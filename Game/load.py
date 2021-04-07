@@ -23,6 +23,9 @@ class Load:
         # the cost of the current step
 
     def get_attribution(self, carrier, previous_node, next_node, carrier_cost, previous_node_cost):
+        """
+        To be called each time a load which was waiting at a node get attributed for a next hop
+        """
         self.in_transit = True
         self.current_carrier = carrier
         self.route_costs.append((previous_node, next_node, carrier_cost, previous_node_cost))
@@ -30,10 +33,10 @@ class Load:
         self.new_node_infos(next_node, carrier_cost, previous_node_cost)  # we call the new info function at each
         # attribution
 
-    def arrive_at_next_node(self):
-        pass  # TODO: implement this function
-
     def new_node_infos(self, next_node, carrier_cost, previous_node_cost):
+        """
+        Generate new info after the attribution
+        """
         infos = []
         for info in self.previous_info:
             infos.append(Info(info.start, next_node, info.cost + carrier_cost + previous_node_cost))
@@ -42,6 +45,12 @@ class Load:
 
         self.previous_info = infos
         # TODO: pass the info to all the nodes
+
+    def arrive_at_next_node(self):
+        """
+        to be called by the carrier each time it arrives at a next node
+        """
+        pass  # TODO: implement this function
 
 
 class Info:
