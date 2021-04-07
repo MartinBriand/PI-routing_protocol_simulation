@@ -1,7 +1,6 @@
 """
 Shipper file
 """
-from Game.load import Load
 
 
 class Law:
@@ -19,19 +18,16 @@ class Shipper:
     auctioned at a node, and has to pay the nodes and the carriers
     """
 
-    def __init__(self,
-                 laws: [Law],
-                 expenses: [float] = None,
-                 loads: [Load] = None):
+    def __init__(self, laws, expenses=None, loads=None):
 
         if loads is None:
             loads = []
         if expenses is None:
             expenses = []
 
-        self.law: [Law] = laws
-        self.expenses: [float] = expenses
-        self.loads: [Load] = loads
+        self.law = laws
+        self.expenses = expenses
+        self.loads = loads
 
     def generate_loads(self):
         pass
