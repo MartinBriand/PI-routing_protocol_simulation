@@ -30,5 +30,8 @@ class Shipper:
         self.loads = loads
 
     def generate_loads(self):
+        """
+        To be calle by the environment at each new round to generate new loads
+        """
         pass
         # TODO: after coding the Law and the load objects
