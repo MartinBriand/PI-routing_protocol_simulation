@@ -2,7 +2,7 @@
 Environment file
 """
 from Game.carrier import Carrier
-from Game.load import Load, Info
+from Game.load import Load
 from Game.node import Node
 from Game.shipper import Shipper
 
@@ -51,18 +51,13 @@ class Environment:
 
         # running auctions
         for node in self.nodes:
-            node.run_auction()  # TODO: make this function
+            node.run_auction()  # TODO: implement this function
 
         # one distance unit for the moving carriers
         for carrier in self.carriers:
-            carrier.next_state()  # TODO: make this function
+            carrier.next_state()  # TODO: implement this function
 
-        # getting new info and broadcasting
-        new_infos: [Info] = []
-        for load in self.loads:
-            new_infos = new_infos + load.new_info()
-        for node in self.nodes:
-            node.update_weights_with_new_info(new_infos)  # TODO: implement this function
+        # TODO: getting new info for the node
 
     def _get_new_loads(self):
         self.new_loads = []
