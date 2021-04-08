@@ -1,10 +1,10 @@
 """
 Environment file
 """
-from Game.carrier import Carrier
-from Game.load import Load
-from Game.node import Node
-from Game.shipper import Shipper
+from Game.Actors.carrier.carrier import Carrier
+from Game.Tools.load import Load
+from Game.Actors.node.node import Node
+from Game.Actors.shipper.shipper import Shipper
 
 
 class Environment:
