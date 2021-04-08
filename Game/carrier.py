@@ -30,7 +30,7 @@ class Carrier:
         if not self.in_transit:
             self.next_node.add_carrier_to_waiting_list(self)
 
-    def bid(self):
+    def bid(self, node):  # this should be a dictionary: key is next_node, value is float
         """To be called by the node before an auction"""
         raise NotImplementedError
 
@@ -38,6 +38,7 @@ class Carrier:
         """To be called by the node after an auction if a load was attributed to the carrier"""
         self.in_transit = True
         current_node = self.next_node
+        current_node.remove_carrier_from_waiting_list()
         self.next_node = next_node
 
         self.time_to_go = self.environment.get_distance(current_node, self.next_node)
