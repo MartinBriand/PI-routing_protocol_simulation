@@ -32,7 +32,7 @@ class Shipper:
 
         return new_loads
 
-    def generate_reserve_price(self, load, node):  # TODO: Is this used
+    def generate_reserve_price(self, load, node):  # this should be a float
         """
         To be called by the node before an auction
         """
