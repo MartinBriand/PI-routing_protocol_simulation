@@ -24,7 +24,7 @@ class Load:
         self.has_new_infos = False
 
         self.route_costs = []  # a cost is a tuple (previous_node, next_node, carrier_cost, previous_node_cost)
-        self.previous_info = [Info(self.start, self.start, 0)]  # to calculate the new info, use the old info and add
+        self.previous_infos = [Info(self.start, self.start, 0)]  # to calculate the new info, use the old info and add
         # the cost of the current step
 
         # And now add it to the start node
@@ -36,10 +36,11 @@ class Load:
         """
         self.in_transit = True
         self.current_carrier = carrier
+        self.next_node.remove_load_from_waiting_list()
         self.next_node = next_node
         self.route_costs.append((previous_node, next_node, carrier_cost, previous_node_cost))
 
-        self._new_node_infos(next_node, carrier_cost, previous_node_cost)  # we call the new info function at each
+        self._new_node_infos(next_node, carrier_cost, previous_node_cost)  # we call the new infos function at each
         # attribution
 
     def _new_node_infos(self, next_node, carrier_cost, previous_node_cost):
@@ -47,23 +48,23 @@ class Load:
         Generate new info after the attribution and tell the environment it has new info
         """
         infos = []
-        for info in self.previous_info:
+        for info in self.previous_infos:
             infos.append(Info(info.start, next_node, info.cost + carrier_cost + previous_node_cost))
             # tolerance for not writing getters on the info class
 
         infos.append(Info(next_node, next_node, 0))
 
-        self.previous_info = infos
-        self.has_new_info = True
-        self.environment.add_load_to_new_info_list(self)
+        self.previous_infos = infos
+        self.has_new_infos = True
+        self.environment.add_load_to_new_infos_list(self)
 
     def communicate_infos(self):
         """Communicate the new info to the environment when asked to"""
-        if not self.has_new_info:
-            raise BrokenPipeError('This load has no new info to communicate')
+        if not self.has_new_infos:
+            raise BrokenPipeError('This load has no new infos to communicate')
         else:
             self.has_new_infos = False
-            return self.previous_info
+            return self.previous_infos
 
     def arrive_at_next_node(self):
         """
@@ -77,11 +78,15 @@ class Load:
             self.next_node.add_load_to_waiting_list(self)
 
     def discard(self):  # TODO: Is this used
-        """Set the load as discarded. Called by the node"""
+        """
+        Set the load as discarded. Called by the node when auction run but no result
+        (A shipper could eventually also call it but it is not implemented yet (and will probably not be))
+        """
         self.is_discarded = True
+        self.next_node.remove_load_from_waiting_list()
 
     def has_new_infos(self):
-        """access the has new info variable. Called by the environment"""
+        """access the has new infos variable. Called by the environment"""
         return self.has_new_infos
 
 
