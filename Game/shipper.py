@@ -10,13 +10,7 @@ class Shipper:
     auctioned at a node, and has to pay the nodes and the carriers
     """
 
-    def __init__(self, laws, expenses=None, loads=None, environment=None):
-
-        if loads is None:
-            loads = []
-        if expenses is None:
-            expenses = []
-
+    def __init__(self, laws, expenses, loads, environment):
         self.environment = environment
         self.laws = laws
         self.expenses = expenses
@@ -38,13 +32,13 @@ class Shipper:
 
         return new_loads
 
-    def generate_reserve_price(self, load, node):
+    def generate_reserve_price(self, load, node):  # TODO: Is this used
         """
         To be called by the node before an auction
         """
         raise NotImplementedError
 
-    def proceed_to_payment_node(self, node, node_value, carrier, carrier_value):
+    def proceed_to_payment_node(self, node, node_value, carrier, carrier_value):  # TODO: Is this used
         """
         To be called by the node after an auction
         """

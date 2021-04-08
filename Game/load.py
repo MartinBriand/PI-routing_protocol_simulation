@@ -30,9 +30,9 @@ class Load:
         # And now add it to the start node
         self.start.add_load_to_waiting_list(self)
 
-    def get_attribution(self, carrier, previous_node, next_node, carrier_cost, previous_node_cost):
+    def get_attribution(self, carrier, previous_node, next_node, carrier_cost, previous_node_cost):  # TODO is it used ?
         """
-        To be called each time a load which was waiting at a node get attributed for a next hop
+        To be called by the node each time a load which was waiting at a node get attributed for a next hop
         """
         self.in_transit = True
         self.current_carrier = carrier
@@ -42,8 +42,6 @@ class Load:
         self._new_node_infos(next_node, carrier_cost, previous_node_cost)  # we call the new info function at each
         # attribution
 
-        # TODO: Is this implemented in the node API
-
     def _new_node_infos(self, next_node, carrier_cost, previous_node_cost):
         """
         Generate new info after the attribution and tell the environment it has new info
@@ -51,7 +49,7 @@ class Load:
         infos = []
         for info in self.previous_info:
             infos.append(Info(info.start, next_node, info.cost + carrier_cost + previous_node_cost))
-            # tolerence for not writing getters on the info class
+            # tolerance for not writing getters on the info class
 
         infos.append(Info(next_node, next_node, 0))
 
@@ -67,7 +65,7 @@ class Load:
             self.has_new_infos = False
             return self.previous_info
 
-    def arrive_at_next_node(self):  # TODO: Is this implemented in the carrier
+    def arrive_at_next_node(self):
         """
         to be called by the carrier each time it arrives at a next node
         """
@@ -78,11 +76,12 @@ class Load:
         else:
             self.next_node.add_load_to_waiting_list(self)
 
-    def discard(self):
-        """Set the load as discarded"""
+    def discard(self):  # TODO: Is this used
+        """Set the load as discarded. Called by the node"""
         self.is_discarded = True
 
     def has_new_infos(self):
+        """access the has new info variable. Called by the environment"""
         return self.has_new_infos
 
 

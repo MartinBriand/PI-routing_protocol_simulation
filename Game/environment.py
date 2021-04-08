@@ -14,23 +14,7 @@ class Environment:
     the Environment should be deleted.
     """
 
-    def __init__(self,
-                 carriers: [Carrier] = None,
-                 shippers: [Shipper] = None,
-                 nodes: [Node] = None,
-                 loads: [Load] = None):
-
-        # a few test lines to make sure we do not have mutable variables in the parameters of init
-        if carriers is None:
-            carriers = []
-        if loads is None:
-            loads = []
-        if nodes is None:
-            nodes = []
-        if shippers is None:
-            shippers = []
-
-        # real initialization
+    def __init__(self, carriers: [Carrier], shippers: [Shipper], nodes: [Node], loads: [Load], distances):
         self.carriers: [Carrier] = carriers
         self.shippers: [Shipper] = shippers
         self.nodes: [Node] = nodes
@@ -39,7 +23,7 @@ class Environment:
         self.new_loads: [Load] = self.loads.copy()
         self.loads_with_new_infos: [Load] = [load for load in self.loads if load.has_new_info()]
 
-        self.distances = {}
+        self.distances = distances  # should be a dictionary of dictionaries with node as keys
 
     def iteration(self):
         """This is the main function of the Environment class. It represents the operation of the game for one unit of
@@ -67,7 +51,7 @@ class Environment:
     def _carriers_next_states(self):
         """Asking carriers to move"""
         for carrier in self.carriers:
-            carrier.next_state()  # TODO: implement this function
+            carrier.next_step()
 
     def _get_and_broadcast_new_infos(self):
         """Asking loads with new info to communicate this and then broadcast the information to nodes"""
@@ -80,3 +64,6 @@ class Environment:
 
     def add_load_to_new_info_list(self, load):
         self.loads_with_new_infos.append(load)
+
+    def get_distance(self, start, end):
+        return self.distances[start][end]
