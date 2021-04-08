@@ -24,7 +24,7 @@ class Shipper:
         new_loads = []
 
         for law in self.laws:
-            departure_node = law.departure_node  # tolereance for not writing a getter method
+            departure_node = law.departure_node  # tolerance for not writing a getter method
             arrival_node = law.arrival_node  # idem
             n = law.call()
             for k in range(n):
