@@ -56,6 +56,7 @@ class Carrier:
             current_node = self.next_node
             self.next_node = new_next_node
             self.time_to_go = self.environment.get_distance(current_node, self.next_node)
+            current_node.remove_carrier_from_waiting_list()
 
     def _decide_next_node(self):
         """Decide of a next node after losing an auction (can be the same node when needed)"""
