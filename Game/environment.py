@@ -37,7 +37,7 @@ class Environment:
         self.loads: [Load] = loads
 
         self.new_loads: [Load] = self.loads.copy()
-        self.loads_with_new_infos: [Load] = [load for load in self.loads if load.has_new_info]
+        self.loads_with_new_infos: [Load] = [load for load in self.loads if load.has_new_info()]
 
         self.distances = {}
 
@@ -76,3 +76,7 @@ class Environment:
             new_infos += load.communicate_infos()
         for node in self.nodes:
             node.receive_new_info(new_infos)  # TODO: implement this function
+        self.loads_with_new_infos = []
+
+    def add_load_to_new_info_list(self, load):
+        self.loads_with_new_infos.append(load)

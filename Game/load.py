@@ -21,14 +21,14 @@ class Load:
         self.in_transit = False
         self.is_arrived = False
         self.is_discarded = False
-        self.has_new_info = False
+        self.has_new_infos = False
 
         self.route_costs = []  # a cost is a tuple (previous_node, next_node, carrier_cost, previous_node_cost)
         self.previous_info = [Info(self.start, self.start, 0)]  # to calculate the new info, use the old info and add
         # the cost of the current step
 
         # And now add it to the start node
-        self.start.waiting_loads.append(self)
+        self.start.add_load_to_waiting_list(self)
 
     def get_attribution(self, carrier, previous_node, next_node, carrier_cost, previous_node_cost):
         """
@@ -39,31 +39,32 @@ class Load:
         self.next_node = next_node
         self.route_costs.append((previous_node, next_node, carrier_cost, previous_node_cost))
 
-        self.new_node_infos(next_node, carrier_cost, previous_node_cost)  # we call the new info function at each
+        self._new_node_infos(next_node, carrier_cost, previous_node_cost)  # we call the new info function at each
         # attribution
 
         # TODO: Is this implemented in the node API
 
-    def new_node_infos(self, next_node, carrier_cost, previous_node_cost):
+    def _new_node_infos(self, next_node, carrier_cost, previous_node_cost):
         """
         Generate new info after the attribution and tell the environment it has new info
         """
         infos = []
         for info in self.previous_info:
             infos.append(Info(info.start, next_node, info.cost + carrier_cost + previous_node_cost))
+            # tolerence for not writing getters on the info class
 
         infos.append(Info(next_node, next_node, 0))
 
         self.previous_info = infos
         self.has_new_info = True
-        self.environment.loads_with_new_infos.append(self)
+        self.environment.add_load_to_new_info_list(self)
 
     def communicate_infos(self):
-        """Communicate the new info to the environment when needed"""
+        """Communicate the new info to the environment when asked to"""
         if not self.has_new_info:
             raise BrokenPipeError('This load has no new info to communicate')
         else:
-            self.has_new_info = False
+            self.has_new_infos = False
             return self.previous_info
 
     def arrive_at_next_node(self):  # TODO: Is this implemented in the carrier
@@ -75,11 +76,14 @@ class Load:
         if self.next_node == self.arrival:
             self.is_arrived = True
         else:
-            self.next_node.waiting_loads.append(self)
+            self.next_node.add_load_to_waiting_list(self)
 
     def discard(self):
         """Set the load as discarded"""
         self.is_discarded = True
+
+    def has_new_infos(self):
+        return self.has_new_infos
 
 
 class Info:
