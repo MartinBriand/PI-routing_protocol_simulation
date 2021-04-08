@@ -1,15 +1,27 @@
 """
 Shipper file
 """
+from Game.load import Load
 
 
-class Law:
+class NodeLaw:
     """
     A law is an association of a node and a statistical law.
+    The only method is a call function to generate a number of load to be created by the shipper at a specific node
     """
 
-    pass
-    # TODO: implement the Law class
+    def __init__(self, departure_node, arrival_node, law, params):
+        """
+        The node is just the node reference
+        The law should be a numpy.random.Generator.law
+        The params should be the parameters to be called by the law
+        """
+        self.departure_node = departure_node
+        self.arrival_node = arrival_node
+        self._law = lambda: law(*params)
+
+    def call(self):
+        return self._law()
 
 
 class Shipper:
@@ -18,20 +30,40 @@ class Shipper:
     auctioned at a node, and has to pay the nodes and the carriers
     """
 
-    def __init__(self, laws, expenses=None, loads=None):
+    def __init__(self, laws, expenses=None, loads=None, environment=None):
 
         if loads is None:
             loads = []
         if expenses is None:
             expenses = []
 
-        self.law = laws
+        self.environment = environment
+        self.laws = laws
         self.expenses = expenses
+        self.total_expenses = sum(self.expenses)
         self.loads = loads
 
     def generate_loads(self):
         """
-        To be calle by the environment at each new round to generate new loads
+        To be called by the environment at each new round to generate new loads
         """
-        pass
-        # TODO: after coding the Law and the load objects
+        new_loads = []
+
+        for law in self.laws:
+            departure_node = law.departure_node
+            arrival_node = law.arrival_node
+            n = law.call()
+            for k in range(n):
+                new_loads.append(Load(departure_node, arrival_node, self, self.environment))
+
+        return new_loads
+
+    def generate_reserve_price(self, load, node):
+        raise NotImplementedError
+
+    def proceed_to_payment_node(self, node, node_value, carrier, carrier_value):
+        node.receive_payment(self, node_value)  # TODO: implement this function
+        carrier.receive_payment(self, node, carrier_value)  # TODO: implement this function
+        total_value = carrier_value + node_value
+        self.expenses.append(total_value)
+        self.total_expenses += total_value
