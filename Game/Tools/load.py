@@ -5,7 +5,7 @@ Load file
 
 class Load:
     """
-    A load tracks what is happening to it. It has a shipper, a current carrier, and a route with its associated costs
+    A load tracks what is happening to it. It has a shippers, a current carriers, and a route with its associated costs
     """
 
     def __init__(self, start, arrival, shipper, environment):
@@ -15,8 +15,8 @@ class Load:
         self.environment = environment
 
         self.current_carrier = None
-        self.next_node = self.start  # note that if you are not in transit, then you are at a node, and you next_node is
-        # also your current node
+        self.next_node = self.start  # note that if you are not in transit, then you are at a nodes, and you next_node is
+        # also your current nodes
 
         self.in_transit = False
         self.is_arrived = False
@@ -27,12 +27,12 @@ class Load:
         self.previous_infos = [Info(self.start, self.start, 0)]  # to calculate the new info, use the old info and add
         # the cost of the current step
 
-        # And now add it to the start node
+        # And now add it to the start nodes
         self.start.add_load_to_waiting_list(self)
 
     def get_attribution(self, carrier, previous_node, next_node, carrier_cost, previous_node_cost):  # TODO is it used ?
         """
-        To be called by the node each time a load which was waiting at a node get attributed for a next hop
+        To be called by the nodes each time a load which was waiting at a nodes get attributed for a next hop
         """
         self.in_transit = True
         self.current_carrier = carrier
@@ -68,7 +68,7 @@ class Load:
 
     def arrive_at_next_node(self):
         """
-        to be called by the carrier each time it arrives at a next node
+        to be called by the carriers each time it arrives at a next nodes
         """
         self.current_carrier = None
         self.in_transit = False
@@ -79,8 +79,8 @@ class Load:
 
     def discard(self):  # TODO: Is this used
         """
-        Set the load as discarded. Called by the node when auction run but no result
-        (A shipper could eventually also call it but it is not implemented yet (and will probably not be))
+        Set the load as discarded. Called by the nodes when auction run but no result
+        (A shippers could eventually also call it but it is not implemented yet (and will probably not be))
         """
         self.is_discarded = True
         self.next_node.remove_load_from_waiting_list()
