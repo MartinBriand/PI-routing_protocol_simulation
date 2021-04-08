@@ -20,7 +20,7 @@ class Auction:
         self.results = {}
 
     def run(self):
-        """The only function to be called in the auction by another class instance (namely a node here)"""
+        """The only function to be called in the auction by another class instance (namely a nodes here)"""
         self._calculate_auction_weights()
         self._get_reserve_prices()
         self._get_bids()
@@ -30,7 +30,7 @@ class Auction:
 
     def _calculate_auction_weights(self):
         """
-        Build the dictionary of weights. The first key is the auctioned load, the second is the intermediary node
+        Build the dictionary of weights. The first key is the auctioned load, the second is the intermediary nodes
         The value is the weight
         """
         for load in self.loads:
@@ -45,7 +45,7 @@ class Auction:
 
     def _get_bids(self):
         """
-        Build the dictionary of the bid dictionary. The first key is the carrier, the second is the next node,
+        Build the dictionary of the bid dictionary. The first key is the carriers, the second is the next nodes,
         the value is the bid
         """
         for carrier in self.carriers:
@@ -77,7 +77,7 @@ class Auction:
             * an 'is_attributed' key with a boolean value associated
             * a 'kwargs' dictionary with the exact format of the kw of the get_attribution function of the load package
                 (or an empty dictionary to call the discard function if need be)
-        In the 'carriers' dictionary, we have, for each carrier key:
+        In the 'carriers' dictionary, we have, for each carriers key:
             * an 'is_attributed' key with a boolean value associated
             * a 'kwargs' dictionary with the exact format of the kw of the get_attribution function of the load package
                 (or an empty dictionary to call the dont_get_attribution function if need be)

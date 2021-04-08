@@ -1,11 +1,12 @@
 """
 Node file
 """
+from Game.Tools.auction import Auction
 
 
 class Node:
     """
-    This is the node class. A node should:
+    This is the nodes class. A nodes should:
         * Generate weights
         * Run auctions for the available loads
             * Ask shippers for reserve prices
@@ -25,8 +26,8 @@ class Node:
         self.waiting_carriers = []  # same as waiting_loads
         self.past_auctions = past_auctions
 
-        self.weights = weights  # this is a dictionary of dictionaries. First key is FINAL node, second key is NEXT node
-        # to avoid cyclic weights, we avoid having NEXT_NODE = THIS_NODE
+        self.weights = weights  # this is a dictionary of dictionaries. First key is FINAL nodes, second key is NEXT
+        # nodes to avoid cyclic weights, we avoid having NEXT_NODE = THIS_NODE
 
     def run_auction(self):
         """Create an Auction instance and run it"""
@@ -36,7 +37,7 @@ class Node:
 
     def update_weights_with_new_infos(self, new_infos):
         """
-        This is the method where the node has some intelligence
+        This is the method where the nodes has some intelligence
         """
         raise NotImplementedError
 
@@ -51,7 +52,3 @@ class Node:
 
     def add_load_from_waiting_list(self, load):
         self.waiting_loads.append(load)
-
-
-
-

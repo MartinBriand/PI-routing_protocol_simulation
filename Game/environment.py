@@ -1,10 +1,10 @@
 """
 Environment file
 """
-from Game.Actors.carrier.carrier import Carrier
+from Game.Actors.carriers.carrier import Carrier
 from Game.Tools.load import Load
-from Game.Actors.node.node import Node
-from Game.Actors.shipper.shipper import Shipper
+from Game.Actors.nodes.node import Node
+from Game.Actors.shippers.shipper import Shipper
 
 
 class Environment:
@@ -23,7 +23,7 @@ class Environment:
         self.new_loads: [Load] = self.loads.copy()
         self.loads_with_new_infos: [Load] = [load for load in self.loads if load.has_new_infos()]
 
-        self.distances = distances  # should be a dictionary of dictionaries with node as keys
+        self.distances = distances  # should be a dictionary of dictionaries with nodes as keys
 
     def iteration(self):
         """This is the main function of the Environment class. It represents the operation of the game for one unit of

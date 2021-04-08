@@ -7,7 +7,7 @@ from Game.Tools.load import Load
 class Shipper:
     """
     A Shipper is able to generate goods according to a law, generate reserve prices for each time one of its good is
-    auctioned at a node, and has to pay the nodes and the carriers
+    auctioned at a nodes, and has to pay the nodes and the carriers
     """
 
     def __init__(self, laws, expenses, loads, environment):
@@ -34,13 +34,13 @@ class Shipper:
 
     def generate_reserve_price(self, load, node):  # this should be a float
         """
-        To be called by the node before an auction
+        To be called by the nodes before an auction
         """
         raise NotImplementedError
 
     def proceed_to_payment_node(self, node, node_value, carrier, carrier_value):  # TODO: Is this used
         """
-        To be called by the node after an auction
+        To be called by the nodes after an auction
         """
         node.receive_payment(self, node_value)  # TODO: implement this function
         carrier.receive_payment(self, node, carrier_value)
@@ -51,13 +51,13 @@ class Shipper:
 
 class NodeLaw:
     """
-    A law is an association of a node and a statistical law.
-    The only method is a call function to generate a number of load to be created by the shipper at a specific node
+    A law is an association of a nodes and a statistical law.
+    The only method is a call function to generate a number of load to be created by the shippers at a specific nodes
     """
 
     def __init__(self, departure_node, arrival_node, law, params):
         """
-        The node is just the node reference
+        The nodes is just the nodes reference
         The law should be a numpy.random.Generator.law
         The params should be the parameters to be called by the law
         """

@@ -5,15 +5,15 @@ Carrier file
 
 class Carrier:
     """
-    A carrier has two states:
+    A carriers has two states:
         * it is either in transit, if so, it is forced to finish it journey
-        * If not, it is because it is at a node, where, it can participate in an auction, and depending on the result
-            * will either be attributed a good to transport and will have to carry it to the next node
-            * Or will not get a good and may decide to stay or move to another node
+        * If not, it is because it is at a nodes, where, it can participate in an auction, and depending on the result
+            * will either be attributed a good to transport and will have to carry it to the next nodes
+            * Or will not get a good and may decide to stay or move to another nodes
     """
 
     def __init__(self, in_transit, next_node, time_to_go, load, environment, expenses, revenues):
-        # state: if not in transit, we are at node next_node, ef not time_to_go > 0 and we are going to next_node
+        # state: if not in transit, we are at nodes next_node, ef not time_to_go > 0 and we are going to next_node
         self.in_transit = in_transit
         self.next_node = next_node
         self.time_to_go = time_to_go
@@ -31,26 +31,26 @@ class Carrier:
             self.next_node.add_carrier_to_waiting_list(self)
 
     def bid(self, node):  # this should be a dictionary: key is next_node, value is float
-        """To be called by the node before an auction"""
+        """To be called by the nodes before an auction"""
         raise NotImplementedError
 
     def get_attribution(self, load, next_node):
-        """To be called by the node after an auction if a load was attributed to the carrier"""
+        """To be called by the nodes after an auction if a load was attributed to the carriers"""
         self.in_transit = True
         current_node = self.next_node
         current_node.remove_carrier_from_waiting_list()
         self.next_node = next_node
 
         self.time_to_go = self.environment.get_distance(current_node, self.next_node)
-        self.load = load  # note that the get_attribution of the load is called by the node too.
+        self.load = load  # note that the get_attribution of the load is called by the nodes too.
 
     def receive_payment(self, value):
-        """To be called by the shipper after an auction if a load was attributed"""
+        """To be called by the shippers after an auction if a load was attributed"""
         self.revenues.append(value)
         self.total_revenues += value
 
     def dont_get_attribution(self):
-        """To be called by the node after an auction if the carrier lost"""
+        """To be called by the nodes after an auction if the carriers lost"""
         new_next_node = self._decide_next_node()
         if new_next_node != self.next_node:
             self.in_transit = True
@@ -60,7 +60,7 @@ class Carrier:
             current_node.remove_carrier_from_waiting_list()
 
     def _decide_next_node(self):
-        """Decide of a next node after losing an auction (can be the same node when needed)"""
+        """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
         raise NotImplementedError
 
     def next_step(self):
@@ -77,11 +77,11 @@ class Carrier:
         self.total_expenses += new_cost
 
     def _arrive_at_next_node(self):
-        """Called by next_step to do all the variable settings when arrive at a next node"""
+        """Called by next_step to do all the variable settings when arrive at a next nodes"""
         self.in_transit = False
         self.load.arrive_at_next_node()
         self.load = None
-        self.next_node.add_carrier_to_waiting_list(self)  # TODO: Is this implemented in the node API
+        self.next_node.add_carrier_to_waiting_list(self)  # TODO: Is this implemented in the nodes API
 
     def _transit_costs(self):
         raise NotImplementedError
