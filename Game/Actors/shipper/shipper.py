@@ -1,7 +1,7 @@
 """
 Shipper file
 """
-from Game.load import Load
+from Game.Tools.load import Load
 
 
 class Shipper:
