@@ -17,10 +17,10 @@ class Carrier:
         self.home = home
         # state: if not in transit, we are at nodes next_node, ef not time_to_go > 0 and we are going to next_node
         self.in_transit = in_transit
-        self.next_node = next_node
+        self.next_node = next_node  # instantiated after the creation of the node
         self.time_to_go = time_to_go
         self.load = load
-        self.environment = environment
+        self.environment = environment  # instantiated after the creation of the environment
 
         # costs are allowed to be methods
 
@@ -29,7 +29,9 @@ class Carrier:
         self.total_expenses = sum(self.expenses)
         self.total_revenues = sum(self.revenues)
 
-        if not self.in_transit:
+        self.environment.add_carrier(self)
+
+        if not self.in_transit:  # should be instantiated after the creations of the nodes
             self.next_node.add_carrier_to_waiting_list(self)
 
     def bid(self, node):  # this should be a dictionary: key is next_node, value is float

@@ -3,7 +3,7 @@ The most basic carrier you could think of
 """
 from random import random, randint, expovariate
 
-from Game.Actors.carriers.carrier import Carrier
+from Mechanics.Actors.carriers.carrier import Carrier
 
 
 class DummyCarrier(Carrier):
@@ -32,7 +32,9 @@ class DummyCarrier(Carrier):
             return self.next_node
 
     def _transit_costs(self):
+        """The transit costs"""
         return self.transit_costs
 
-    def _far_from_home_costs(self):
+    def _far_from_home_costs(self):  # yes it is a constant, I told you it was dummy
+        """The far from home costs"""
         return self.far_from_home_costs
