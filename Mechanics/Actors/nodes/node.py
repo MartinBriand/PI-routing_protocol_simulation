@@ -86,4 +86,3 @@ class Node:
     def signal_as_past_auction(self, auction):
         self.past_auctions.append(auction)
         self.current_auction = None
-

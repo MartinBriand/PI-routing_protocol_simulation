@@ -20,11 +20,11 @@ class Auction:
         # The following four dictionaries are going to be changed in the call of run
         # The data structure is described in each of the corresponding function
         self.weights = {}
-        self.reserve_prices = None
+        self.reserve_prices = {}
         self.bids = {}
         self.results = {'loads': {}, 'carriers': {}}
 
-        self.source.signal_as_current_auction()
+        self.source.signal_as_current_auction(self)
 
     def run(self):
         """The only function to be called in the auction by another class instance (namely a nodes here)"""
@@ -47,7 +47,7 @@ class Auction:
                 break  # keep the other loads in the waiting list for the next round
         self._notify_loosing_carriers()
         self._terminate_auction()
-        self.source.signal_as_past_auction()
+        self.source.signal_as_past_auction(self)
 
     def _terminate_auction(self):
         """Make an auction independent of the state of the parent node"""
@@ -99,7 +99,7 @@ class Auction:
 
     def _ask_payment(self, load):
         """Ask the shipper to pay the carrier and the node"""
-        d = self.results['loads'][load]
+        d = self.results['loads'][load]['kwargs']
         load.shipper.proceed_to_payment(node=d['previous_node'],
                                         node_value=d['previous_node_cost'],
                                         carrier=d['carrier'],
@@ -124,7 +124,6 @@ class Auction:
 
         new_bids = {}
         for carrier in this_auction_bids:
-            new_bids[carrier] = {}
             for node in this_auction_bids[carrier]:
                 new_bids[(carrier, node)] = this_auction_bids[carrier][node] + this_auction_weights[node]
 
