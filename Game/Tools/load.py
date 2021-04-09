@@ -30,7 +30,7 @@ class Load:
         # And now add it to the start nodes
         self.start.add_load_to_waiting_list(self)
 
-    def get_attribution(self, carrier, previous_node, next_node, carrier_cost, previous_node_cost):  # TODO is it used ?
+    def get_attribution(self, carrier, previous_node, next_node, carrier_cost, previous_node_cost):
         """
         To be called by the nodes each time a load which was waiting at a nodes get attributed for a next hop
         """
@@ -77,7 +77,7 @@ class Load:
         else:
             self.next_node.add_load_to_waiting_list(self)
 
-    def discard(self):  # TODO: Is this used
+    def discard(self):
         """
         Set the load as discarded. Called by the nodes when auction run but no result
         (A shippers could eventually also call it but it is not implemented yet (and will probably not be))

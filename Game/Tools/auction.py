@@ -2,11 +2,14 @@
 Auction file
 """
 
+import random
+
 
 class Auction:
     """
     An auction correspond to one auction being run
     """
+
     def __init__(self, source):
         self.source = source
         self.loads = source.waiting_loads
@@ -15,61 +18,81 @@ class Auction:
         # The following four dictionaries are going to be changed in the call of run
         # The data structure is described in each of the corresponding function
         self.weights = {}
-        self.reserve_prices = {}
+        self.reserve_prices = None
         self.bids = {}
-        self.results = {}
+        self.results = {'loads': {}, 'carriers': {}}
 
     def run(self):
         """The only function to be called in the auction by another class instance (namely a nodes here)"""
-        self._calculate_auction_weights()
-        self._get_reserve_prices()
-        self._get_bids()
-        self._make_attribution_and_payments()
-        self._notify_loads()
-        self._notify_carriers()
+        nb_load = len(self.loads)
+        random.shuffle(self.carriers)  # No waiting list since they can decide to leave when they want
+        # Don't randomize load waiting list so that we have a queue
+        for k in range(nb_load):
+            load = self.loads[k]
+            nb_carriers_involved = max(1, len(self.carriers) - nb_load + k + 1)  # self.carriers has at least 1 element
+            if len(self.carriers) > 0:
+                self._calculate_auction_weights(load)
+                self._get_reserve_price(load)
+                self._get_bids(load, nb_carriers_involved)
+                load_attributed, winning_carrier = self._make_attributions_and_payments(load, nb_carriers_involved)
+                self._notify_load(load)
+                if load_attributed:  # This step is important to make sure they do not participate in the next auction
+                    self._notify_winning_carrier(winning_carrier)
+                    self._ask_payment(load)
+            else:
+                break  # keep the other loads in the waiting list for the next round
+        self._notify_loosing_carriers()
 
-    def _calculate_auction_weights(self):
+    def _calculate_auction_weights(self, load):
         """
         Build the dictionary of weights. The first key is the auctioned load, the second is the intermediary nodes
         The value is the weight
         """
-        for load in self.loads:
-            self.weights[load] = self.source.weights[load.arrival]
+        self.weights[load] = self.source.weights[load.arrival]
 
-    def _get_reserve_prices(self):
+    def _get_reserve_price(self, load):
         """
         Build the dictionary of reserve prices. The key is the auctioned load, the value is the reserve price
         """
-        for load in self.loads:
-            self.reserve_prices[load] = load.shipper.generate_reserve_price(load, self.source)
+        self.reserve_prices[load] = load.shipper.generate_reserve_price(load, self.source)
 
-    def _get_bids(self):
+    def _get_bids(self, load, nb_carriers_involved):
         """
-        Build the dictionary of the bid dictionary. The first key is the carriers, the second is the next nodes,
-        the value is the bid
+        Build the dictionary of the bid dictionary. The first key is the load, key2 the carrier, and key3 the next
+        node. The value is the bid
         """
-        for carrier in self.carriers:
-            self.bids[carrier] = carrier.bid(self.source)
+        self.bids[load] = {}
+        for carrier in self.carriers[:nb_carriers_involved]:
+            self.bids[load][carrier] = carrier.bid(self.source)
 
-    def _notify_loads(self):
+    def _notify_load(self, load):
         """Notify the loads after making the attributions"""
-        for load in self.results['loads']:
-            d = self.results['loads'][load]
-            if d['is_attributed']:
-                load.get_attribution(**d['kwargs'])
-            else:
-                load.discard()
+        d = self.results['loads'][load]
+        if d['is_attributed']:
+            load.get_attribution(**d['kwargs'])
+        else:
+            load.discard(**d['kwargs'])
 
-    def _notify_carriers(self):
+    def _notify_winning_carrier(self, winning_carrier):
         """Notify the carriers after making the attribution"""
-        for carrier in self.results['carriers']:
-            d = self.results['carriers'][carrier]
-            if d['is_attributed']:
-                carrier.get_attribution(**d['kwargs'])
-            else:
-                carrier.dont_get_attribution()
+        d = self.results['carriers'][winning_carrier]
+        assert d['is_attributed'], 'winning is not winning...'
+        winning_carrier.get_attribution(**d['kwargs'])
 
-    def _make_attribution_and_payments(self):
+    def _notify_loosing_carriers(self):
+        for carrier in self.carriers:
+            self.results['carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
+        for carrier in self.carriers.copy():
+            carrier.dont_get_attribution(**self.results['carriers'][carrier]['kwargs'])
+
+    def _ask_payment(self, load):
+        d = self.results['loads'][load]
+        load.shipper.proceed_to_payment(node=d['previous_node'],
+                                        node_value=d['previous_node_cost'],
+                                        carrier=d['carrier'],
+                                        carrier_value=d['carrier_cost'])
+
+    def _make_attributions_and_payments(self, load, nb_carriers_involved):
         """
         This is the auction process. It builds the result dictionary
         the first key is either 'loads' or 'carriers'
@@ -82,4 +105,34 @@ class Auction:
             * a 'kwargs' dictionary with the exact format of the kw of the get_attribution function of the load package
                 (or an empty dictionary to call the dont_get_attribution function if need be)
         """
-        pass
+        this_auction_weights = self.weights[load]
+        this_auction_reserve_price = self.reserve_prices[load]
+        this_auction_bids = self.bids[load]
+
+        new_bids = {}
+        for carrier in this_auction_bids:
+            new_bids[carrier] = {}
+            for node in this_auction_bids[carrier]:
+                new_bids[(carrier, node)] = this_auction_bids[carrier][node] + this_auction_weights[node]
+
+        new_bids = sorted(new_bids.items(), key=lambda item: item[1])
+        winning_bid = new_bids[0]  # No out of bound error because
+        winning_carrier, winning_next_node = winning_bid[0]
+        winning_value = winning_bid[1]
+        if winning_value <= this_auction_reserve_price:
+            carrier_cost = min(this_auction_reserve_price, new_bids[1][1]) if nb_carriers_involved <= 1 else \
+                this_auction_reserve_price
+            self.results['loads'][load] = \
+                {'is_attributed': True,
+                 'kwargs': {'carrier': winning_carrier,
+                            'previous_node': self.source,
+                            'next_node': winning_next_node,
+                            'carrier_cost': carrier_cost,
+                            'previous_node_cost': self.source.auction_cost()}}
+            self.results['carriers'][winning_carrier] = \
+                {'is_attributed': True,
+                 'kwargs': {'load': load, 'next_node': winning_next_node}}
+            return True, winning_carrier
+        else:
+            self.results['loads'][load] = {'is_attributed': False, 'kwargs': {}}
+            return False, None

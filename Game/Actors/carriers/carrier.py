@@ -81,7 +81,7 @@ class Carrier:
         self.in_transit = False
         self.load.arrive_at_next_node()
         self.load = None
-        self.next_node.add_carrier_to_waiting_list(self)  # TODO: Is this implemented in the nodes API
+        self.next_node.add_carrier_to_waiting_list(self)
 
     def _transit_costs(self):
         raise NotImplementedError
