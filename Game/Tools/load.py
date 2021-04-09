@@ -15,8 +15,8 @@ class Load:
         self.environment = environment
 
         self.current_carrier = None
-        self.next_node = self.start  # note that if you are not in transit, then you are at a nodes, and you next_node is
-        # also your current nodes
+        self.next_node = self.start  # note that if you are not in transit you are at a nodes, and your next_node is
+        # also your current node then
 
         self.in_transit = False
         self.is_arrived = False

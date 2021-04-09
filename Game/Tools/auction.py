@@ -47,7 +47,7 @@ class Auction:
         self._terminate_auction()
 
     def _terminate_auction(self):
-        """Make an auction independant of the state of the parent node"""
+        """Make an auction independent of the state of the parent node"""
         del self.loads
         del self.carriers
 
