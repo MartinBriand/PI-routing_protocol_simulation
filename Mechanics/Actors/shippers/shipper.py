@@ -58,12 +58,12 @@ class NodeLaw:
     def __init__(self, departure_node, arrival_node, law, params):
         """
         The nodes is just the nodes reference
-        The law should be a numpy.random.Generator.law
+        The law should be a numpy.random.Generator.law (or anything else)
         The params should be the parameters to be called by the law
         """
         self.departure_node = departure_node
         self.arrival_node = arrival_node
-        self._law = lambda: law(*params)
+        self._law = lambda: law(**params)
 
     def call(self):
         """Calling the law to generate a number"""

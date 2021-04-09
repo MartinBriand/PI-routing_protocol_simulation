@@ -21,7 +21,7 @@ class Load:
         self.in_transit = False
         self.is_arrived = False
         self.is_discarded = False
-        self.has_new_infos = False
+        self._has_new_infos = False
 
         self.route_costs = []  # a cost is a tuple (previous_node, next_node, carrier_cost, previous_node_cost)
         self.previous_infos = [Info(self.start, self.start, 0)]  # to calculate the new info, use the old info and add
@@ -35,6 +35,7 @@ class Load:
         """
         To be called by the nodes each time a load which was waiting at a nodes get attributed for a next hop
         """
+        assert not self.in_transit, 'pb here'
         self.in_transit = True
         self.current_carrier = carrier
         self.next_node.remove_load_from_waiting_list()
@@ -48,10 +49,12 @@ class Load:
         """
         Generate new info after the attribution and tell the environment it has new info
         """
+        assert not self._has_new_infos, 'pb_here'
         infos = []
         for info in self.previous_infos:
             infos.append(Info(info.start, next_node, info.cost + carrier_cost + previous_node_cost))
             # tolerance for not writing getters on the info class
+            # Even if you go back to yourself, it is important to have the info
 
         infos.append(Info(next_node, next_node, 0))
 
@@ -61,16 +64,15 @@ class Load:
 
     def communicate_infos(self):
         """Communicate the new info to the environment when asked to"""
-        if not self.has_new_infos:
-            raise BrokenPipeError('This load has no new infos to communicate')
-        else:
-            self.has_new_infos = False
-            return self.previous_infos
+        assert self._has_new_infos, 'pb here'
+        self._has_new_infos = False
+        return self.previous_infos
 
     def arrive_at_next_node(self):
         """
         to be called by the carriers each time it arrives at a next nodes
         """
+        assert not self.in_transit, 'Arrive while not in transit? seriously'
         self.current_carrier = None
         self.in_transit = False
         if self.next_node == self.arrival:
@@ -83,12 +85,13 @@ class Load:
         Set the load as discarded. Called by the nodes when auction run but no result
         (A shippers could eventually also call it but it is not implemented yet (and will probably not be))
         """
+        assert not self.is_discarded or not self.in_transit or self.is_arrived, 'pb here'
         self.is_discarded = True
         self.next_node.remove_load_from_waiting_list()
 
     def has_new_infos(self):
         """access the has new infos variable. Called by the environment"""
-        return self.has_new_infos
+        return self._has_new_infos
 
 
 class Info:

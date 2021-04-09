@@ -6,4 +6,26 @@
 
 from Mechanics.environment import Environment
 from Mechanics.Actors.nodes.dummy_node import DummyNode
-from Mechanics
+from Mechanics.Actors.carriers.dummy_carrier import DummyCarrier
+from Mechanics.Actors.shippers.dummy_shipper import DummyShipper
+from Mechanics.Actors.shippers.shipper import NodeLaw
+
+e = Environment()
+
+ps = DummyNode('Paris', {}, {}, [], e)
+bx = DummyNode('Bruxelles', {}, {}, [], e)
+hh = DummyNode('Hamburg', {}, {}, [], e)
+for node in e.nodes:
+    node.initialize_weights()
+
+distances = {ps: {bx: 3, hh: 6}, bx: {ps: 3, hh: 4}, hh: {ps: 6, bx: 4}}
+e.set_distance(distances)
+
+spshh = DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
+shhps = DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
+
+# cps = DummyCarrier
+# cbx = DummyCarrier
+# chh = DummyCarrier
+
+print('end')

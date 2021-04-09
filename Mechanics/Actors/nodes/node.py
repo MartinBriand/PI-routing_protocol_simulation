@@ -21,12 +21,14 @@ class Node:
     wants to be auctioned, remove itself after being auctioned, and similarly for the carriers.
     """
 
-    def __init__(self, name, past_auctions, weights, revenues, environment):
+    def __init__(self, name, weights, revenues, environment):
         self.name = name
         self.environment = environment
         self.waiting_loads = []  # always initialize as an empty list since the loads add themselves to the list after
         self.waiting_carriers = []  # same as waiting_loads
-        self.past_auctions = past_auctions
+
+        self.current_auction = None
+        self.past_auctions = []  # They will signal at creation
 
         self.revenues = revenues
         self.total_revenues = sum(self.revenues)
@@ -41,9 +43,10 @@ class Node:
     def run_auction(self):
         """Create an Auction instance and run it, called by the environment"""
         if len(self.waiting_loads) > 0 and len(self.waiting_carriers) > 0:
-            current_auction = Auction(self)
-            current_auction.run()
-            self.past_auctions.append(current_auction)
+            Auction(self)  # the auction itself will signal to the node
+            self.current_auction.run()
+            self.past_auctions.append(self.current_auction)
+            self.current_auction = None
 
     def update_weights_with_new_infos(self, new_infos):
         """
@@ -63,7 +66,7 @@ class Node:
         """To be called by loads to be removed from load waiting list"""
         self.waiting_loads.remove(load)
 
-    def add_load_from_waiting_list(self, load):
+    def add_load_to_waiting_list(self, load):
         """To be called by loads to be added to load waiting list"""
         self.waiting_loads.append(load)
 
@@ -75,3 +78,12 @@ class Node:
     def auction_cost(self):
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
         raise NotImplementedError
+
+    def signal_as_current_auction(self, auction):
+        assert self.current_auction is None, 'already a running auction'
+        self.current_auction = auction
+
+    def signal_as_past_auction(self, auction):
+        self.past_auctions.append(auction)
+        self.current_auction = None
+

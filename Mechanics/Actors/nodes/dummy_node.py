@@ -6,8 +6,8 @@ from Mechanics.Actors.nodes.node import Node
 
 class DummyNode(Node):  # Actually this is not so dummy and will perhaps not change in the future
 
-    def __init__(self, name, past_auctions, weights, revenues, environment, nb_info):
-        super().__init__(name, past_auctions, weights, revenues, environment)
+    def __init__(self, name, weights, nb_info, revenues, environment):
+        super().__init__(name, weights, revenues, environment)
 
         self.nb_infos = nb_info
 
@@ -27,6 +27,7 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
     def update_weights_with_new_infos(self, new_infos):
         """
         This is the method where the nodes has some intelligence
+        should no ho to consume info where arrival and start are the same
         """
         for info in new_infos:
             if info.start != self and info.arrival != self:
