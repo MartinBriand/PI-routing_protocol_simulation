@@ -38,12 +38,12 @@ class Shipper:
         """
         raise NotImplementedError
 
-    def proceed_to_payment_node(self, node, node_value, carrier, carrier_value):  # TODO: Is this used
+    def proceed_to_payment(self, node, node_value, carrier, carrier_value):
         """
-        To be called by the nodes after an auction
+        To be called by the auction after an auction
         """
-        node.receive_payment(self, node_value)  # TODO: implement this function
-        carrier.receive_payment(self, node, carrier_value)
+        node.receive_payment(self, node_value)
+        carrier.receive_payment(self, carrier_value)
         total_value = carrier_value + node_value
         self.expenses.append(total_value)
         self.total_expenses += total_value

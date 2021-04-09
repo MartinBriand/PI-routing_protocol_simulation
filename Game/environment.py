@@ -46,7 +46,7 @@ class Environment:
     def _run_auctions(self):
         """Ask nodes to run the auctions (collect bids and reserve prices, make attribution and ask for payments)"""
         for node in self.nodes:
-            node.run_auction()  # TODO: implement this function
+            node.run_auction()
 
     def _carriers_next_states(self):
         """Asking carriers to move"""
@@ -59,7 +59,7 @@ class Environment:
         for load in self.loads_with_new_infos:
             new_infos += load.communicate_infos()
         for node in self.nodes:
-            node.update_weights_with_new_infos(new_infos)  # TODO: implement this function
+            node.update_weights_with_new_infos(new_infos)
         self.loads_with_new_infos = []
 
     def add_load_to_new_infos_list(self, load):
