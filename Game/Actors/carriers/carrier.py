@@ -12,7 +12,9 @@ class Carrier:
             * Or will not get a good and may decide to stay or move to another nodes
     """
 
-    def __init__(self, in_transit, next_node, time_to_go, load, environment, expenses, revenues):
+    def __init__(self, name, home, in_transit, next_node, time_to_go, load, environment, expenses, revenues):
+        self.name = name
+        self.home = home
         # state: if not in transit, we are at nodes next_node, ef not time_to_go > 0 and we are going to next_node
         self.in_transit = in_transit
         self.next_node = next_node
@@ -84,7 +86,9 @@ class Carrier:
         self.next_node.add_carrier_to_waiting_list(self)
 
     def _transit_costs(self):
+        """Calculating the transit costs depending on the states"""
         raise NotImplementedError
 
     def _far_from_home_costs(self):
+        """Calculating the "far from home" costs depending on the states"""
         raise NotImplementedError

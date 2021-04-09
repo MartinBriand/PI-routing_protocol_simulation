@@ -21,13 +21,14 @@ class Node:
     wants to be auctioned, remove itself after being auctioned, and similarly for the carriers.
     """
 
-    def __init__(self, past_auctions, weights, revenues):
+    def __init__(self, name, past_auctions, weights, revenues):
+        self.name = name
         self.waiting_loads = []  # always initialize as an empty list since the loads add themselves to the list after
         self.waiting_carriers = []  # same as waiting_loads
         self.past_auctions = past_auctions
 
         self.revenues = revenues
-        self.total_revenue = sum(self.revenues)
+        self.total_revenues = sum(self.revenues)
 
         self.weights = weights  # this is a dictionary of dictionaries. First key is FINAL nodes, second key is NEXT
         # nodes to avoid cyclic weights, we avoid having NEXT_NODE = THIS_NODE
@@ -46,21 +47,26 @@ class Node:
         raise NotImplementedError
 
     def remove_carrier_from_waiting_list(self, carrier):
+        """To be called by carriers to be removed from auction waiting list"""
         self.waiting_carriers.remove(carrier)
 
     def add_carrier_to_waiting_list(self, carrier):
+        """To be called by carriers to be added to the auction waiting list"""
         self.waiting_carriers.append(carrier)
 
     def remove_load_from_waiting_list(self, load):
+        """To be called by loads to be removed from load waiting list"""
         self.waiting_loads.remove(load)
 
     def add_load_from_waiting_list(self, load):
+        """To be called by loads to be added to load waiting list"""
         self.waiting_loads.append(load)
 
     def receive_payment(self, value):
+        """To be called by shipper (on an order from the auction) when should receive payment"""
         self.revenues.append(value)
         self.total_revenues += value
 
     def auction_cost(self):
+        """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
         raise NotImplementedError
-
