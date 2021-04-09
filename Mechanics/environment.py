@@ -89,4 +89,3 @@ class Environment:
     def add_load_to_new_infos_list(self, load):
         """to be called by load with new info to signal the new information"""
         self.loads_with_new_infos.append(load)
-

@@ -38,7 +38,7 @@ class Load:
         assert not self.in_transit, 'pb here'
         self.in_transit = True
         self.current_carrier = carrier
-        self.next_node.remove_load_from_waiting_list()
+        self.next_node.remove_load_from_waiting_list(self)
         self.next_node = next_node
         self.route_costs.append((previous_node, next_node, carrier_cost, previous_node_cost))
 
@@ -59,7 +59,7 @@ class Load:
         infos.append(Info(next_node, next_node, 0))
 
         self.previous_infos = infos
-        self.has_new_infos = True
+        self._has_new_infos = True
         self.environment.add_load_to_new_infos_list(self)
 
     def communicate_infos(self):
@@ -72,7 +72,7 @@ class Load:
         """
         to be called by the carriers each time it arrives at a next nodes
         """
-        assert not self.in_transit, 'Arrive while not in transit? seriously'
+        assert self.in_transit, 'Arrive while not in transit? seriously'
         self.current_carrier = None
         self.in_transit = False
         if self.next_node == self.arrival:

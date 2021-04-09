@@ -42,8 +42,8 @@ class Shipper:
         """
         To be called by the auction after an auction
         """
-        node.receive_payment(self, node_value)
-        carrier.receive_payment(self, carrier_value)
+        node.receive_payment(node_value)
+        carrier.receive_payment(carrier_value)
         total_value = carrier_value + node_value
         self.expenses.append(total_value)
         self.total_expenses += total_value

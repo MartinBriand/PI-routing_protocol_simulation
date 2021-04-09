@@ -43,7 +43,7 @@ class Carrier:
         assert not self.in_transit, 'pb here'
         self.in_transit = True
         current_node = self.next_node
-        current_node.remove_carrier_from_waiting_list()
+        current_node.remove_carrier_from_waiting_list(self)
         self.next_node = next_node
 
         self.time_to_go = self.environment.get_distance(current_node, self.next_node)

@@ -13,7 +13,7 @@ from Mechanics.Actors.shippers.shipper import NodeLaw
 e = Environment()
 
 ps = DummyNode('Paris', {}, {}, [], e)
-bx = DummyNode('Bruxelles', {}, {}, [], e)
+bx = DummyNode('Brussels', {}, {}, [], e)
 hh = DummyNode('Hamburg', {}, {}, [], e)
 for node in e.nodes:
     node.initialize_weights()
@@ -24,8 +24,12 @@ e.set_distance(distances)
 spshh = DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
 shhps = DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
 
-# cps = DummyCarrier
-# cbx = DummyCarrier
-# chh = DummyCarrier
+cps = DummyCarrier('CParis', ps, False, ps, 0, None, e, [], [], 3, 1)
+cbx = DummyCarrier('CBrussels', bx, False, bx, 0, None, e, [], [], 3, 1)
+chh = DummyCarrier('CHamburg', hh, False, hh, 0, None, e, [], [], 3, 1)
 
+
+for k in range(100000):
+    print(k)
+    e.iteration()
 print('end')
