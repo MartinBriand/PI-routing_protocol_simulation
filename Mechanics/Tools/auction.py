@@ -13,14 +13,18 @@ class Auction:
     def __init__(self, source):
         self.source = source
         self.loads = source.waiting_loads
+        self.original_loads = self.loads.copy()
         self.carriers = source.waiting_carriers
+        self.original_carriers = self.carriers.copy()
 
         # The following four dictionaries are going to be changed in the call of run
         # The data structure is described in each of the corresponding function
         self.weights = {}
-        self.reserve_prices = None
+        self.reserve_prices = {}
         self.bids = {}
         self.results = {'loads': {}, 'carriers': {}}
+
+        self.source.signal_as_current_auction(self)
 
     def run(self):
         """The only function to be called in the auction by another class instance (namely a nodes here)"""
@@ -42,6 +46,13 @@ class Auction:
             else:
                 break  # keep the other loads in the waiting list for the next round
         self._notify_loosing_carriers()
+        self._terminate_auction()
+        self.source.signal_as_past_auction(self)
+
+    def _terminate_auction(self):
+        """Make an auction independent of the state of the parent node"""
+        del self.loads
+        del self.carriers
 
     def _calculate_auction_weights(self, load):
         """
@@ -80,13 +91,15 @@ class Auction:
         winning_carrier.get_attribution(**d['kwargs'])
 
     def _notify_loosing_carriers(self):
+        """Notify the remaining carriers in the auction list that they """
         for carrier in self.carriers:
             self.results['carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
         for carrier in self.carriers.copy():
             carrier.dont_get_attribution(**self.results['carriers'][carrier]['kwargs'])
 
     def _ask_payment(self, load):
-        d = self.results['loads'][load]
+        """Ask the shipper to pay the carrier and the node"""
+        d = self.results['loads'][load]['kwargs']
         load.shipper.proceed_to_payment(node=d['previous_node'],
                                         node_value=d['previous_node_cost'],
                                         carrier=d['carrier'],
@@ -111,7 +124,6 @@ class Auction:
 
         new_bids = {}
         for carrier in this_auction_bids:
-            new_bids[carrier] = {}
             for node in this_auction_bids[carrier]:
                 new_bids[(carrier, node)] = this_auction_bids[carrier][node] + this_auction_weights[node]
 

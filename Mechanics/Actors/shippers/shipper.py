@@ -1,7 +1,7 @@
 """
 Shipper file
 """
-from Game.Tools.load import Load
+from Mechanics.Tools.load import Load
 
 
 class Shipper:
@@ -10,27 +10,27 @@ class Shipper:
     auctioned at a nodes, and has to pay the nodes and the carriers
     """
 
-    def __init__(self, laws, expenses, loads, environment):
+    def __init__(self, name, laws, expenses, loads, environment):
+        self.name = name
         self.environment = environment
         self.laws = laws
         self.expenses = expenses
         self.total_expenses = sum(self.expenses)
         self.loads = loads
 
+        self.environment.add_shipper(self)
+
     def generate_loads(self):
         """
         To be called by the environment at each new round to generate new loads
         """
-        new_loads = []
 
         for law in self.laws:
             departure_node = law.departure_node  # tolerance for not writing a getter method
             arrival_node = law.arrival_node  # idem
             n = law.call()
             for k in range(n):
-                new_loads.append(Load(departure_node, arrival_node, self, self.environment))
-
-        return new_loads
+                Load(departure_node, arrival_node, self, self.environment)
 
     def generate_reserve_price(self, load, node):  # this should be a float
         """
@@ -42,8 +42,8 @@ class Shipper:
         """
         To be called by the auction after an auction
         """
-        node.receive_payment(self, node_value)
-        carrier.receive_payment(self, carrier_value)
+        node.receive_payment(node_value)
+        carrier.receive_payment(carrier_value)
         total_value = carrier_value + node_value
         self.expenses.append(total_value)
         self.total_expenses += total_value
@@ -58,12 +58,13 @@ class NodeLaw:
     def __init__(self, departure_node, arrival_node, law, params):
         """
         The nodes is just the nodes reference
-        The law should be a numpy.random.Generator.law
+        The law should be a numpy.random.Generator.law (or anything else)
         The params should be the parameters to be called by the law
         """
         self.departure_node = departure_node
         self.arrival_node = arrival_node
-        self._law = lambda: law(*params)
+        self._law = lambda: law(**params)
 
     def call(self):
+        """Calling the law to generate a number"""
         return self._law()
