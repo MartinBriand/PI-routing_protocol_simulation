@@ -53,7 +53,7 @@ class Environment:
         for carrier in self.carriers:
             carrier.next_step()
 
-    def _get_and_broadcast_new_infos(self):
+    def _get_and_broadcast_new_infos(self):  # FIXME: This can be clearly optimized
         """Asking loads with new infos to communicate this and then broadcast the information to nodes"""
         new_infos = []
         for load in self.loads_with_new_infos:
@@ -63,7 +63,9 @@ class Environment:
         self.loads_with_new_infos = []
 
     def add_load_to_new_infos_list(self, load):
+        """to be called by load with new info to signal the new information"""
         self.loads_with_new_infos.append(load)
 
     def get_distance(self, start, end):
+        """to be called by carriers to know the remaining time"""
         return self.distances[start][end]

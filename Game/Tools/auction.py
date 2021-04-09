@@ -13,7 +13,9 @@ class Auction:
     def __init__(self, source):
         self.source = source
         self.loads = source.waiting_loads
+        self.original_loads = self.loads.copy()
         self.carriers = source.waiting_carriers
+        self.original_carriers = self.carriers.copy()
 
         # The following four dictionaries are going to be changed in the call of run
         # The data structure is described in each of the corresponding function
@@ -42,6 +44,12 @@ class Auction:
             else:
                 break  # keep the other loads in the waiting list for the next round
         self._notify_loosing_carriers()
+        self._terminate_auction()
+
+    def _terminate_auction(self):
+        """Make an auction independant of the state of the parent node"""
+        del self.loads
+        del self.carriers
 
     def _calculate_auction_weights(self, load):
         """
@@ -80,12 +88,14 @@ class Auction:
         winning_carrier.get_attribution(**d['kwargs'])
 
     def _notify_loosing_carriers(self):
+        """Notify the remaining carriers in the auction list that they """
         for carrier in self.carriers:
             self.results['carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
         for carrier in self.carriers.copy():
             carrier.dont_get_attribution(**self.results['carriers'][carrier]['kwargs'])
 
     def _ask_payment(self, load):
+        """Ask the shipper to pay the carrier and the node"""
         d = self.results['loads'][load]
         load.shipper.proceed_to_payment(node=d['previous_node'],
                                         node_value=d['previous_node_cost'],

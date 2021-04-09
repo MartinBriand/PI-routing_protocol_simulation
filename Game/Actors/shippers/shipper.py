@@ -10,7 +10,8 @@ class Shipper:
     auctioned at a nodes, and has to pay the nodes and the carriers
     """
 
-    def __init__(self, laws, expenses, loads, environment):
+    def __init__(self, name, laws, expenses, loads, environment):
+        self.name = name
         self.environment = environment
         self.laws = laws
         self.expenses = expenses
@@ -66,4 +67,5 @@ class NodeLaw:
         self._law = lambda: law(*params)
 
     def call(self):
+        """Calling the law to generate a number"""
         return self._law()
