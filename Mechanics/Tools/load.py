@@ -27,8 +27,9 @@ class Load:
         self.previous_infos = [Info(self.start, self.start, 0)]  # to calculate the new info, use the old info and add
         # the cost of the current step
 
-        # And now add it to the start nodes
+        # And now add it to the start nodes and the environment
         self.start.add_load_to_waiting_list(self)
+        self.environment.add_load(self)
 
     def get_attribution(self, carrier, previous_node, next_node, carrier_cost, previous_node_cost):
         """

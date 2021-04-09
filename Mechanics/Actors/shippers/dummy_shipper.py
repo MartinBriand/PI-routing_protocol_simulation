@@ -1,7 +1,7 @@
 """
 The most basic shipper you could think of
 """
-from Game.Actors.shippers.shipper import Shipper
+from Mechanics.Actors.shippers.shipper import Shipper
 
 
 class DummyShipper(Shipper):

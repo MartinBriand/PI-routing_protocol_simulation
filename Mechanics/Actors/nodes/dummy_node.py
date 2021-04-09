@@ -1,26 +1,28 @@
 """
 The most basic node you could think of
 """
-from Game.Actors.nodes.node import Node
+from Mechanics.Actors.nodes.node import Node
 
 
 class DummyNode(Node):  # Actually this is not so dummy and will perhaps not change in the future
 
-    def __init__(self, name, past_auctions, weights, revenues, environment, initialize_weights, nb_info):
+    def __init__(self, name, past_auctions, weights, revenues, environment, nb_info):
         super().__init__(name, past_auctions, weights, revenues, environment)
 
         self.nb_infos = nb_info
-        if initialize_weights:  # create structure and initialize the weights and the number of visits to 0
-            self.nb_infos = {}
-            self.weights = {}
-            for node_i in self.environment.nodes:
-                if node_i != self:
-                    self.nb_infos[node_i] = {}
-                    self.weights[node_i] = {}
-                    for node_j in self.environment.nodes:
-                        if node_j != self:
-                            self.nb_infos[node_i][node_j] = 0
-                            self.weights[node_i][node_j] = 0
+
+    def initialize_weights(self):
+        """create structure and initialize the weights and the number of visits to 0. Should be called by the game"""
+        self.nb_infos = {}
+        self.weights = {}
+        for node_i in self.environment.nodes:
+            if node_i != self:
+                self.nb_infos[node_i] = {}
+                self.weights[node_i] = {}
+                for node_j in self.environment.nodes:
+                    if node_j != self:
+                        self.nb_infos[node_i][node_j] = 0
+                        self.weights[node_i][node_j] = 0
 
     def update_weights_with_new_infos(self, new_infos):
         """

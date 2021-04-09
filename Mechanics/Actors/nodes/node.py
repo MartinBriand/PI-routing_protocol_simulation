@@ -1,7 +1,7 @@
 """
 Node file
 """
-from Game.Tools.auction import Auction
+from Mechanics.Tools.auction import Auction
 
 
 class Node:
@@ -35,6 +35,8 @@ class Node:
         # nodes to avoid cyclic weights, we avoid having NEXT_NODE == THIS_NODE or  FINAL_NODE == THIS_NODE
         # however, it is clear that we can have NEXT_NODE == FINAL_NODE
         # MUST be initialized will all the structure, because not going to be created
+
+        self.environment.add_node(self)
 
     def run_auction(self):
         """Create an Auction instance and run it, called by the environment"""
