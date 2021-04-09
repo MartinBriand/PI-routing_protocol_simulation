@@ -29,7 +29,7 @@ cbx = DummyCarrier('CBrussels', bx, False, bx, 0, None, e, [], [], 3, 1)
 chh = DummyCarrier('CHamburg', hh, False, hh, 0, None, e, [], [], 3, 1)
 
 
-for k in range(100000):
+for k in range(10000):
     print(k)
     e.iteration()
 print('end')
