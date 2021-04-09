@@ -24,6 +24,8 @@ class Auction:
         self.bids = {}
         self.results = {'loads': {}, 'carriers': {}}
 
+        self.source.signal_as_current_auction()
+
     def run(self):
         """The only function to be called in the auction by another class instance (namely a nodes here)"""
         nb_load = len(self.loads)
@@ -45,6 +47,7 @@ class Auction:
                 break  # keep the other loads in the waiting list for the next round
         self._notify_loosing_carriers()
         self._terminate_auction()
+        self.source.signal_as_past_auction()
 
     def _terminate_auction(self):
         """Make an auction independent of the state of the parent node"""
