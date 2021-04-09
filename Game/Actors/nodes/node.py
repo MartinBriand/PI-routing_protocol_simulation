@@ -21,8 +21,9 @@ class Node:
     wants to be auctioned, remove itself after being auctioned, and similarly for the carriers.
     """
 
-    def __init__(self, name, past_auctions, weights, revenues):
+    def __init__(self, name, past_auctions, weights, revenues, environment):
         self.name = name
+        self.environment = environment
         self.waiting_loads = []  # always initialize as an empty list since the loads add themselves to the list after
         self.waiting_carriers = []  # same as waiting_loads
         self.past_auctions = past_auctions
@@ -31,7 +32,9 @@ class Node:
         self.total_revenues = sum(self.revenues)
 
         self.weights = weights  # this is a dictionary of dictionaries. First key is FINAL nodes, second key is NEXT
-        # nodes to avoid cyclic weights, we avoid having NEXT_NODE = THIS_NODE
+        # nodes to avoid cyclic weights, we avoid having NEXT_NODE == THIS_NODE or  FINAL_NODE == THIS_NODE
+        # however, it is clear that we can have NEXT_NODE == FINAL_NODE
+        # MUST be initialized will all the structure, because not going to be created
 
     def run_auction(self):
         """Create an Auction instance and run it, called by the environment"""
@@ -42,7 +45,7 @@ class Node:
 
     def update_weights_with_new_infos(self, new_infos):
         """
-        This is the method where the nodes has some intelligence
+        This is the method where the nodes has some intelligence.
         """
         raise NotImplementedError
 
