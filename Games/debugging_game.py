@@ -24,27 +24,11 @@ e.set_distance(distances)
 spshh = DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
 shhps = DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
 
-cps1 = DummyCarrier('CParis1', ps, False, ps, 0, None, e, [], [], 3, 1)
-cps2 = DummyCarrier('CParis2', ps, False, ps, 0, None, e, [], [], 3, 1)
-cps3 = DummyCarrier('CParis3', ps, False, ps, 0, None, e, [], [], 3, 1)
-cps4 = DummyCarrier('CParis4', ps, False, ps, 0, None, e, [], [], 3, 1)
-cps5 = DummyCarrier('CParis5', ps, False, ps, 0, None, e, [], [], 3, 1)
-cps6 = DummyCarrier('CParis6', ps, False, ps, 0, None, e, [], [], 3, 1)
-cbx1 = DummyCarrier('CBrussels1', bx, False, bx, 0, None, e, [], [], 3, 1)
-cbx2 = DummyCarrier('CBrussels2', bx, False, bx, 0, None, e, [], [], 3, 1)
-cbx3 = DummyCarrier('CBrussels3', bx, False, bx, 0, None, e, [], [], 3, 1)
-cbx4 = DummyCarrier('CBrussels4', bx, False, bx, 0, None, e, [], [], 3, 1)
-cbx5 = DummyCarrier('CBrussels5', bx, False, bx, 0, None, e, [], [], 3, 1)
-cbx6 = DummyCarrier('CBrussels6', bx, False, bx, 0, None, e, [], [], 3, 1)
-chh1 = DummyCarrier('CHamburg1', hh, False, hh, 0, None, e, [], [], 3, 1)
-chh2 = DummyCarrier('CHamburg2', hh, False, hh, 0, None, e, [], [], 3, 1)
-chh3 = DummyCarrier('CHamburg3', hh, False, hh, 0, None, e, [], [], 3, 1)
-chh4 = DummyCarrier('CHamburg4', hh, False, hh, 0, None, e, [], [], 3, 1)
-chh5 = DummyCarrier('CHamburg5', hh, False, hh, 0, None, e, [], [], 3, 1)
-chh6 = DummyCarrier('CHamburg6', hh, False, hh, 0, None, e, [], [], 3, 1)
+for k in range (10):
+    DummyCarrier('CParis_{}'.format(k), ps, False, ps, 0, None, e, [], [], 3, 1)
+    DummyCarrier('CBrussels_{}'.format(k), bx, False, bx, 0, None, e, [], [], 3, 1)
+    chh1 = DummyCarrier('CHamburg_{}'.format(k), hh, False, hh, 0, None, e, [], [], 3, 1)
 
-
-for k in range(50):
-    print(k)
+for k in range(1000):
     e.iteration()
 print('end')
