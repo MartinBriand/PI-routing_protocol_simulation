@@ -22,7 +22,7 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                 for node_j in self.environment.nodes:
                     if node_j != self:
                         self.nb_infos[node_i][node_j] = 0
-                        self.weights[node_i][node_j] = 0
+                        self.weights[node_i][node_j] = 0.
 
     def update_weights_with_new_infos(self, new_infos):
         """
@@ -30,7 +30,9 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         should no ho to consume info where arrival and start are the same
         """
         for info in new_infos:
-            if info.start != self and info.arrival != self:
+            if info.start == info.arrival or info.start == self or info.arrival == self:
+                continue
+            else:
                 w = self.weights[info.arrival][info.start]
                 nb = self.nb_infos[info.arrival][info.start]
                 w = w*nb+info.cost

@@ -36,7 +36,7 @@ class Node:
         self.weights = weights  # this is a dictionary of dictionaries. First key is FINAL nodes, second key is NEXT
         # nodes to avoid cyclic weights, we avoid having NEXT_NODE == THIS_NODE or  FINAL_NODE == THIS_NODE
         # however, it is clear that we can have NEXT_NODE == FINAL_NODE
-        # MUST be initialized will all the structure, because not going to be created
+        # MUST be initialized with all the structure, because not going to be created
 
         self.environment.add_node(self)
 

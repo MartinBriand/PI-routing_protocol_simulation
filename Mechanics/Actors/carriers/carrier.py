@@ -63,7 +63,7 @@ class Carrier:
             current_node = self.next_node
             self.next_node = new_next_node
             self.time_to_go = self.environment.get_distance(current_node, self.next_node)
-            current_node.remove_carrier_from_waiting_list()
+            current_node.remove_carrier_from_waiting_list(self)
 
     def _decide_next_node(self):
         """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
@@ -86,7 +86,8 @@ class Carrier:
         """Called by next_step to do all the variable settings when arrive at a next nodes"""
         # no need to assert since called only by next_step in an if statement
         self.in_transit = False
-        self.load.arrive_at_next_node()
+        if self.load:  # is not none
+            self.load.arrive_at_next_node()
         self.load = None
         self.next_node.add_carrier_to_waiting_list(self)
 

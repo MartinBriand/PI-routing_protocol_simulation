@@ -43,17 +43,17 @@ class Load:
         self.next_node = next_node
         self.route_costs.append((previous_node, next_node, carrier_cost, previous_node_cost))
 
-        self._new_node_infos(next_node, carrier_cost, previous_node_cost)  # we call the new infos function at each
+        self._new_node_infos(next_node, carrier_cost + previous_node_cost)  # we call the new infos function at each
         # attribution
 
-    def _new_node_infos(self, next_node, carrier_cost, previous_node_cost):
+    def _new_node_infos(self, next_node, cost):
         """
         Generate new info after the attribution and tell the environment it has new info
         """
         assert not self._has_new_infos, 'pb_here'  # TODO: remove for speed
         infos = []
         for info in self.previous_infos:
-            infos.append(Info(info.start, next_node, info.cost + carrier_cost + previous_node_cost))
+            infos.append(Info(info.start, next_node, info.cost + cost))
             # tolerance for not writing getters on the info class
             # Even if you go back to yourself, it is important to have the info
 
