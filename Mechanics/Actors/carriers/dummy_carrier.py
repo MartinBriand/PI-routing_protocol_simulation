@@ -24,10 +24,9 @@ class DummyCarrier(Carrier):
 
     def _decide_next_node(self):  # stay at same node with prob 0.9 or go home with prob 0.1
         """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
-        leave = random() < 0.1
-        if leave:
-            nodes = self.environment.nodes
-            return nodes[randint(0, len(nodes) - 1)]
+        home = random() < 0.1
+        if home:
+            return self.home
         else:
             return self.next_node
 

@@ -24,12 +24,14 @@ e.set_distance(distances)
 spshh = DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
 shhps = DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
 
-cps = DummyCarrier('CParis', ps, False, ps, 0, None, e, [], [], 3, 1)
+cps1 = DummyCarrier('CParis1', ps, False, ps, 0, None, e, [], [], 3, 1)
+# cps2 = DummyCarrier('CParis2', ps, False, ps, 0, None, e, [], [], 3, 1)
+# cps3 = DummyCarrier('CParis3', ps, False, ps, 0, None, e, [], [], 3, 1)
 cbx = DummyCarrier('CBrussels', bx, False, bx, 0, None, e, [], [], 3, 1)
 chh = DummyCarrier('CHamburg', hh, False, hh, 0, None, e, [], [], 3, 1)
 
 
-for k in range(3):
+for k in range(10):
     print(k)
     e.iteration()
 print('end')

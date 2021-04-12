@@ -26,23 +26,20 @@ class Auction:
 
     def run(self):
         """The only function to be called in the auction by another class instance (namely a nodes here)"""
-        nb_load = len(self.loads)
         random.shuffle(self.carriers)  # No waiting list since they can decide to leave when they want
         # Don't randomize load waiting list so that we have a queue
-        for k in range(nb_load):
-            load = self.loads[k]
-            nb_carriers_involved = max(1, len(self.carriers) - nb_load + k + 1)  # self.carriers has at least 1 element
-            if len(self.carriers) > 0:
-                self._calculate_auction_weights(load)
-                self._get_reserve_price(load)
-                self._get_bids(load, nb_carriers_involved)
-                load_attributed, winning_carrier = self._make_attributions_and_payments(load, nb_carriers_involved)
-                self._notify_load(load)
-                if load_attributed:  # This step is important to make sure they do not participate in the next auction
-                    self._notify_winning_carrier(winning_carrier)
-                    self._ask_payment(load)
-            else:
-                break  # keep the other loads in the waiting list for the next round
+        while len(self.loads) > 0 and len(self.carriers) > 0:
+            load = self.loads[0]
+            nb_carriers_involved = max(1, len(self.carriers) - len(self.loads) + 1)  # to keep some carriers for later
+            self._calculate_auction_weights(load)
+            self._get_reserve_price(load)
+            self._get_bids(load, nb_carriers_involved)
+            load_attributed, winning_carrier = self._make_attributions_and_payments(load, nb_carriers_involved)
+            self._notify_load(load)
+            if load_attributed:  # This step is important to make sure they do not participate in the next auction
+                self._notify_winning_carrier(winning_carrier)
+                self._ask_payment(load)
+
         self._write_loosing_carriers()
         self._terminate_auction()
         self.source.signal_as_past_auction(self)
@@ -136,6 +133,7 @@ class Auction:
         if winning_value <= this_auction_reserve_price:
             carrier_cost = min(this_auction_reserve_price, final_bids[1][1]) if nb_carriers_involved > 1 else \
                 this_auction_reserve_price
+            carrier_cost -= this_auction_weights[winning_next_node]
             self.results['loads'][load] = \
                 {'is_attributed': True,
                  'kwargs': {'carrier': winning_carrier,
