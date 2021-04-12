@@ -44,9 +44,9 @@ class Node:
         """Create an Auction instance and run it, called by the environment"""
         if len(self.waiting_loads) > 0 and len(self.waiting_carriers) > 0:
             Auction(self)  # the auction itself will signal to the node
-            self.current_auction.run()
-            self.past_auctions.append(self.current_auction)
-            self.current_auction = None
+            self.current_auction.run()  # auto signal a current and past auction
+        for carrier in self.waiting_carriers:  # If lose the auction of if no auction, they are still in this list
+            carrier.dont_get_attribution()
 
     def update_weights_with_new_infos(self, new_infos):
         """

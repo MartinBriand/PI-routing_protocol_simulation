@@ -26,11 +26,9 @@ class Shipper:
         """
 
         for law in self.laws:
-            departure_node = law.departure_node  # tolerance for not writing a getter method
-            arrival_node = law.arrival_node  # idem
             n = law.call()
             for k in range(n):
-                Load(departure_node, arrival_node, self, self.environment)
+                Load(law.departure_node, law.arrival_node, self, self.environment)
 
     def generate_reserve_price(self, load, node):  # this should be a float
         """
@@ -47,6 +45,10 @@ class Shipper:
         total_value = carrier_value + node_value
         self.expenses.append(total_value)
         self.total_expenses += total_value
+
+    def add_load(self, load):
+        """called by the load to signal to the shipper"""
+        self.loads.append(load)
 
 
 class NodeLaw:

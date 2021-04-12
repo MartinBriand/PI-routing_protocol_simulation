@@ -13,9 +13,7 @@ class Auction:
     def __init__(self, source):
         self.source = source
         self.loads = source.waiting_loads
-        self.original_loads = self.loads.copy()
         self.carriers = source.waiting_carriers
-        self.original_carriers = self.carriers.copy()
 
         # The following four dictionaries are going to be changed in the call of run
         # The data structure is described in each of the corresponding function
@@ -45,7 +43,7 @@ class Auction:
                     self._ask_payment(load)
             else:
                 break  # keep the other loads in the waiting list for the next round
-        self._notify_loosing_carriers()
+        self._write_loosing_carriers()
         self._terminate_auction()
         self.source.signal_as_past_auction(self)
 
@@ -90,12 +88,10 @@ class Auction:
         assert d['is_attributed'], 'winning is not winning...'  # TODO: remove for speed
         winning_carrier.get_attribution(**d['kwargs'])
 
-    def _notify_loosing_carriers(self):
+    def _write_loosing_carriers(self):
         """Notify the remaining carriers in the auction list that they """
         for carrier in self.carriers:
             self.results['carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
-        for carrier in self.carriers.copy():
-            carrier.dont_get_attribution(**self.results['carriers'][carrier]['kwargs'])
 
     def _ask_payment(self, load):
         """Ask the shipper to pay the carrier and the node"""
@@ -124,15 +120,21 @@ class Auction:
 
         new_bids = {}
         for carrier in this_auction_bids:
+            new_bids[carrier] = {}
             for node in this_auction_bids[carrier]:
-                new_bids[(carrier, node)] = this_auction_bids[carrier][node] + this_auction_weights[node]
+                new_bids[carrier][node] = this_auction_bids[carrier][node] + this_auction_weights[node]
 
-        new_bids = sorted(new_bids.items(), key=lambda item: item[1])
-        winning_bid = new_bids[0]  # No out of bound error because
+        final_bids = {}
+        for carrier in new_bids:
+            node_arg_min = min(new_bids[carrier], key=new_bids[carrier].get)
+            final_bids[(carrier, node_arg_min)] = new_bids[carrier][node_arg_min]
+
+        final_bids = sorted(final_bids.items(), key=lambda item: item[1])
+        winning_bid = final_bids[0]  # No out of bound error because
         winning_carrier, winning_next_node = winning_bid[0]
         winning_value = winning_bid[1]
         if winning_value <= this_auction_reserve_price:
-            carrier_cost = min(this_auction_reserve_price, new_bids[1][1]) if nb_carriers_involved <= 1 else \
+            carrier_cost = min(this_auction_reserve_price, final_bids[1][1]) if nb_carriers_involved > 1 else \
                 this_auction_reserve_price
             self.results['loads'][load] = \
                 {'is_attributed': True,
