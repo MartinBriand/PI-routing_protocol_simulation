@@ -38,7 +38,7 @@ Then experiments can be designed and run using these objects in `Games` scripts
 ## The Data flow and the workflow
 In the whole project, the data flow is such that the parent object call for the creation of the child object (the only exception being the `environment` which doesn't call for the creation of anything), and then the object signals it presence or state to the parent object (there is no exception to this rule). This make the mechanism highly readable and easy to debug. I highly recomend to follow this workflow for further development.
 
-Also, none of the attribute of an object are transformed by other object, the other object always call a function asking the specific object to change its property. (again this is respecting the dataflow describe above.
+Also, none of the attribute of an object are transformed by other object, the other object always call a function asking the specific object to change its property. (Again, respecting the dataflow describe above).
 
 ## Launching a game
-A game is launch in the `Games` folder. Their are sripts instaciating all the objects (`environment` and `actors`) and running a loop to run the `Environment.iter` method
+A game is launched in the `Games` folder. It sript instaciating all the objects (`environment` and `actors`) and running a loop to run the `Environment.iter` method.
