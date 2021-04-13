@@ -40,7 +40,6 @@ class Carrier:
 
     def get_attribution(self, load, next_node):
         """To be called by the nodes after an auction if a load was attributed to the carriers"""
-        assert not self.in_transit, 'pb here'
         self.in_transit = True
         current_node = self.next_node
         current_node.remove_carrier_from_waiting_list(self)
@@ -56,7 +55,6 @@ class Carrier:
 
     def dont_get_attribution(self):
         """To be called by the nodes after an auction if the carriers lost"""
-        assert not self.in_transit, 'pb here'
         new_next_node = self._decide_next_node()
         if new_next_node != self.next_node:
             self.in_transit = True
@@ -84,7 +82,6 @@ class Carrier:
 
     def _arrive_at_next_node(self):
         """Called by next_step to do all the variable settings when arrive at a next nodes"""
-        # no need to assert since called only by next_step in an if statement
         self.in_transit = False
         if self.load:  # is not none
             self.load.arrive_at_next_node()

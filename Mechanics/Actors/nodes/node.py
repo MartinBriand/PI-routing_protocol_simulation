@@ -80,7 +80,6 @@ class Node:
         raise NotImplementedError
 
     def signal_as_current_auction(self, auction):
-        assert self.current_auction is None, 'already a running auction'
         self.current_auction = auction
 
     def signal_as_past_auction(self, auction):

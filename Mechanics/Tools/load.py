@@ -36,7 +36,6 @@ class Load:
         """
         To be called by the nodes each time a load which was waiting at a nodes get attributed for a next hop
         """
-        assert not self.in_transit, 'pb here'  # TODO: remove for speed
         self.in_transit = True
         self.current_carrier = carrier
         self.next_node.remove_load_from_waiting_list(self)
@@ -50,7 +49,6 @@ class Load:
         """
         Generate new info after the attribution and tell the environment it has new info
         """
-        assert not self._has_new_infos, 'pb_here'  # TODO: remove for speed
         infos = []
         for info in self.previous_infos:
             infos.append(Info(info.start, next_node, info.cost + cost))
@@ -65,7 +63,6 @@ class Load:
 
     def communicate_infos(self):
         """Communicate the new info to the environment when asked to"""
-        assert self._has_new_infos, 'pb here'  # TODO: remove for speed
         self._has_new_infos = False
         return self.previous_infos
 
@@ -73,7 +70,6 @@ class Load:
         """
         to be called by the carriers each time it arrives at a next nodes
         """
-        assert self.in_transit, 'Arrive while not in transit? seriously'  # TODO: remove for speed
         self.current_carrier = None
         self.in_transit = False
         if self.next_node == self.arrival:
@@ -86,7 +82,6 @@ class Load:
         Set the load as discarded. Called by the nodes when auction run but no result
         (A shippers could eventually also call it but it is not implemented yet (and will probably not be))
         """
-        assert not self.is_discarded or not self.in_transit or self.is_arrived, 'pb here'  # TODO: remove for speed
         self.is_discarded = True
         self.next_node.remove_load_from_waiting_list()
 

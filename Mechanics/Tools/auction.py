@@ -82,7 +82,6 @@ class Auction:
     def _notify_winning_carrier(self, winning_carrier):
         """Notify the carriers after making the attribution"""
         d = self.results['carriers'][winning_carrier]
-        assert d['is_attributed'], 'winning is not winning...'  # TODO: remove for speed
         winning_carrier.get_attribution(**d['kwargs'])
 
     def _write_loosing_carriers(self):
