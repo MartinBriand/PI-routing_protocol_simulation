@@ -37,3 +37,7 @@ class DummyCarrier(Carrier):
     def _far_from_home_costs(self):  # yes it is a constant, I told you it was dummy
         """The far from home costs"""
         return self.far_from_home_costs
+
+    def _update_ffh_cost_functions(self):
+        """Here we do nothing"""
+        pass

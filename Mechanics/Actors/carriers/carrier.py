@@ -79,6 +79,7 @@ class Carrier:
 
         self.expenses.append(new_cost)
         self.total_expenses += new_cost
+        self._update_ffh_cost_functions()
 
     def _arrive_at_next_node(self):
         """Called by next_step to do all the variable settings when arrive at a next nodes"""
@@ -94,4 +95,8 @@ class Carrier:
 
     def _far_from_home_costs(self):
         """Calculating the "far from home" costs depending on the states"""
+        raise NotImplementedError
+
+    def _update_ffh_cost_functions(self):
+        """To update your far_from_home costs"""
         raise NotImplementedError
