@@ -12,9 +12,9 @@ from Mechanics.Actors.shippers.shipper import NodeLaw
 
 e = Environment()
 
-ps = DummyNode('Paris', {}, {}, [], e)
-bx = DummyNode('Brussels', {}, {}, [], e)
-hh = DummyNode('Hamburg', {}, {}, [], e)
+ps = DummyNode('Paris', {}, 100, [], e)
+bx = DummyNode('Brussels', {}, 100, [], e)
+hh = DummyNode('Hamburg', {}, 100, [], e)
 
 for node in e.nodes:
     node.initialize_weights()

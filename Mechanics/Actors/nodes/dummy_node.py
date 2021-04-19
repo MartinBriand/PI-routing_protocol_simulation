@@ -13,16 +13,13 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
 
     def initialize_weights(self):
         """create structure and initialize the weights and the number of visits to 0. Should be called by the game"""
-        self.nb_infos = {}
         self.weights = {}
         for node_i in self.environment.nodes:
             if node_i != self:
-                self.nb_infos[node_i] = {}
                 self.weights[node_i] = {}
                 for node_j in self.environment.nodes:
                     if node_j != self:
-                        self.nb_infos[node_i][node_j] = 0
-                        self.weights[node_i][node_j] = 0.
+                        self.weights[node_i][node_j] = 0.  # exponential smoothing starting at 0.
 
     def update_weights_with_new_infos(self, new_infos):
         """
@@ -34,12 +31,8 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                 continue
             else:
                 w = self.weights[info.arrival][info.start]
-                nb = self.nb_infos[info.arrival][info.start]
-                w = w*nb+info.cost
-                nb += 1
-                w /= nb
+                w = w + (info.cost-w)/self.nb_infos  # we have an exponential smoothing of self.nb_infos
                 self.weights[info.arrival][info.start] = w
-                self.nb_infos[info.arrival][info.start] = nb
 
     def auction_cost(self):
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
