@@ -17,7 +17,7 @@ class DummyCarrier(Carrier):
     def bid(self, node):  # this should be a dictionary: key is next_node, value is float
         """To be called by the nodes before an auction"""
         bid = {}
-        for next_node in self.environment.nodes:
+        for next_node in self.environment._nodes:
             if next_node != node:
                 bid[next_node] = expovariate(1 / 30)  # exponential law centered at 30 (told you it is dummy)
         return bid

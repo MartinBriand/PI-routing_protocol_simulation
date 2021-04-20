@@ -2,9 +2,10 @@
 Node file
 """
 from Mechanics.Tools.auction import Auction
+import abc
 
 
-class Node:
+class Node(abc.ABC):
     """
     This is the nodes class. A nodes should:
         * Generate weights
@@ -48,11 +49,11 @@ class Node:
         for carrier in self.waiting_carriers:  # If lose the auction of if no auction, they are still in this list
             carrier.dont_get_attribution()
 
+    @abc.abstractmethod
     def update_weights_with_new_infos(self, new_infos):
         """
         This is the method where the nodes has some intelligence.
         """
-        raise NotImplementedError
 
     def remove_carrier_from_waiting_list(self, carrier):
         """To be called by carriers to be removed from auction waiting list"""
@@ -75,9 +76,9 @@ class Node:
         self.revenues.append(value)
         self.total_revenues += value
 
+    @abc.abstractmethod
     def auction_cost(self):
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
-        raise NotImplementedError
 
     def signal_as_current_auction(self, auction):
         self.current_auction = auction

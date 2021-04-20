@@ -31,6 +31,6 @@ for k in range(10):
     DummyCarrier('CHamburg_{}'.format(k), hh, False, hh, 0, None, e, [], [], 3, 1)
 
 
-for k in range(100000):
+for k in range(10000):
     e.iteration()
 print('end')

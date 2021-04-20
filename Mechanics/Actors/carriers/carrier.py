@@ -1,9 +1,10 @@
 """
 Carrier file
 """
+import abc
 
 
-class Carrier:
+class Carrier(abc.ABC):
     """
     A carriers has two states:
         * it is either in transit, if so, it is forced to finish it journey
@@ -34,9 +35,9 @@ class Carrier:
         if not self.in_transit:  # should be instantiated after the creations of the nodes
             self.next_node.add_carrier_to_waiting_list(self)
 
+    @abc.abstractmethod
     def bid(self, node):  # this should be a dictionary: key is next_node, value is float
         """To be called by the nodes before an auction"""
-        raise NotImplementedError
 
     def get_attribution(self, load, next_node):
         """To be called by the nodes after an auction if a load was attributed to the carriers"""
@@ -63,9 +64,9 @@ class Carrier:
             self.time_to_go = self.environment.get_distance(current_node, self.next_node)
             current_node.remove_carrier_from_waiting_list(self)
 
+    @abc.abstractmethod
     def _decide_next_node(self):
         """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
-        raise NotImplementedError
 
     def next_step(self):
         """To be called by the environment at each iteration"""
@@ -89,14 +90,14 @@ class Carrier:
         self.load = None
         self.next_node.add_carrier_to_waiting_list(self)
 
+    @abc.abstractmethod
     def _transit_costs(self):
         """Calculating the transit costs depending on the states"""
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def _far_from_home_costs(self):
         """Calculating the "far from home" costs depending on the states"""
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def _update_ffh_cost_functions(self):
         """To update your far_from_home costs"""
-        raise NotImplementedError

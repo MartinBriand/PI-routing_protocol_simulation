@@ -2,9 +2,10 @@
 Shipper file
 """
 from Mechanics.Tools.load import Load
+import abc
 
 
-class Shipper:
+class Shipper(abc.ABC):
     """
     A Shipper is able to generate goods according to a law, generate reserve prices for each time one of its good is
     auctioned at a nodes, and has to pay the nodes and the carriers
@@ -30,11 +31,11 @@ class Shipper:
             for k in range(n):
                 Load(law.departure_node, law.arrival_node, self, self.environment)
 
+    @abc.abstractmethod
     def generate_reserve_price(self, load, node):  # this should be a float
         """
         To be called by the nodes before an auction
         """
-        raise NotImplementedError
 
     def proceed_to_payment(self, node, node_value, carrier, carrier_value):
         """

@@ -10,4 +10,4 @@ class DummyShipper(Shipper):
         """
         To be called by the nodes before an auction
         """
-        return 10000  # Yes it is a lot ;)
+        return 300  # Yes it is a lot ;)
