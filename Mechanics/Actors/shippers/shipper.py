@@ -12,24 +12,24 @@ class Shipper(abc.ABC):
     """
 
     def __init__(self, name, laws, expenses, loads, environment):
-        self.name = name
-        self.environment = environment
-        self.laws = laws
-        self.expenses = expenses
-        self.total_expenses = sum(self.expenses)
-        self.loads = loads
+        self._name = name
+        self._environment = environment
+        self._laws = laws
+        self._expenses = expenses
+        self._total_expenses = sum(self._expenses)
+        self._loads = loads
 
-        self.environment.add_shipper(self)
+        self._environment.add_shipper(self)
 
     def generate_loads(self):
         """
         To be called by the environment at each new round to generate new loads
         """
 
-        for law in self.laws:
+        for law in self._laws:
             n = law.call()
             for k in range(n):
-                Load(law.departure_node, law.arrival_node, self, self.environment)
+                Load(law.departure_node, law.arrival_node, self, self._environment)
 
     @abc.abstractmethod
     def generate_reserve_price(self, load, node):  # this should be a float
@@ -44,12 +44,12 @@ class Shipper(abc.ABC):
         node.receive_payment(node_value)
         carrier.receive_payment(carrier_value)
         total_value = carrier_value + node_value
-        self.expenses.append(total_value)
-        self.total_expenses += total_value
+        self._expenses.append(total_value)
+        self._total_expenses += total_value
 
     def add_load(self, load):
         """called by the load to signal to the shipper"""
-        self.loads.append(load)
+        self._loads.append(load)
 
 
 class NodeLaw:
@@ -64,10 +64,18 @@ class NodeLaw:
         The law should be a numpy.random.Generator.law (or anything else)
         The params should be the parameters to be called by the law
         """
-        self.departure_node = departure_node
-        self.arrival_node = arrival_node
+        self._departure_node = departure_node
+        self._arrival_node = arrival_node
         self._law = lambda: law(**params)
 
     def call(self):
         """Calling the law to generate a number"""
         return self._law()
+
+    @property
+    def departure_node(self):
+        return self._departure_node
+
+    @property
+    def arrival_node(self):
+        return self._arrival_node

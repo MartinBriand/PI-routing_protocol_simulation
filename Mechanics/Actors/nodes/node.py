@@ -23,30 +23,30 @@ class Node(abc.ABC):
     """
 
     def __init__(self, name, weights, revenues, environment):
-        self.name = name
-        self.environment = environment
-        self.waiting_loads = []  # always initialize as an empty list since the loads add themselves to the list after
-        self.waiting_carriers = []  # same as waiting_loads
+        self._name = name
+        self._environment = environment
+        self._waiting_loads = []  # always initialize as an empty list since the loads add themselves to the list after
+        self._waiting_carriers = []  # same as waiting_loads
 
-        self.current_auction = None
-        self.past_auctions = []  # They will signal at creation
+        self._current_auction = None
+        self._past_auctions = []  # They will signal at creation
 
-        self.revenues = revenues
-        self.total_revenues = sum(self.revenues)
+        self._revenues = revenues
+        self._total_revenues = sum(self._revenues)
 
-        self.weights = weights  # this is a dictionary of dictionaries. First key is FINAL nodes, second key is NEXT
+        self._weights = weights  # this is a dictionary of dictionaries. First key is FINAL nodes, second key is NEXT
         # nodes to avoid cyclic weights, we avoid having NEXT_NODE == THIS_NODE or  FINAL_NODE == THIS_NODE
         # however, it is clear that we can have NEXT_NODE == FINAL_NODE
         # MUST be initialized with all the structure, because not going to be created
 
-        self.environment.add_node(self)
+        self._environment.add_node(self)
 
     def run_auction(self):
         """Create an Auction instance and run it, called by the environment"""
-        if len(self.waiting_loads) > 0 and len(self.waiting_carriers) > 0:
+        if len(self._waiting_loads) > 0 and len(self._waiting_carriers) > 0:
             Auction(self)  # the auction itself will signal to the node
-            self.current_auction.run()  # auto signal a current and past auction
-        for carrier in self.waiting_carriers:  # If lose the auction of if no auction, they are still in this list
+            self._current_auction.run()  # auto signal a current and past auction
+        for carrier in self._waiting_carriers:  # If lose the auction of if no auction, they are still in this list
             carrier.dont_get_attribution()
 
     @abc.abstractmethod
@@ -57,32 +57,44 @@ class Node(abc.ABC):
 
     def remove_carrier_from_waiting_list(self, carrier):
         """To be called by carriers to be removed from auction waiting list"""
-        self.waiting_carriers.remove(carrier)
+        self._waiting_carriers.remove(carrier)
 
     def add_carrier_to_waiting_list(self, carrier):
         """To be called by carriers to be added to the auction waiting list"""
-        self.waiting_carriers.append(carrier)
+        self._waiting_carriers.append(carrier)
 
     def remove_load_from_waiting_list(self, load):
         """To be called by loads to be removed from load waiting list"""
-        self.waiting_loads.remove(load)
+        self._waiting_loads.remove(load)
 
     def add_load_to_waiting_list(self, load):
         """To be called by loads to be added to load waiting list"""
-        self.waiting_loads.append(load)
+        self._waiting_loads.append(load)
 
     def receive_payment(self, value):
         """To be called by shipper (on an order from the auction) when should receive payment"""
-        self.revenues.append(value)
-        self.total_revenues += value
+        self._revenues.append(value)
+        self._total_revenues += value
 
     @abc.abstractmethod
     def auction_cost(self):
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
 
     def signal_as_current_auction(self, auction):
-        self.current_auction = auction
+        self._current_auction = auction
 
     def signal_as_past_auction(self, auction):
-        self.past_auctions.append(auction)
-        self.current_auction = None
+        self._past_auctions.append(auction)
+        self._current_auction = None
+
+    @property
+    def waiting_loads(self):
+        return self._waiting_loads
+
+    @property
+    def waiting_carriers(self):
+        return self._waiting_carriers
+
+    @property
+    def weights(self):
+        return self._weights

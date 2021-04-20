@@ -9,17 +9,17 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
     def __init__(self, name, weights, nb_info, revenues, environment):
         super().__init__(name, weights, revenues, environment)
 
-        self.nb_infos = nb_info
+        self._nb_infos = nb_info
 
     def initialize_weights(self):
         """create structure and initialize the weights and the number of visits to 0. Should be called by the game"""
-        self.weights = {}
-        for node_i in self.environment._nodes:
+        self._weights = {}
+        for node_i in self._environment.nodes:
             if node_i != self:
-                self.weights[node_i] = {}
-                for node_j in self.environment._nodes:
+                self._weights[node_i] = {}
+                for node_j in self._environment.nodes:
                     if node_j != self:
-                        self.weights[node_i][node_j] = 0.  # exponential smoothing starting at 0.
+                        self._weights[node_i][node_j] = 0.  # exponential smoothing starting at 0.
 
     def update_weights_with_new_infos(self, new_infos):
         """
@@ -30,9 +30,9 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
             if info.start == info.arrival or info.start == self or info.arrival == self:
                 continue
             else:  # we update only when we have information which means that old info could be valuable if no new info
-                w = self.weights[info.arrival][info.start]
-                w = w + (info.cost-w)/self.nb_infos  # we have an exponential smoothing of self.nb_infos
-                self.weights[info.arrival][info.start] = w
+                w = self._weights[info.arrival][info.start]
+                w = w + (info.cost-w)/self._nb_infos  # we have an exponential smoothing of self.nb_infos
+                self._weights[info.arrival][info.start] = w
 
     def auction_cost(self):
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
