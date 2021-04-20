@@ -3,6 +3,15 @@ Auction file
 """
 
 import random
+from typing import TYPE_CHECKING, Union, Tuple, List, Dict
+if TYPE_CHECKING:
+    from Mechanics.Actors.nodes.node import Node
+    from Mechanics.Tools.load import Load
+    from Mechanics.Actors.carriers.carrier import Carrier
+
+AuctionWeights = Dict['Load', Dict['Node', float]]
+AuctionReservePrice = Dict['Load', float]
+AuctionBid = Dict['Load', Dict['Carrier', Dict['Node', float]]]
 
 
 class Auction:
@@ -10,21 +19,23 @@ class Auction:
     An auction correspond to one auction being run
     """
 
-    def __init__(self, source):
-        self._source = source
-        self._loads = source.waiting_loads
-        self._carriers = source.waiting_carriers
+    def __init__(self,
+                 source: 'Node') -> None:
+
+        self._source: 'Node' = source
+        self._loads: List['Load'] = source.waiting_loads
+        self._carriers: List['Carrier'] = source.waiting_carriers
 
         # The following four dictionaries are going to be changed in the call of run
         # The data structure is described in each of the corresponding function
-        self._weights = {}
-        self._reserve_prices = {}
-        self._bids = {}
-        self._results = {'loads': {}, 'carriers': {}}
+        self._weights: 'AuctionWeights' = {}
+        self._reserve_prices: 'AuctionReservePrice' = {}
+        self._bids: 'AuctionBid' = {}
+        self._results: Dict = {'loads': {}, 'carriers': {}}
 
         self._source.signal_as_current_auction(self)
 
-    def run(self):
+    def run(self) -> None:
         """The only function to be called in the auction by another class instance (namely a nodes here)"""
         random.shuffle(self._carriers)  # No waiting list since they can decide to leave when they want
         # Don't randomize load waiting list so that we have a queue
@@ -44,25 +55,25 @@ class Auction:
         self._terminate_auction()
         self._source.signal_as_past_auction(self)
 
-    def _terminate_auction(self):
+    def _terminate_auction(self) -> None:
         """Make an auction independent of the state of the parent node"""
         del self._loads
         del self._carriers
 
-    def _calculate_auction_weights(self, load):
+    def _calculate_auction_weights(self, load: 'Load') -> None:
         """
         Build the dictionary of weights. The first key is the auctioned load, the second is the intermediary nodes
         The value is the weight
         """
         self._weights[load] = self._source.weights[load.arrival]
 
-    def _get_reserve_price(self, load):
+    def _get_reserve_price(self, load: 'Load') -> None:
         """
         Build the dictionary of reserve prices. The key is the auctioned load, the value is the reserve price
         """
         self._reserve_prices[load] = load.shipper.generate_reserve_price(load, self._source)
 
-    def _get_bids(self, load, nb_carriers_involved):
+    def _get_bids(self, load: 'Load', nb_carriers_involved: int) -> None:
         """
         Build the dictionary of the bid dictionary. The first key is the load, key2 the carrier, and key3 the next
         node. The value is the bid
@@ -71,25 +82,25 @@ class Auction:
         for carrier in self._carriers[:nb_carriers_involved]:
             self._bids[load][carrier] = carrier.bid(self._source)
 
-    def _notify_load(self, load):
+    def _notify_load(self, load: 'Load') -> None:
         """Notify the loads after making the attributions"""
         d = self._results['loads'][load]
         if d['is_attributed']:
             load.get_attribution(**d['kwargs'])
         else:
-            load.discard(**d['kwargs'])
+            load.discard()  # if later load expects something else, we can use **d['kwargs'] as an argument
 
-    def _notify_winning_carrier(self, winning_carrier):
+    def _notify_winning_carrier(self, winning_carrier: 'Carrier') -> None:
         """Notify the carriers after making the attribution"""
         d = self._results['carriers'][winning_carrier]
         winning_carrier.get_attribution(**d['kwargs'])
 
-    def _write_loosing_carriers(self):
+    def _write_loosing_carriers(self) -> None:
         """Notify the remaining carriers in the auction list that they """
         for carrier in self._carriers:
             self._results['carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
 
-    def _ask_payment(self, load):
+    def _ask_payment(self, load: 'Load') -> None:
         """Ask the shipper to pay the carrier and the node"""
         d = self._results['loads'][load]['kwargs']
         load.shipper.proceed_to_payment(node=d['previous_node'],
@@ -97,7 +108,8 @@ class Auction:
                                         carrier=d['carrier'],
                                         carrier_value=d['carrier_cost'])
 
-    def _make_attributions_and_payments(self, load, nb_carriers_involved):
+    def _make_attributions_and_payments(self, load: 'Load',
+                                        nb_carriers_involved: int) -> Tuple[bool, Union['Carrier', None]]:
         """
         This is the auction process. It builds the result dictionary
         the first key is either 'loads' or 'carriers'

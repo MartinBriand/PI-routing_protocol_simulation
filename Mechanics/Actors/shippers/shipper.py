@@ -3,6 +3,13 @@ Shipper file
 """
 from Mechanics.Tools.load import Load
 import abc
+from typing import TYPE_CHECKING, Callable, List, Dict
+if TYPE_CHECKING:
+    from Mechanics.Actors.nodes.node import Node
+    from Mechanics.Actors.carriers.carrier import Carrier
+    from Mechanics.environment import Environment
+
+Law = Callable[..., int]
 
 
 class Shipper(abc.ABC):
@@ -11,17 +18,23 @@ class Shipper(abc.ABC):
     auctioned at a nodes, and has to pay the nodes and the carriers
     """
 
-    def __init__(self, name, laws, expenses, loads, environment):
-        self._name = name
-        self._environment = environment
-        self._laws = laws
-        self._expenses = expenses
-        self._total_expenses = sum(self._expenses)
-        self._loads = loads
+    def __init__(self,
+                 name: str,
+                 laws: List['NodeLaw'],  # forward reference
+                 expenses: List[float],
+                 loads: List[Load],
+                 environment: 'Environment') -> None:
+
+        self._name: str = name
+        self._environment: 'Environment' = environment
+        self._laws: List['NodeLaw'] = laws
+        self._expenses: List[float] = expenses
+        self._total_expenses: float = sum(self._expenses)
+        self._loads: List['Load'] = loads
 
         self._environment.add_shipper(self)
 
-    def generate_loads(self):
+    def generate_loads(self) -> None:
         """
         To be called by the environment at each new round to generate new loads
         """
@@ -32,12 +45,16 @@ class Shipper(abc.ABC):
                 Load(law.departure_node, law.arrival_node, self, self._environment)
 
     @abc.abstractmethod
-    def generate_reserve_price(self, load, node):  # this should be a float
+    def generate_reserve_price(self, load: Load, node: 'Node') -> float:
         """
         To be called by the nodes before an auction
         """
 
-    def proceed_to_payment(self, node, node_value, carrier, carrier_value):
+    def proceed_to_payment(self,
+                           node: 'Node',
+                           node_value: float,
+                           carrier: 'Carrier',
+                           carrier_value: float) -> None:
         """
         To be called by the auction after an auction
         """
@@ -47,7 +64,7 @@ class Shipper(abc.ABC):
         self._expenses.append(total_value)
         self._total_expenses += total_value
 
-    def add_load(self, load):
+    def add_load(self, load: Load) -> None:
         """called by the load to signal to the shipper"""
         self._loads.append(load)
 
@@ -58,24 +75,28 @@ class NodeLaw:
     The only method is a call function to generate a number of load to be created by the shippers at a specific nodes
     """
 
-    def __init__(self, departure_node, arrival_node, law, params):
+    def __init__(self,
+                 departure_node: 'Node',
+                 arrival_node: 'Node',
+                 law: Law,
+                 params: Dict):
         """
         The nodes is just the nodes reference
         The law should be a numpy.random.Generator.law (or anything else)
         The params should be the parameters to be called by the law
         """
-        self._departure_node = departure_node
-        self._arrival_node = arrival_node
-        self._law = lambda: law(**params)
+        self._departure_node: 'Node' = departure_node
+        self._arrival_node: 'Node' = arrival_node
+        self._law: Callable[[None], int] = lambda: law(**params)
 
-    def call(self):
+    def call(self) -> int:
         """Calling the law to generate a number"""
         return self._law()
 
     @property
-    def departure_node(self):
+    def departure_node(self) -> 'Node':
         return self._departure_node
 
     @property
-    def arrival_node(self):
+    def arrival_node(self) -> 'Node':
         return self._arrival_node
