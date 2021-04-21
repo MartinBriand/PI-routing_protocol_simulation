@@ -1,8 +1,10 @@
-"""The game, properly speaking... aka the script that we launch the game and the visualizers"""
-
-# instantiate everything
-# launch visualizers
-# run a iteration while loop on the environment
+"""
+This script is meant to be changed and tun games to debug the structure and mechanics of the game
+It is supposed to:
+    * instantiate everything
+    * launch visualizers
+    * run an iteration loop on the environment
+"""
 
 from Mechanics.environment import Environment
 from Mechanics.Actors.nodes.dummy_node import DummyNode

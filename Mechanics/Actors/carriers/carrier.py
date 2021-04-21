@@ -2,7 +2,6 @@
 Carrier file
 """
 import abc
-from abc import ABCMeta
 from typing import TYPE_CHECKING, Optional, List, Dict
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
@@ -131,7 +130,8 @@ class Carrier(abc.ABC):
         """To update your far_from_home costs"""
 
 
-class CarrierWithCosts(Carrier, abc.ABC):  # The idea is to modify this class not to implement the cost again and again
+class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter
+    """The idea is to modify the Carrier class to have a single cost structure"""
 
     def __init__(self,
                  name: str,
