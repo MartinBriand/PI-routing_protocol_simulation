@@ -1,9 +1,14 @@
 """
-The prjtyping package
+The prj_typing package
 """
 
 from tensorflow import Tensor
-from typing import Dict, Callable, Tuple
+from typing import TYPE_CHECKING, Dict, Callable, Tuple
+
+if TYPE_CHECKING:
+    from Mechanics.Actors.nodes.node import Node
+    from Mechanics.Actors.carriers.carrier import Carrier
+    from Mechanics.Tools.load import Load
 
 
 # for Carrier

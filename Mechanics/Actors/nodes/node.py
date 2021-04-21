@@ -6,7 +6,7 @@ import abc
 from Mechanics.Tools.auction import Auction
 
 from typing import TYPE_CHECKING, Optional, List
-from prjtyping.types import NodeWeights
+from prj_typing.types import NodeWeights
 
 if TYPE_CHECKING:
     from Mechanics.Actors.carriers.carrier import Carrier

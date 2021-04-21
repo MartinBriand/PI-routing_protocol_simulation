@@ -5,7 +5,7 @@ Auction file
 import random
 
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict
-from prjtyping.types import AuctionWeights, AuctionReservePrice, AuctionBid
+from prj_typing.types import AuctionWeights, AuctionReservePrice, AuctionBid
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node

@@ -8,7 +8,7 @@ from Mechanics.Environment.environment import Environment
 from tensorflow import Tensor
 
 from typing import TYPE_CHECKING
-from prjtyping.types import NodeState
+from prj_typing.types import NodeState
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node

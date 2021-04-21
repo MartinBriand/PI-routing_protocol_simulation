@@ -31,7 +31,7 @@ from tf_agents.agents.td3.td3_agent import Td3Agent
 from Mechanics.Actors.carriers.carrier import CarrierWithCosts
 
 from typing import TYPE_CHECKING, Optional, List
-from prjtyping.types import CarrierBid
+from prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node

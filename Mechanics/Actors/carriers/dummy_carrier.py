@@ -6,7 +6,7 @@ from random import random, expovariate
 from Mechanics.Actors.carriers.carrier import CarrierWithCosts
 
 from typing import TYPE_CHECKING
-from prjtyping.types import CarrierBid
+from prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node

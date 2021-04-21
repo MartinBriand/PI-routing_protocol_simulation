@@ -6,7 +6,7 @@ import abc
 from Mechanics.Tools.load import Load
 
 from typing import TYPE_CHECKING, Callable, List, Dict
-from prjtyping.types import Law
+from prj_typing.types import Law
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node

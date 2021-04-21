@@ -3,7 +3,7 @@ Load file
 """
 
 from typing import TYPE_CHECKING, Optional, List
-from prjtyping.types import Cost
+from prj_typing.types import Cost
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node

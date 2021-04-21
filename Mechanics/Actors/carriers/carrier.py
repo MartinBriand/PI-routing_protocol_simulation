@@ -4,7 +4,7 @@ Carrier file
 import abc
 from typing import TYPE_CHECKING, Optional, List
 
-from prjtyping.types import CarrierBid
+from prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node

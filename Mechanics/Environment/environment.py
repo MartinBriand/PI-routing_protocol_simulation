@@ -3,7 +3,7 @@ Environment file
 """
 
 from typing import TYPE_CHECKING, List
-from prjtyping.types import Distance
+from prj_typing.types import Distance
 
 if TYPE_CHECKING:
     from Mechanics.Actors.carriers.carrier import Carrier
