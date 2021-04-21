@@ -2,7 +2,8 @@
 Carrier file
 """
 import abc
-from typing import TYPE_CHECKING, List, Dict
+from abc import ABCMeta
+from typing import TYPE_CHECKING, Optional, List, Dict
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Tools.load import Load
@@ -26,7 +27,7 @@ class Carrier(abc.ABC):
                  in_transit: bool,
                  next_node: 'Node',
                  time_to_go: int,
-                 load: 'Load',
+                 load: Optional['Load'],
                  environment: 'Environment',
                  episode_expenses: List[float],
                  episode_revenues: List[float],
@@ -60,6 +61,10 @@ class Carrier(abc.ABC):
     def bid(self, node: 'Node') -> CarrierBid:
         """To be called by the nodes before an auction"""
 
+    @abc.abstractmethod
+    def _decide_next_node(self) -> 'Node':
+        """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
+
     def get_attribution(self, load: 'Load', next_node: 'Node') -> None:
         """To be called by the nodes after an auction if a load was attributed to the carriers"""
         self._in_transit = True
@@ -83,10 +88,6 @@ class Carrier(abc.ABC):
             self._next_node = new_next_node
             self._time_to_go = self._environment.get_distance(current_node, self._next_node)
             current_node.remove_carrier_from_waiting_list(self)
-
-    @abc.abstractmethod
-    def _decide_next_node(self) -> 'Node':
-        """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
 
     def next_step(self) -> None:
         """To be called by the environment at each iteration"""
@@ -130,4 +131,46 @@ class Carrier(abc.ABC):
         """To update your far_from_home costs"""
 
 
+class CarrierWithCosts(Carrier, abc.ABC):  # The idea is to modify this class not to implement the cost again and again
 
+    def __init__(self,
+                 name: str,
+                 home: 'Node',
+                 in_transit: bool,
+                 next_node: 'Node',
+                 time_to_go: int,
+                 load: Optional['Load'],
+                 environment: 'Environment',
+                 episode_expenses: List[float],
+                 episode_revenues: List[float],
+                 this_episode_expenses: List[float],
+                 this_episode_revenues: float,
+                 transit_cost: float,
+                 far_from_home_cost: float):
+
+        super().__init__(name,
+                         home,
+                         in_transit,
+                         next_node,
+                         time_to_go,
+                         load,
+                         environment,
+                         episode_expenses,
+                         episode_revenues,
+                         this_episode_expenses,
+                         this_episode_revenues)
+
+        self._t_c: float = transit_cost
+        self._ffh_c: float = far_from_home_cost
+
+    def _transit_costs(self) -> float:
+        """The transit costs"""
+        return self._t_c
+
+    def _far_from_home_costs(self) -> float:  # yes it is a constant, I told you it was dummy
+        """The far from home costs"""
+        return self._ffh_c
+
+    def _update_ffh_cost_functions(self) -> None:
+        """Here we do nothing"""
+        pass
