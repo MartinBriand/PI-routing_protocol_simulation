@@ -1,13 +1,15 @@
 """
 The most basic carrier you could think of
 """
+
 from random import random, expovariate
-from Mechanics.Actors.carriers.carrier import CarrierWithCosts, CarrierBid
-from typing import TYPE_CHECKING, Optional, List
+from Mechanics.Actors.carriers.carrier import CarrierWithCosts
+
+from typing import TYPE_CHECKING
+from prjtyping.types import CarrierBid
+
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Tools.load import Load
-    from Mechanics.environment import Environment
 
 
 class DummyCarrier(CarrierWithCosts):

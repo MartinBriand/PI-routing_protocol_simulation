@@ -6,7 +6,7 @@ It is supposed to:
     * run an iteration loop on the environment
 """
 
-from Mechanics.environment import Environment
+from Mechanics.Environment.environment import Environment
 from Mechanics.Actors.nodes.dummy_node import DummyNode
 from Mechanics.Actors.carriers.dummy_carrier import DummyCarrier
 from Mechanics.Actors.shippers.dummy_shipper import DummyShipper

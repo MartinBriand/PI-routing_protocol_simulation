@@ -1,14 +1,15 @@
 """
 Load file
 """
-from typing import TYPE_CHECKING, Optional, List, Tuple
+
+from typing import TYPE_CHECKING, Optional, List
+from prjtyping.types import Cost
+
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Actors.shippers.shipper import Shipper
     from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.environment import Environment
-
-Cost = Tuple['Node', 'Node', float, float]
+    from Mechanics.Environment.environment import Environment
 
 
 class Load:

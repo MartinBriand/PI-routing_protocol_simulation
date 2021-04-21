@@ -1,15 +1,15 @@
 """
 Environment file
 """
-from typing import TYPE_CHECKING, List, Dict
+
+from typing import TYPE_CHECKING, List
+from prjtyping.types import Distance
 
 if TYPE_CHECKING:
     from Mechanics.Actors.carriers.carrier import Carrier
     from Mechanics.Tools.load import Load
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Actors.shippers.shipper import Shipper
-
-Distance = Dict['Node', Dict['Node', int]]
 
 
 class Environment:

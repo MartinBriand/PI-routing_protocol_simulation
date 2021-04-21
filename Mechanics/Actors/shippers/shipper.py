@@ -1,15 +1,17 @@
 """
 Shipper file
 """
-from Mechanics.Tools.load import Load
+
 import abc
+from Mechanics.Tools.load import Load
+
 from typing import TYPE_CHECKING, Callable, List, Dict
+from prjtyping.types import Law
+
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.environment import Environment
-
-Law = Callable[..., int]
+    from Mechanics.Environment.environment import Environment
 
 
 class Shipper(abc.ABC):

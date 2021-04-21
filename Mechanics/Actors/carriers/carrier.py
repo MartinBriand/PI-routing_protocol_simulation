@@ -2,13 +2,14 @@
 Carrier file
 """
 import abc
-from typing import TYPE_CHECKING, Optional, List, Dict
+from typing import TYPE_CHECKING, Optional, List
+
+from prjtyping.types import CarrierBid
+
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Tools.load import Load
-    from Mechanics.environment import Environment
-
-CarrierBid = Dict['Node', float]
+    from Mechanics.Environment.environment import Environment
 
 
 class Carrier(abc.ABC):
@@ -107,6 +108,7 @@ class Carrier(abc.ABC):
             self._episode_expenses.append(sum(self._this_episode_expenses))
             self._this_episode_revenues = 0
             self._this_episode_expenses.clear()
+            # And generate episode if needed
 
     def _arrive_at_next_node(self) -> None:
         """Called by next_step to do all the variable settings when arrive at a next nodes
@@ -130,7 +132,7 @@ class Carrier(abc.ABC):
         """To update your far_from_home costs"""
 
 
-class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter
+class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially the ffh costs
     """The idea is to modify the Carrier class to have a single cost structure"""
 
     def __init__(self,
@@ -146,7 +148,8 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter
                  this_episode_expenses: List[float],
                  this_episode_revenues: float,
                  transit_cost: float,
-                 far_from_home_cost: float):
+                 far_from_home_cost: float,
+                 time_not_at_home: int) -> None:
 
         super().__init__(name,
                          home,
@@ -162,6 +165,7 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter
 
         self._t_c: float = transit_cost
         self._ffh_c: float = far_from_home_cost
+        self._time_not_at_home = time_not_at_home
 
     def _transit_costs(self) -> float:
         """The transit costs"""
@@ -173,4 +177,9 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter
 
     def _update_ffh_cost_functions(self) -> None:
         """Here we do nothing"""
-        pass
+        self._time_not_at_home += 1
+
+    def _arrive_at_next_node(self) -> None:
+        """Reinitialize the time not at home counter"""
+        super()._arrive_at_next_node()
+        self._time_not_at_home = 0

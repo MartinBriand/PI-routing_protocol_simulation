@@ -1,11 +1,13 @@
 """
 The most basic node you could think of
 """
+
 from Mechanics.Actors.nodes.node import Node, NodeWeights
 from typing import TYPE_CHECKING, List
+
 if TYPE_CHECKING:
     from Mechanics.Tools.load import Info
-    from Mechanics.environment import Environment
+    from Mechanics.Environment.environment import Environment
 
 
 class DummyNode(Node):  # Actually this is not so dummy and will perhaps not change in the future
