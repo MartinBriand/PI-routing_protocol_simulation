@@ -2,8 +2,8 @@
 The prj_typing package
 """
 
-from tensorflow import Tensor
-from typing import TYPE_CHECKING, Dict, Callable, Tuple
+from tensorflow.python.framework.ops import EagerTensor
+from typing import TYPE_CHECKING, TypeVar, Dict, Callable, Tuple
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
@@ -13,16 +13,17 @@ if TYPE_CHECKING:
 
 # for Carrier
 CarrierBid = Dict['Node', float]
+CarrierState = TypeVar(EagerTensor)
 
 # for Node
 NodeWeights = Dict['Node', Dict['Node', float]]
-NodeState = Dict['Node', Tensor]
 
 # for Shipper
 Law = Callable[..., int]
 
 # for Environment
 Distance = Dict['Node', Dict['Node', int]]
+NodeState = Dict['Node', EagerTensor]
 
 # for Auction
 AuctionWeights = Dict['Load', Dict['Node', float]]

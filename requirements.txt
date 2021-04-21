@@ -1,2 +1,3 @@
 tensorflow~=2.4.1
 TODO: Why I don't have tf_agents automatically written here?
+numpy~=1.19.2

@@ -26,11 +26,16 @@ During exploitation
 
 from random import random
 from tensorflow import constant as tf_constant, concat as tf_concat
+from tensorflow.python.framework.ops import EagerTensor
 from tf_agents.agents.td3.td3_agent import Td3Agent
+from tf_agents.trajectories.policy_step import PolicyStep
+from tf_agents.trajectories.time_step import TimeStep, StepType
+from tf_agents.trajectories.trajectory import mid
 
 from Mechanics.Actors.carriers.carrier import CarrierWithCosts
 
 from typing import TYPE_CHECKING, Optional, List
+
 from prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
@@ -62,7 +67,10 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                  far_from_home_cost: float,
                  time_not_at_home: int,
                  learning_agent: 'LearningAgents',
-                 is_learning: bool) -> None:  # TODO this function is useless for the moment
+                 is_learning: bool,
+                 gamma: float,
+                 time_step: Optional[TimeStep],
+                 action: Optional[PolicyStep]) -> None:  # TODO this function is useless for the moment
 
         super().__init__(name=name,
                          home=home,
@@ -79,12 +87,29 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
 
-        self._learning_agent = learning_agent
-        self._is_learning = is_learning
+        self._learning_agent: 'LearningAgents' = learning_agent
+
+        if gamma > 1 or gamma < 0:
+            raise ValueError('Gamma between 0 and 1')
+
+        self._gamma: EagerTensor = tf_constant([gamma])
+        self._gamma_power: int = 1
+
+        self._is_learning: bool = is_learning
         if self._is_learning:
             self._policy = self._learning_agent.collect_policy
         else:
             self._policy = self._learning_agent.policy
+
+        if time_step:
+            self._time_step: Optional[TimeStep] = time_step
+        else:
+            self._time_step: Optional[TimeStep] = self._generate_current_time_step()
+
+        if action:
+            self._action_step: Optional[PolicyStep] = action
+        else:
+            self._action_step: Optional[PolicyStep] = None
 
     # Carrier's methods
     def _decide_next_node(self) -> 'Node':  # Very simple function to get back home in 20% of the lost auctions
@@ -96,34 +121,58 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         else:
             return self._next_node
 
-    def bid(self, node: 'Node') -> 'CarrierBid':
-        #
-        #
-        # save state
-        # ask the agents what to bid
-        # save agent bid
+    def get_attribution(self, load: 'Load', next_node: 'Node') -> None:
+        super().get_attribution(load, next_node)
+        self._gamma_power = self._time_to_go
+
+    def dont_get_attribution(self) -> None:
+        super().dont_get_attribution()
+        if self._in_transit:
+            self._gamma_power = self._time_to_go
+        else:
+            self._gamma_power = 1
+
+    def bid(self, node: 'Node') -> 'CarrierBid':  # TODO
+        self._action_step = self._policy.action(self._time_step)  # the time step is generated in next_step
+        action = self._action_step.action.numpy()
+        node_list = self._environment.nodes
         bid = {}
-        # transform the agent bid in a CarrierBid format
+        for k in range(action.shape[0]):
+            bid[node_list[k]] = action[k]
         return bid
 
-    def set_new_cost_parameters(self) -> None:
-        pass
+    def set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
+        self._t_c = t_c
+        self._ffh_c = ffh_c
 
     def next_step(self) -> None:
         super().next_step()
-        if self._is_learning and not self._in_transit:
-            self._generate_episode()
+        if not self._in_transit and self._is_learning:
+            new_time_step = self._generate_current_time_step()
+            if self._is_learning:
+                self._generate_trajectory(new_time_step)
+            self._time_step = new_time_step
 
-    def _generate_episode(self) -> None:
+    def _generate_trajectory(self, new_time_step: TimeStep) -> None:  # TODO
+        if self._action_step:
+            trajectory = mid(observation=self._time_step.observation,
+                             action=self._action_step.action,
+                             policy_info=self._action_step.info,
+                             reward=new_time_step.reward,
+                             discount=self._gamma ** self._gamma_power)  # note that reward is update in next_step()
+            # communicate trajectory
+            # TODO: How do I know the next state in the trajectory?
+
+    def _generate_current_time_step(self) -> TimeStep:
         node_state = self._environment.this_node_state(self._next_node)
         cost_state = tf_constant([self._t_c, self._ffh_c, self._time_not_at_home])
-        new_state = tf_concat([node_state, cost_state], 0)
 
-        # generate episode
-        # make sure the format of the state is the same as the one required by the agents
-        self._old_tf_state = new_state
-
-        pass
+        # note that reward is update in next_step()
+        # and that gamma_power is updated in the _get_attribution()/_dont_get_attribution()
+        return TimeStep(step_type=StepType.MID,
+                        reward=tf_constant([self._episode_revenues[-1] - self._episode_expenses[-1]]),
+                        discount=self._gamma ** self._gamma_power,
+                        osbervation=tf_concat([node_state, cost_state], 0))
 
     @property
     def is_learning(self):
