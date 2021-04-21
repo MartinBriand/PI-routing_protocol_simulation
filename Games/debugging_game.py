@@ -18,9 +18,11 @@ hh = DummyNode('Hamburg', {}, 100, [], e)
 
 for node in e.nodes:
     node.initialize_weights()
+del node
 
 distances = {ps: {bx: 3, hh: 6}, bx: {ps: 3, hh: 4}, hh: {ps: 6, bx: 4}}
 e.set_distance(distances)
+del distances
 
 DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
 DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
@@ -65,6 +67,8 @@ for k in range(10):
                  this_episode_revenues=0,
                  transit_cost=3,
                  far_from_home_cost=1)
+
+del ps, bx, hh
 
 for k in range(10000):
     e.iteration()
