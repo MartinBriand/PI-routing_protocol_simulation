@@ -26,10 +26,45 @@ DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
 DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
 
 for k in range(10):
-    DummyCarrier('CParis_{}'.format(k), ps, False, ps, 0, None, e, [], [], 3, 1)
-    DummyCarrier('CBrussels_{}'.format(k), bx, False, bx, 0, None, e, [], [], 3, 1)
-    DummyCarrier('CHamburg_{}'.format(k), hh, False, hh, 0, None, e, [], [], 3, 1)
-
+    DummyCarrier(name='CParis_{}'.format(k),
+                 home=ps,
+                 in_transit=False,
+                 next_node=ps,
+                 time_to_go=0,
+                 load=None,
+                 environment=e,
+                 episode_expenses=[],
+                 episode_revenues=[],
+                 this_episode_expenses=[],
+                 this_episode_revenues=0,
+                 transit_cost=3,
+                 far_from_home_cost=1)
+    DummyCarrier(name='CBrussels_{}'.format(k),
+                 home=bx,
+                 in_transit=False,
+                 next_node=bx,
+                 time_to_go=0,
+                 load=None,
+                 environment=e,
+                 episode_expenses=[],
+                 episode_revenues=[],
+                 this_episode_expenses=[],
+                 this_episode_revenues=0,
+                 transit_cost=3,
+                 far_from_home_cost=1)
+    DummyCarrier(name='CHamburg_{}'.format(k),
+                 home=hh,
+                 in_transit=False,
+                 next_node=hh,
+                 time_to_go=0,
+                 load=None,
+                 environment=e,
+                 episode_expenses=[],
+                 episode_revenues=[],
+                 this_episode_expenses=[],
+                 this_episode_revenues=0,
+                 transit_cost=3,
+                 far_from_home_cost=1)
 
 for k in range(10000):
     e.iteration()

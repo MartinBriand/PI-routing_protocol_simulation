@@ -3,7 +3,6 @@ Carrier file
 """
 import abc
 from typing import TYPE_CHECKING, List, Dict
-
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Tools.load import Load
@@ -29,8 +28,10 @@ class Carrier(abc.ABC):
                  time_to_go: int,
                  load: 'Load',
                  environment: 'Environment',
-                 expenses: List[float],
-                 revenues: List[float]) -> None:
+                 episode_expenses: List[float],
+                 episode_revenues: List[float],
+                 this_episode_expenses: List[float],
+                 this_episode_revenues: float) -> None:
 
         self._name: str = name
         self._home: 'Node' = home
@@ -43,10 +44,12 @@ class Carrier(abc.ABC):
 
         # costs are allowed to be methods
 
-        self._expenses: List[float] = expenses
-        self._revenues: List[float] = revenues
-        self._total_expenses: float = sum(self._expenses)
-        self._total_revenues: float = sum(self._revenues)
+        self._episode_expenses: List[float] = episode_expenses
+        self._episode_revenues: List[float] = episode_revenues
+        self._this_episode_expenses: List[float] = this_episode_expenses
+        self._this_episode_revenues: float = this_episode_revenues
+        self._total_expenses: float = sum(self._episode_expenses) + sum(self._this_episode_expenses)
+        self._total_revenues: float = sum(self._episode_revenues) + self._this_episode_revenues
 
         self._environment.add_carrier(self)
 
@@ -63,13 +66,12 @@ class Carrier(abc.ABC):
         current_node = self._next_node
         current_node.remove_carrier_from_waiting_list(self)
         self._next_node = next_node
-
         self._time_to_go = self._environment.get_distance(current_node, self._next_node)
         self._load = load  # note that the get_attribution of the load is called by the auction of the node
 
     def receive_payment(self, value: float) -> None:
         """To be called by the shippers after an auction if a load was attributed"""
-        self._revenues.append(value)
+        self._this_episode_revenues += value
         self._total_revenues += value
 
     def dont_get_attribution(self) -> None:
@@ -92,16 +94,23 @@ class Carrier(abc.ABC):
             self._time_to_go -= 1
             new_cost = self._transit_costs() + self._far_from_home_costs()
             if self._time_to_go == 0:
-                self._arrive_at_next_node()
+                self._arrive_at_next_node()  # this does not reinitialize the costs trackers nor generate next state
         else:
             new_cost = self._far_from_home_costs()
 
-        self._expenses.append(new_cost)
+        self._this_episode_expenses.append(new_cost)
         self._total_expenses += new_cost
         self._update_ffh_cost_functions()
 
+        if not self._in_transit:  # May have been modified by the _arrive_at_next_node method
+            self._episode_revenues.append(self._this_episode_revenues)
+            self._episode_expenses.append(sum(self._this_episode_expenses))
+            self._this_episode_revenues = 0
+            self._this_episode_expenses.clear()
+
     def _arrive_at_next_node(self) -> None:
-        """Called by next_step to do all the variable settings when arrive at a next nodes"""
+        """Called by next_step to do all the variable settings when arrive at a next nodes
+        Note: cost calculations and episode generation are not made here"""
         self._in_transit = False
         if self._load:  # is not none
             self._load.arrive_at_next_node()
@@ -119,3 +128,6 @@ class Carrier(abc.ABC):
     @abc.abstractmethod
     def _update_ffh_cost_functions(self) -> None:
         """To update your far_from_home costs"""
+
+
+

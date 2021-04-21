@@ -3,7 +3,7 @@ The most basic carrier you could think of
 """
 from random import random, expovariate
 from Mechanics.Actors.carriers.carrier import Carrier, CarrierBid
-from typing import TYPE_CHECKING, Union, List
+from typing import TYPE_CHECKING, Optional, List
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Tools.load import Load
@@ -18,14 +18,27 @@ class DummyCarrier(Carrier):
                  in_transit: bool,
                  next_node: 'Node',
                  time_to_go: int,
-                 load: Union['Load', None],
+                 load: Optional['Load'],
                  environment: 'Environment',
-                 expenses: List[float],
-                 revenues: List[float],
+                 episode_expenses: List[float],
+                 episode_revenues: List[float],
+                 this_episode_expenses: List[float],
+                 this_episode_revenues: float,
                  transit_cost: float,
                  far_from_home_cost: float):
 
-        super().__init__(name, home, in_transit, next_node, time_to_go, load, environment, expenses, revenues)
+        super().__init__(name,
+                         home,
+                         in_transit,
+                         next_node,
+                         time_to_go,
+                         load,
+                         environment,
+                         episode_expenses,
+                         episode_revenues,
+                         this_episode_expenses,
+                         this_episode_revenues)
+
         self._t_c: float = transit_cost
         self._ffh_c: float = far_from_home_cost
 

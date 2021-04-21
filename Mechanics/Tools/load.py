@@ -1,7 +1,7 @@
 """
 Load file
 """
-from typing import TYPE_CHECKING, Union, List, Tuple
+from typing import TYPE_CHECKING, Optional, List, Tuple
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Actors.shippers.shipper import Shipper
@@ -27,7 +27,7 @@ class Load:
         self._shipper: 'Shipper' = shipper
         self._environment: 'Environment' = environment
 
-        self._current_carrier: Union['Carrier', None] = None
+        self._current_carrier: Optional['Carrier'] = None
         self._next_node: 'Node' = self._start  # note that if you are not in transit you are at a nodes,
         # and your next_node is also your current node then
 

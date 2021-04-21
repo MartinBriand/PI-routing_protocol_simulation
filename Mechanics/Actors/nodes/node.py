@@ -3,7 +3,7 @@ Node file
 """
 from Mechanics.Tools.auction import Auction
 import abc
-from typing import TYPE_CHECKING, Union, List, Dict
+from typing import TYPE_CHECKING, Optional, List, Dict
 if TYPE_CHECKING:
     from Mechanics.Actors.carriers.carrier import Carrier
     from Mechanics.Tools.load import Load, Info
@@ -40,7 +40,7 @@ class Node(abc.ABC):
         self._waiting_loads: List['Load'] = []  # always initialize as an empty list (the loads signal themselves)
         self._waiting_carriers: List['Carrier'] = []  # same as waiting_loads
 
-        self._current_auction: Union[Auction, None] = None
+        self._current_auction: Optional[Auction] = None
         self._past_auctions: List[Auction] = []  # They will signal at creation
 
         self._revenues: List[float] = revenues

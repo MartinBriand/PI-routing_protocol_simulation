@@ -3,7 +3,7 @@ Auction file
 """
 
 import random
-from typing import TYPE_CHECKING, Union, Tuple, List, Dict
+from typing import TYPE_CHECKING, Optional, Tuple, List, Dict
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Tools.load import Load
@@ -109,7 +109,7 @@ class Auction:
                                         carrier_value=d['carrier_cost'])
 
     def _make_attributions_and_payments(self, load: 'Load',
-                                        nb_carriers_involved: int) -> Tuple[bool, Union['Carrier', None]]:
+                                        nb_carriers_involved: int) -> Tuple[bool, Optional['Carrier']]:
         """
         This is the auction process. It builds the result dictionary
         the first key is either 'loads' or 'carriers'
