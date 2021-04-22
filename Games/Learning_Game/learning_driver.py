@@ -8,3 +8,5 @@ It is supposed to:
     * Regularly change the costs parameters of the carriers
     * Save the model if we are satisfied
 """
+
+import tf_agents as tfa
