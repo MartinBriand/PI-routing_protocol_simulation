@@ -139,6 +139,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     def bid(self, node: 'Node') -> 'CarrierBid':
         self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
         action = self._policy_step.action.numpy()
+        # TODO denormalize
         node_list = self._environment.nodes
         bid = {}
         for k in range(action.shape[0]):
@@ -173,6 +174,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     def _generate_current_time_step(self) -> TimeStep:
         node_state = self._environment.this_node_state(self._next_node)  # silent the pycharm error
         cost_state = tf_constant([self._t_c, self._ffh_c, self._time_not_at_home])
+        # TODO normalize
         observation = tf_concat([node_state, cost_state], 0)
         discount = self._discount ** self._discount_power
         if self._is_first_step:

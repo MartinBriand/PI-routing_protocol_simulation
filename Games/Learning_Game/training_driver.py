@@ -14,8 +14,15 @@ It is supposed to:
     * Regularly change the costs parameters of the carriers
     * Save the model if we are satisfied
 """
-
+from numpy import dtype
+from tf_agents.agents.ddpg.critic_network import CriticNetwork
 from tf_agents.replay_buffers.tf_uniform_replay_buffer import TFUniformReplayBuffer
+from tf_agents.specs import ArraySpec, BoundedArraySpec
+from tf_agents.trajectories.policy_step import PolicyStep
+from tf_agents.trajectories.time_step import TimeStep
+from tf_agents.trajectories.trajectory import Transition
+
+import tensorflow as tf
 
 from Mechanics.Environment.tfa_environment import TFAEnvironment
 from Mechanics.Actors.nodes.dummy_node import DummyNode
@@ -42,33 +49,52 @@ del distances
 DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
 DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
 
-discount = 0.9
-
 # Initializing the agents
-buffer = TFUniformReplayBuffer(data_spec=, batch_size=, max_length=, dataset_drop_remainder=True)
-time_step_spec =
-action_spec =
-actor_network =
-critic_network =
-actor_optimizer =
-critic_optimizer =
-exploration_noise_std =
-critic_network_2 =
-target_actor_network =
-target_critic_network =
-target_critic_network_2 =
-target_update_tau =
-target_update_period =
-actor_update_period =
-td_errors_loss_fn =
-gamma =
-reward_scale_factor =
-target_policy_noise =
-target_policy_noise_clip =
-gradient_clipping =
-debug_summaries =
-summarize_grads_and_vars =
-train_step_counter =
+time_step_spec = TimeStep(step_type=ArraySpec(shape=(), dtype=dtype('int32'), name='step_type'),
+                          reward=ArraySpec(shape=(), dtype=dtype('float32'), name='reward'),
+                          discount=BoundedArraySpec(shape=(), dtype=dtype('float32'), name='discount',
+                                                    minimum=0.0, maximum=1.0),
+                          observation=ArraySpec(shape=(len(e.nodes) + LearningCarrier.cost_dimension()),
+                                                dtype=dtype('float32'), name='observation'))
+
+action_spec = ArraySpec(shape=(len(e.nodes)), dtype=dtype('float32'), name='observation')
+policy = PolicyStep(action=action_spec, state=(), info=())
+data_spec = Transition(time_step=time_step_spec, action_step=policy, next_time_step=time_step_spec)
+
+buffer = TFUniformReplayBuffer(data_spec=data_spec,
+                               batch_size=1,  # the sample batch size is then different, but we add 1 by 1
+                               max_length=3000,
+                               dataset_drop_remainder=True)
+
+actor_network =  # TODO find the correct network
+critic_network = CriticNetwork(
+        (time_step_spec.observation, action_spec),
+        observation_fc_layer_params=None,
+        action_fc_layer_params=None,
+        joint_fc_layer_params=(64, 64),
+        kernel_initializer='glorot_uniform',
+        last_kernel_initializer='glorot_uniform')
+actor_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+critic_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+exploration_noise_std = 0.1  # Note that it will be normalize before
+# TODO check that will accept action in more than one dimension
+critic_network_2 = None  # TODO check the weights at creation
+target_actor_network = None  # TODO check the weights at creation
+target_critic_network = None  # TODO check
+target_critic_network_2 = None  # TODO check
+target_update_tau = 1.0
+target_update_period = 1
+actor_update_period = 3
+td_errors_loss_fn = None  # we  don't need any since already given by the algo (elementwise huber_loss)
+gamma = 1
+reward_scale_factor =  # TO Define
+target_policy_noise = 0.2  # will default to 0.2
+target_policy_noise_clip = 0.5  # will default to 0.5
+# TODO why do we need that ?
+gradient_clipping = None  # TODO understand that
+debug_summaries = False
+summarize_grads_and_vars = False
+train_step_counter = None  # should be automatically initialized
 name = "TD3_Multi_Agents_Learner"
 
 agent = LearningAgent(replay_buffer=buffer,
@@ -98,6 +124,7 @@ agent = LearningAgent(replay_buffer=buffer,
                       name=name)
 
 # Initializing the LearningCarriers in Learning Mode
+discount = 0.9
 for k in range(10):
     LearningCarrier(name='CParis_{}'.format(k),
                     home=ps,
