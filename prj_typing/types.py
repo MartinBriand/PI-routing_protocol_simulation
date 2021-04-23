@@ -23,7 +23,7 @@ Law = Callable[..., int]
 
 # for Environment
 Distance = Dict['Node', Dict['Node', int]]
-NodeState = Dict['Node', EagerTensor]
+NodeStates = Dict['Node', EagerTensor]
 
 # for Auction
 AuctionWeights = Dict['Load', Dict['Node', float]]

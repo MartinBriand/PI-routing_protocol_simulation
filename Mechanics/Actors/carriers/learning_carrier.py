@@ -70,7 +70,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int,
-                 learning_agent: 'LearningAgents',
+                 learning_agent: 'LearningAgent',
                  is_learning: bool,
                  discount: float,
                  discount_power: Optional[int],
@@ -92,7 +92,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
 
-        self._learning_agent: 'LearningAgents' = learning_agent
+        self._learning_agent: 'LearningAgent' = learning_agent
         self._buffer: ReplayBuffer = self._learning_agent.replay_buffer
 
         if discount > 1 or discount < 0:
@@ -107,16 +107,14 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         else:
             self._policy = self._learning_agent.policy
 
-        self._is_first_step = time_step is None
+        self._is_first_step = (time_step is None)  # TODO Check the property during debugging
         if not self._is_first_step:
             self._time_step: Optional[TimeStep] = time_step
         elif not self._in_transit:
             self._time_step: Optional[TimeStep] = self._generate_current_time_step()
+            self._is_first_step = False
 
-        if policy_step:
-            self._policy_step: Optional[PolicyStep] = policy_step
-        else:
-            self._policy_step: Optional[PolicyStep] = None
+        self._policy_step: Optional[PolicyStep] = policy_step
 
     def _decide_next_node(self) -> 'Node':  # Very simple function to get back home in 20% of the lost auctions
         # This could get smarter later
@@ -160,6 +158,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
             if self._is_learning and not self._is_first_step:
                 self._generate_transition(next_time_step)
             self._time_step = next_time_step
+            self._is_first_step = False
 
     def _generate_transition(self, next_time_step: TimeStep) -> None:
         if self._policy_step:
@@ -185,7 +184,6 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
         # note that reward is update in next_step()
         # and that discount_power is updated in the _get_attribution()/_dont_get_attribution()
-        self._is_first_step = False
         return TimeStep(step_type=step_type,
                         reward=reward,
                         discount=discount,
@@ -205,7 +203,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
 
 # here we can silent the pycharm error
-class LearningAgents(Td3Agent):  # TODO: implement this
+class LearningAgent(Td3Agent):  # TODO: implement this
     # TODO write description
     def __init__(self,
                  replay_buffer: ReplayBuffer,
