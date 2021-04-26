@@ -152,7 +152,6 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially 
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int) -> None:
-
         super().__init__(name,
                          home,
                          in_transit,
@@ -168,7 +167,6 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially 
         self._t_c: float = transit_cost
         self._ffh_c: float = far_from_home_cost
         self._time_not_at_home = time_not_at_home
-
 
     def _transit_costs(self) -> float:
         """The transit costs"""

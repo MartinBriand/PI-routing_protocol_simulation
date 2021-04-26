@@ -15,6 +15,7 @@ It is supposed to:
     * Save the model if we are satisfied
 """
 from numpy import dtype
+from tf_agents.agents.ddpg.actor_network import ActorNetwork
 from tf_agents.agents.ddpg.critic_network import CriticNetwork
 from tf_agents.replay_buffers.tf_uniform_replay_buffer import TFUniformReplayBuffer
 from tf_agents.specs import ArraySpec, BoundedArraySpec
@@ -66,14 +67,25 @@ buffer = TFUniformReplayBuffer(data_spec=data_spec,
                                max_length=3000,
                                dataset_drop_remainder=True)
 
-actor_network =  # TODO find the correct network
-critic_network = CriticNetwork(
-        (time_step_spec.observation, action_spec),
-        observation_fc_layer_params=None,
-        action_fc_layer_params=None,
-        joint_fc_layer_params=(64, 64),
-        kernel_initializer='glorot_uniform',
-        last_kernel_initializer='glorot_uniform')
+actor_network = ActorNetwork(input_tensor_spec=time_step_spec.observation,
+                             output_tensor_spec=action_spec,
+                             fc_layer_params=(64, 64),
+                             dropout_layer_params=None,
+                             activation_fn=tf.keras.activations.relu,
+                             kernel_initializer='glorot_uniform',
+                             last_kernel_initializer='glorot_uniform'
+                             )
+
+critic_network = CriticNetwork(input_tensor_spec=(time_step_spec.observation, action_spec),
+                               observation_fc_layer_params=None,
+                               action_fc_layer_params=None,
+                               joint_fc_layer_params=(64, 64),
+                               joint_dropout_layer_params=None,
+                               activation_fn=tf.nn.relu,
+                               kernel_initializer='glorot_uniform',
+                               last_kernel_initializer='glorot_uniform',
+                               name='Critic_network')
+
 actor_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 critic_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 exploration_noise_std = 0.1  # Note that it will be normalize before
@@ -87,11 +99,10 @@ target_update_period = 1
 actor_update_period = 3
 td_errors_loss_fn = None  # we  don't need any since already given by the algo (elementwise huber_loss)
 gamma = 1
-reward_scale_factor =  # TO Define
+reward_scale_factor = 1  # TODO Change scale later
 target_policy_noise = 0.2  # will default to 0.2
-target_policy_noise_clip = 0.5  # will default to 0.5
-# TODO why do we need that ?
-gradient_clipping = None  # TODO understand that
+target_policy_noise_clip = 0.5  # will default to 0.5: this is the min max of the noise
+gradient_clipping = None  # we don't want to clip the gradients (min max values)
 debug_summaries = False
 summarize_grads_and_vars = False
 train_step_counter = None  # should be automatically initialized

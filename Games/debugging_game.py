@@ -42,7 +42,8 @@ for k in range(10):
                  this_episode_expenses=[],
                  this_episode_revenues=0,
                  transit_cost=3,
-                 far_from_home_cost=1)
+                 far_from_home_cost=1,
+                 time_not_at_home=0)
     DummyCarrier(name='CBrussels_{}'.format(k),
                  home=bx,
                  in_transit=False,
@@ -55,7 +56,8 @@ for k in range(10):
                  this_episode_expenses=[],
                  this_episode_revenues=0,
                  transit_cost=3,
-                 far_from_home_cost=1)
+                 far_from_home_cost=1,
+                 time_not_at_home=0)
     DummyCarrier(name='CHamburg_{}'.format(k),
                  home=hh,
                  in_transit=False,
@@ -68,7 +70,8 @@ for k in range(10):
                  this_episode_expenses=[],
                  this_episode_revenues=0,
                  transit_cost=3,
-                 far_from_home_cost=1)
+                 far_from_home_cost=1,
+                 time_not_at_home=0)
 
 del ps, bx, hh
 

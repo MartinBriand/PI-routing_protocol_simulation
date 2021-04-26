@@ -206,6 +206,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
 # here we can silent the pycharm error
 class LearningAgent(Td3Agent):  # TODO: implement this
+
     # TODO write description
     def __init__(self,
                  replay_buffer: ReplayBuffer,
