@@ -183,12 +183,6 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially 
         else:
             self._time_not_at_home += 1
 
-    def next_step(self) -> None:  # TODO remove
-        super().next_step()
-        if self == self._environment._carriers[0]:
-            print('in transit:', self._in_transit)
-            print('next_node:', self._next_node._name)
-            print('time not at home:', self._time_not_at_home)
 
     @classmethod
     def cost_dimension(cls):

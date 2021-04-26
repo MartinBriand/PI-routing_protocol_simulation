@@ -91,12 +91,11 @@ critic_network = CriticNetwork(input_tensor_spec=(time_step_spec.observation, ac
 
 actor_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 critic_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-exploration_noise_std = 20
-# TODO check that will accept action in more than one dimension
-critic_network_2 = None  # TODO check the weights at creation
-target_actor_network = None  # TODO check the weights at creation
-target_critic_network = None  # TODO check
-target_critic_network_2 = None  # TODO check
+exploration_noise_std = 150  # big enough for exploration, it may even be reduced over time
+critic_network_2 = None
+target_actor_network = None
+target_critic_network = None
+target_critic_network_2 = None
 target_update_tau = 1.0
 target_update_period = 1
 actor_update_period = 3
@@ -214,9 +213,20 @@ for k in range(15):
 
 del ps, bx, hh
 
+training_data_set = agent.replay_buffer.as_dataset(sample_batch_size=25,
+                                                   num_steps=None,
+                                                   num_parallel_calls=None,
+                                                   single_deterministic_pass=False)
+training_data_set_iter = iter(training_data_set)
+
 # Defining the training loop
 for k in range(100):
     e.iteration()
     # collect experience
     # agent.train(experience=, weights=None)
 print('end')
+
+for k in range(10):
+    experience, _ = next(training_data_set_iter)
+    agent.train(experience=experience, weights=None)
+

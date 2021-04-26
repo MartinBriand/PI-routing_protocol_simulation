@@ -193,11 +193,15 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                              discount=discount,
                              observation=observation)
 
-        if self == self._environment._carriers[0]:
-            print('NEW TIME STEP ASKED!!:')
-            print('next_node:', self._next_node._name)
-            print('time not at home:', self._time_not_at_home)
-            print('time_step:', time_step)
+        # if self == self._environment._carriers[0]:
+        #     print('NEW TIME STEP ASKED!!:')
+        #     print('next_node:', self._next_node._name)
+        #     print('time not at home:', self._time_not_at_home)
+        #     print('time_step:')
+        #     print('  step type:', time_step.step_type)
+        #     print('  reward:', time_step.reward)
+        #     print('  discount:', time_step.discount)
+        #     print('  observation', time_step.observation)
         return time_step
 
     @property
