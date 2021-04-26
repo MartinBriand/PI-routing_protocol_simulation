@@ -178,12 +178,17 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially 
 
     def _update_ffh_cost_functions(self) -> None:
         """Here we do nothing"""
-        self._time_not_at_home += 1
+        if not self._in_transit and self._next_node == self._home:
+            self._time_not_at_home = 0
+        else:
+            self._time_not_at_home += 1
 
-    def _arrive_at_next_node(self) -> None:
-        """Reinitialize the time not at home counter"""
-        super()._arrive_at_next_node()
-        self._time_not_at_home = 0
+    def next_step(self) -> None:  # TODO remove
+        super().next_step()
+        if self == self._environment._carriers[0]:
+            print('in transit:', self._in_transit)
+            print('next_node:', self._next_node._name)
+            print('time not at home:', self._time_not_at_home)
 
     @classmethod
     def cost_dimension(cls):

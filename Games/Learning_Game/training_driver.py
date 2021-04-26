@@ -18,7 +18,7 @@ from numpy import dtype
 from tf_agents.agents.ddpg.actor_network import ActorNetwork
 from tf_agents.agents.ddpg.critic_network import CriticNetwork
 from tf_agents.replay_buffers.tf_uniform_replay_buffer import TFUniformReplayBuffer
-from tf_agents.specs import ArraySpec, BoundedArraySpec
+from tf_agents.specs import TensorSpec, BoundedTensorSpec
 from tf_agents.trajectories.policy_step import PolicyStep
 from tf_agents.trajectories.time_step import TimeStep
 from tf_agents.trajectories.trajectory import Transition
@@ -51,16 +51,19 @@ DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
 DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
 
 # Initializing the agents
-time_step_spec = TimeStep(step_type=ArraySpec(shape=(), dtype=dtype('int32'), name='step_type'),
-                          reward=ArraySpec(shape=(), dtype=dtype('float32'), name='reward'),
-                          discount=BoundedArraySpec(shape=(), dtype=dtype('float32'), name='discount',
-                                                    minimum=0.0, maximum=1.0),
-                          observation=ArraySpec(shape=(len(e.nodes) + LearningCarrier.cost_dimension()),
-                                                dtype=dtype('float32'), name='observation'))
+time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
+                          reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
+                          discount=BoundedTensorSpec(shape=(), dtype=dtype('float32'), name='discount',
+                                                     minimum=0.0, maximum=1.0),
+                          observation=TensorSpec(shape=(len(e.nodes) + LearningCarrier.cost_dimension(),),
+                                                 dtype=dtype('float32'), name='observation'))
 
-action_spec = ArraySpec(shape=(len(e.nodes)), dtype=dtype('float32'), name='observation')
-policy = PolicyStep(action=action_spec, state=(), info=())
-data_spec = Transition(time_step=time_step_spec, action_step=policy, next_time_step=time_step_spec)
+action_spec = BoundedTensorSpec(shape=(len(e.nodes),), dtype=dtype('float32'), name='action',
+                                minimum=[100 for k in range(len(e.nodes))],
+                                maximum=[20000 for k in range(len(e.nodes))])
+
+policy_spec = PolicyStep(action=action_spec, state=(), info=())
+data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
 
 buffer = TFUniformReplayBuffer(data_spec=data_spec,
                                batch_size=1,  # the sample batch size is then different, but we add 1 by 1
@@ -88,7 +91,7 @@ critic_network = CriticNetwork(input_tensor_spec=(time_step_spec.observation, ac
 
 actor_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 critic_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-exploration_noise_std = 0.1  # Note that it will be normalize before
+exploration_noise_std = 20
 # TODO check that will accept action in more than one dimension
 critic_network_2 = None  # TODO check the weights at creation
 target_actor_network = None  # TODO check the weights at creation
@@ -134,9 +137,17 @@ agent = LearningAgent(replay_buffer=buffer,
                       train_step_counter=train_step_counter,
                       name=name)
 
+# cleaning memory to debug
+del time_step_spec, action_spec, policy_spec, data_spec, buffer, actor_network, critic_network
+del actor_optimizer, critic_optimizer, exploration_noise_std, critic_network_2, target_actor_network
+del target_critic_network, target_critic_network_2, target_update_tau, target_update_period
+del actor_update_period, td_errors_loss_fn, gamma, reward_scale_factor, target_policy_noise
+del target_policy_noise_clip, gradient_clipping, debug_summaries, summarize_grads_and_vars
+del train_step_counter, name
+
 # Initializing the LearningCarriers in Learning Mode
 discount = 0.9
-for k in range(10):
+for k in range(15):
     LearningCarrier(name='CParis_{}'.format(k),
                     home=ps,
                     in_transit=False,
@@ -204,6 +215,8 @@ for k in range(10):
 del ps, bx, hh
 
 # Defining the training loop
-# for k in range(10000):
-#     e.iteration()
-# print('end')
+for k in range(100):
+    e.iteration()
+    # collect experience
+    # agent.train(experience=, weights=None)
+print('end')

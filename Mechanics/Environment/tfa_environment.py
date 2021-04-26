@@ -29,7 +29,7 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
         return self._node_states[node]
 
     def build_node_state(self) -> None:  # first node in list, then tensor[1, 0, 0, ...], second: [0, 1, 0, ...]
-        var = zeros(len(self._nodes))
+        var = zeros(len(self._nodes), dtype='float32')
         for k in range(len(self._nodes)):
             var[k-1] = 0
             var[k] = 1

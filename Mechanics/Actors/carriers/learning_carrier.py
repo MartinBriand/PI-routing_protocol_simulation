@@ -25,7 +25,7 @@ During exploitation
 # TODO: is this description correct at the end of the implementation?
 
 from random import random
-from tensorflow import constant as tf_constant, concat as tf_concat, Variable
+from tensorflow import constant as tf_constant, concat as tf_concat, Variable, expand_dims as tf_expand_dims
 from tensorflow.python.framework.ops import EagerTensor
 from tf_agents.agents.td3.td3_agent import Td3Agent
 from tf_agents.networks import Network
@@ -142,8 +142,10 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         # TODO denormalize
         node_list = self._environment.nodes
         bid = {}
-        for k in range(action.shape[0]):
-            bid[node_list[k]] = action[k]
+        for k in range(action.shape[-1]):
+            next_node = node_list[k]
+            if next_node != node:
+                bid[next_node] = action[0, k]  # 0 because of the first dimension
         return bid
 
     def set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
@@ -173,23 +175,30 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
     def _generate_current_time_step(self) -> TimeStep:
         node_state = self._environment.this_node_state(self._next_node)  # silent the pycharm error
-        cost_state = tf_constant([self._t_c, self._ffh_c, self._time_not_at_home])
+        cost_state = tf_constant([self._t_c, self._ffh_c, self._time_not_at_home], dtype='float32')
         # TODO normalize
-        observation = tf_concat([node_state, cost_state], 0)
+        observation = tf_expand_dims(tf_concat([node_state, cost_state], 0), axis=0)
         discount = self._discount ** self._discount_power
         if self._is_first_step:
-            step_type = StepType.FIRST
-            reward = tf_constant([0])
+            step_type = tf_constant([StepType.FIRST])
+            reward = tf_constant([0], dtype='float32')
         else:
-            step_type = StepType.MID
-            reward = tf_constant([self._episode_revenues[-1] - self._episode_expenses[-1]])
+            step_type = tf_constant([StepType.MID])
+            reward = tf_constant([self._episode_revenues[-1] - self._episode_expenses[-1]], dtype='float32')
 
         # note that reward is update in next_step()
         # and that discount_power is updated in the _get_attribution()/_dont_get_attribution()
-        return TimeStep(step_type=step_type,
-                        reward=reward,
-                        discount=discount,
-                        osbervation=observation)
+        time_step = TimeStep(step_type=step_type,  # TODO remove
+                             reward=reward,
+                             discount=discount,
+                             observation=observation)
+
+        if self == self._environment._carriers[0]:
+            print('NEW TIME STEP ASKED!!:')
+            print('next_node:', self._next_node._name)
+            print('time not at home:', self._time_not_at_home)
+            print('time_step:', time_step)
+        return time_step
 
     @property
     def is_learning(self):
@@ -234,7 +243,6 @@ class LearningAgent(Td3Agent):  # TODO: implement this
                  summarize_grads_and_vars: bool = False,
                  train_step_counter: Optional[Variable] = None,
                  name: tfa_types.Text = None) -> None:
-
         super().__init__(time_step_spec=time_step_spec,
                          action_spec=action_spec,
                          actor_network=actor_network,

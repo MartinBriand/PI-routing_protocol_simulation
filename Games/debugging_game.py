@@ -75,6 +75,6 @@ for k in range(10):
 
 del ps, bx, hh
 
-for k in range(10000):
+for k in range(1000):
     e.iteration()
 print('end')
