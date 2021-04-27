@@ -230,4 +230,3 @@ print('end')
 for k in range(10):
     experience, _ = next(training_data_set_iter)
     agent.train(experience=experience, weights=None)
-

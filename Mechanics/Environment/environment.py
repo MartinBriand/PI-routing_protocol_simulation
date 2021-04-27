@@ -55,12 +55,12 @@ class Environment:
         for carrier in self._carriers:
             carrier.next_step()
 
-    def _get_and_broadcast_new_infos(self) -> None:  # FIXME: This can be clearly optimized
+    def _get_and_broadcast_new_infos(self) -> None:
         """Asking loads with new infos to communicate this and then broadcast the information to nodes"""
         new_infos = []
         for load in self._loads_with_new_infos:
             new_infos += load.communicate_infos()
-        for node in self._nodes:
+        for node in self._nodes:  # FIXME: This can be clearly optimized
             node.update_weights_with_new_infos(new_infos)
         self._loads_with_new_infos = []
 

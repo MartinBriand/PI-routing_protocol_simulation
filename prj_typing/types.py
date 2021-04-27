@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 # for Carrier
 CarrierBid = Dict['Node', float]
-CarrierState = TypeVar('EagerTensor')
+CarrierState = TypeVar(EagerTensor)
 
 # for Node
 NodeWeights = Dict['Node', Dict['Node', float]]

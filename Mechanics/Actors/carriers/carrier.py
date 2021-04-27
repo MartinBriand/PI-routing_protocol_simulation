@@ -135,7 +135,7 @@ class Carrier(abc.ABC):
 class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially the ffh costs
     """The idea is to modify the Carrier class to have a single cost structure"""
 
-    _cost_dimension = 3
+    _cost_dimension: int = 3
 
     def __init__(self,
                  name: str,
@@ -166,7 +166,7 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially 
 
         self._t_c: float = transit_cost
         self._ffh_c: float = far_from_home_cost
-        self._time_not_at_home = time_not_at_home
+        self._time_not_at_home: int = time_not_at_home
 
     def _transit_costs(self) -> float:
         """The transit costs"""
@@ -183,7 +183,6 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially 
         else:
             self._time_not_at_home += 1
 
-
     @classmethod
-    def cost_dimension(cls):
+    def cost_dimension(cls) -> int:
         return cls._cost_dimension

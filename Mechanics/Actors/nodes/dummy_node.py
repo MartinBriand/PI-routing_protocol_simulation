@@ -42,13 +42,12 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                 continue
             else:  # we update only when we have information which means that old info could be valuable if no new info
                 w = self._weights[info.arrival][info.start]
-                w += (info.cost-w)/self._nb_infos  # we have an exponential smoothing of self.nb_infos
+                w += (info.cost - w) / self._nb_infos  # we have an exponential smoothing of self.nb_infos
                 self._weights[info.arrival][info.start] = w
 
         for arrival in self._weights:  # decreasing with time
             for intermediate in self._weights[arrival]:
                 self._weights[arrival][intermediate] *= ((self._nb_infos - 1) / self._nb_infos)
-
 
     def auction_cost(self) -> float:
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""

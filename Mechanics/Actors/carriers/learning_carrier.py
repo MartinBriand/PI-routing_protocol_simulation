@@ -29,6 +29,7 @@ from tensorflow import constant as tf_constant, concat as tf_concat, Variable, e
 from tensorflow.python.framework.ops import EagerTensor
 from tf_agents.agents.td3.td3_agent import Td3Agent
 from tf_agents.networks import Network
+from tf_agents.policies.tf_policy import TFPolicy
 from tf_agents.replay_buffers.replay_buffer import ReplayBuffer
 from tf_agents.trajectories.policy_step import PolicyStep
 from tf_agents.trajectories.time_step import TimeStep, StepType
@@ -103,11 +104,11 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
         self._is_learning: bool = is_learning
         if self._is_learning:
-            self._policy = self._learning_agent.collect_policy
+            self._policy: TFPolicy = self._learning_agent.collect_policy
         else:
-            self._policy = self._learning_agent.policy
+            self._policy: TFPolicy = self._learning_agent.policy
 
-        self._is_first_step = (time_step is None)  # TODO Check the property during debugging
+        self._is_first_step: bool = (time_step is None)  # TODO Check the property during debugging
         if not self._is_first_step:
             self._time_step: Optional[TimeStep] = time_step
         elif not self._in_transit:
@@ -205,11 +206,11 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         return time_step
 
     @property
-    def is_learning(self):
+    def is_learning(self) -> bool:
         return self._is_learning
 
     @is_learning.setter
-    def is_learning(self, value: bool):
+    def is_learning(self, value: bool) -> None:
         self._is_learning = value
         if self._is_learning:
             self._policy = self._learning_agent.collect_policy
@@ -275,5 +276,5 @@ class LearningAgent(Td3Agent):  # TODO: implement this
         self._replay_buffer: ReplayBuffer = replay_buffer
 
     @property
-    def replay_buffer(self):
+    def replay_buffer(self) -> ReplayBuffer:
         return self._replay_buffer
