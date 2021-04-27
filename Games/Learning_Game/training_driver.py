@@ -22,6 +22,7 @@ from tf_agents.specs import TensorSpec, BoundedTensorSpec
 from tf_agents.trajectories.policy_step import PolicyStep
 from tf_agents.trajectories.time_step import TimeStep
 from tf_agents.trajectories.trajectory import Transition
+from tf_agents.utils.common import function as tfa_function
 
 import tensorflow as tf
 
@@ -218,7 +219,7 @@ training_data_set = agent.replay_buffer.as_dataset(sample_batch_size=25,
                                                    num_parallel_calls=None,
                                                    single_deterministic_pass=False)
 training_data_set_iter = iter(training_data_set)
-
+train = tfa_function(agent.train)
 # Defining the training loop
 for k in range(100):
     e.iteration()
