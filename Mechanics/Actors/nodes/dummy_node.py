@@ -39,8 +39,8 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         """
         for info in new_infos:
             if info.start == info.arrival or info.start == self or info.arrival == self:
-                continue
-            else:  # we update only when we have information which means that old info could be valuable if no new info
+                continue  # this is to avoid useless info to be taken
+            else:
                 w = self._weights[info.arrival][info.start]
                 w += (info.cost - w) / self._nb_infos  # we have an exponential smoothing of self.nb_infos
                 self._weights[info.arrival][info.start] = w

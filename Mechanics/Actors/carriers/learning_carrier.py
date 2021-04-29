@@ -49,6 +49,8 @@ if TYPE_CHECKING:
     from Mechanics.Environment.tfa_environment import TFAEnvironment
 
 
+# TODO change to make the home part of the state
+# TODO Should we have different buffers?
 class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     """
 
@@ -120,7 +122,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     def _decide_next_node(self) -> 'Node':  # Very simple function to get back home in 20% of the lost auctions
         # This could get smarter later
         """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
-        home = random() < 0.2
+        home = random() < 0.1
         if home:
             return self._home
         else:
