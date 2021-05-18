@@ -3,6 +3,7 @@ Carrier file
 """
 import abc
 from typing import TYPE_CHECKING, Optional, List
+from math import exp
 
 from prj_typing.types import CarrierBid
 
@@ -132,7 +133,7 @@ class Carrier(abc.ABC):
         """To update your far_from_home costs"""
 
 
-class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially the ffh costs
+class CarrierWithCosts(Carrier, abc.ABC):
     """The idea is to modify the Carrier class to have a single cost structure"""
 
     _cost_dimension: int = 3
@@ -172,9 +173,10 @@ class CarrierWithCosts(Carrier, abc.ABC):  # TODO: make that smarter especially 
         """The transit costs"""
         return self._t_c
 
-    def _far_from_home_costs(self) -> float:  # yes it is a constant, I told you it was dummy
+    def _far_from_home_costs(self) -> float:
         """The far from home costs"""
-        return self._ffh_c
+        return self._ffh_c + 53*(exp(self._environment.nb_hours_per_time_unit*0.0015*self._time_not_at_home) - 1)\
+            if self._time_not_at_home > 0 else 0.
 
     def _update_ffh_cost_functions(self) -> None:
         """Here we do nothing"""

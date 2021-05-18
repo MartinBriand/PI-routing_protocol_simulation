@@ -21,8 +21,8 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
     Environment with some attributes and builders for the learning context
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, nb_hours_per_time_unit: float) -> None:
+        super().__init__(nb_hours_per_time_unit)
         self._node_states: NodeStates = {}
 
     def this_node_state(self, node: 'Node') -> EagerTensor:

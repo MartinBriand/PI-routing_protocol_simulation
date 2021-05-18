@@ -19,7 +19,9 @@ class Environment:
     the Environment should be deleted.
     """
 
-    def __init__(self):
+    def __init__(self, nb_hours_per_time_unit: float):
+
+        self._nb_hours_per_time_unit: float = nb_hours_per_time_unit
 
         # for the four lists, the creation process add them to the list
         self._nodes: List[Node] = []
@@ -95,3 +97,7 @@ class Environment:
     @property
     def nodes(self) -> List['Node']:
         return self._nodes
+
+    @property
+    def nb_hours_per_time_unit(self):
+        return self._nb_hours_per_time_unit

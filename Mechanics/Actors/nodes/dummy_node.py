@@ -51,4 +51,4 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
 
     def auction_cost(self) -> float:
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
-        return 5.  # yes this is not 0 but still not much
+        return 0.  # yes this is not 0 but still not much
