@@ -3,12 +3,17 @@ This files defines a few funciton to unitialize the variables in exploitation_dr
 """
 
 import csv
+import random
+
 import numpy as np
 from typing import TYPE_CHECKING, List, Dict
 
 from Mechanics.Actors.nodes.dummy_node import DummyNode
 from Mechanics.Actors.nodes.node import Node
+from Mechanics.Actors.shippers.dummy_shipper import DummyShipper
+from Mechanics.Actors.shippers.shipper import Shipper, NodeLaw
 from Mechanics.Environment.tfa_environment import TFAEnvironment
+from Mechanics.Tools.load import Load
 
 
 def load_env() -> 'TFAEnvironment':
@@ -50,7 +55,30 @@ def load_env() -> 'TFAEnvironment':
     e.set_distance(distances)
 
     # create shippers
+    shipper = DummyShipper(name='Shipper_arrete_de_shipper', laws=[], expenses=[], loads=[], environment=e)
 
+    # create laws
+    generator = np.random.default_rng()
+
+    def law(shipp: Shipper,
+            environment: TFAEnvironment,
+            start: Node,
+            lamb: float,
+            population: List[Node],
+            weights: List[float]) -> None:
+        nb_loads = generator.poisson(lamb)
+        for k in range(nb_loads):
+            arrival = random.choices(population=population, weights=weights)[0]
+            Load(start=start, arrival=arrival, shipper=shipp, environment=environment)
+
+    for start in lambdas.keys():
+        params = {'shipp': shipper,
+                  'environment': e,
+                  'start': start,
+                  'lamb': lambdas[start],
+                  'population': list(attribution[start].keys()),
+                  'weights': list(attribution[start].values())}
+        shipper.add_law(NodeLaw(owner=shipper, law=law, params=params))
 
     return e, lambdas, attribution, distances
 
