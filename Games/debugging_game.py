@@ -11,6 +11,7 @@ from Mechanics.Actors.nodes.dummy_node import DummyNode
 from Mechanics.Actors.carriers.dummy_carrier import DummyCarrier
 from Mechanics.Actors.shippers.dummy_shipper import DummyShipper
 from Mechanics.Actors.shippers.shipper import NodeLaw
+from Mechanics.Tools.load import Load
 
 e = Environment()
 
@@ -26,8 +27,18 @@ distances = {ps: {bx: 3, hh: 6}, bx: {ps: 3, hh: 4}, hh: {ps: 6, bx: 4}}
 e.set_distance(distances)
 del distances
 
-DummyShipper('Paris->Hamburg', [NodeLaw(ps, hh, lambda: 1, {})], [], [], e)
-DummyShipper('Hamburg->Paris', [NodeLaw(hh, ps, lambda: 1, {})], [], [], e)
+s1 = DummyShipper('Paris->Hamburg', [], [], [], e)
+s2 = DummyShipper('Hamburg->Paris', [], [], [], e)
+
+
+def law(start, arrival, shipper, environment):
+    Load(start=start, arrival=arrival, shipper=shipper, environment=environment)
+
+
+s1.add_law(NodeLaw(owner=s1, law=law, params={'start': ps, 'arrival': hh, 'shipper': s1, 'environment': e}))
+s2.add_law(NodeLaw(owner=s2, law=law, params={'start': hh, 'arrival': ps, 'shipper': s2, 'environment': e}))
+
+del law
 
 for k in range(10):
     DummyCarrier(name='CParis_{}'.format(k),

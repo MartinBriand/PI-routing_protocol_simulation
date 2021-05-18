@@ -19,7 +19,7 @@ CarrierState = TypeVar(EagerTensor)
 NodeWeights = Dict['Node', Dict['Node', float]]
 
 # for Shipper
-Law = Callable[..., int]
+Law = Callable[..., None]  # is supposed to generate loads
 
 # for Environment
 Distance = Dict['Node', Dict['Node', int]]
