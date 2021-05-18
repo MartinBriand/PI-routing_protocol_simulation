@@ -56,7 +56,12 @@ def load_env_and_agent(n_carriers: int, discount: float) -> (TFAEnvironment, Lea
     lambdas, attribution, distances = _to_dicts(lambdas[:, 0], lambdas, attribution, distances)
 
     # create env
-    e = TFAEnvironment(nb_hours_per_time_unit=6.147508)  # 390 km at an average speed of 39.42 km/h)
+    e = TFAEnvironment(nb_hours_per_time_unit=6.147508,  # 390 km at an average speed of 39.42 km/h)
+                       t_c_mu=33.,
+                       t_c_sigma=4.15,
+                       ffh_c_mu=20.,
+                       ffh_c_sigma=1.00,  # multiplication by nb_hours occurs in init
+                       tnah_divisor=40)
 
     # create nodes
     for name in lambdas.keys():
@@ -99,7 +104,6 @@ def load_env_and_agent(n_carriers: int, discount: float) -> (TFAEnvironment, Lea
     # create carriers
     learning_agent = init_learning_agent(e)
 
-    nb_hours_per_time_unit = 6.147508  # 390 km at an average speed of 39.42 km/h
     counter = {}
     for k in range(n_carriers):
         node = e.nodes[k % len(e.nodes)]
@@ -107,8 +111,8 @@ def load_env_and_agent(n_carriers: int, discount: float) -> (TFAEnvironment, Lea
             counter[node] += 1
         else:
             counter[node] = 1
-        road_costs = e.nb_hours_per_time_unit * random.normalvariate(mu=33, sigma=4.15)
-        drivers_costs = e.nb_hours_per_time_unit * random.normalvariate(mu=20, sigma=1.00)
+        road_costs = random.normalvariate(mu=e.t_c_mu, sigma=e.t_c_sigma)
+        drivers_costs = random.normalvariate(mu=e.ffh_c_mu, sigma=e.ffh_c_sigma)
         LearningCarrier(name=node.name + '_' + str(counter[node]),
                         home=node,
                         in_transit=False,
@@ -229,7 +233,7 @@ def init_learning_agent(e: TFAEnvironment) -> LearningAgent:
     actor_update_period = 3
     td_errors_loss_fn = None  # we  don't need any since already given by the algo (elementwise huber_loss)
     gamma = 1
-    reward_scale_factor = 1  # TODO Change scale later
+    reward_scale_factor = 1  # TODO Change scale for reward
     target_policy_noise = 0.2  # will default to 0.2
     target_policy_noise_clip = 0.5  # will default to 0.5: this is the min max of the noise
     gradient_clipping = None  # we don't want to clip the gradients (min max values)

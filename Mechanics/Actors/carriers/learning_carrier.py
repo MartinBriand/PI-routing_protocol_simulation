@@ -95,6 +95,9 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
 
+        self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
+        self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
+
         self._learning_agent: 'LearningAgent' = learning_agent
         self._buffer: ReplayBuffer = self._learning_agent.replay_buffer
 
@@ -110,7 +113,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         else:
             self._policy: TFPolicy = self._learning_agent.policy
 
-        self._is_first_step: bool = (time_step is None)  # TODO Check the property during debugging
+        self._is_first_step: bool = (time_step is None)
         if not self._is_first_step:
             self._time_step: Optional[TimeStep] = time_step
         elif not self._in_transit:
@@ -142,7 +145,6 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     def bid(self, node: 'Node') -> 'CarrierBid':
         self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
         action = self._policy_step.action.numpy()
-        # TODO denormalize
         node_list = self._environment.nodes
         bid = {}
         for k in range(action.shape[-1]):
@@ -154,8 +156,10 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     def set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
         self._t_c = t_c
         self._ffh_c = ffh_c
+        self._t_c_obs = (self._t_c - self._environment.t_c_mu)/self._environment.t_c_sigma
+        self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu)/self._environment.ffh_c_sigma
         self._discount_power = 1
-        self._is_first_step = True
+        self._is_first_step = True  # the time_step will not be writen
 
     def next_step(self) -> None:
         super().next_step()
@@ -178,8 +182,9 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
     def _generate_current_time_step(self) -> TimeStep:
         node_state = self._environment.this_node_state(self._next_node)  # silent the pycharm error
-        cost_state = tf_constant([self._t_c, self._ffh_c, self._time_not_at_home], dtype='float32')
-        # TODO normalize
+        cost_state = tf_constant([self._t_c_obs,
+                                  self._ffh_c_obs,
+                                  self._time_not_at_home/self._environment.tnah_divisor], dtype='float32')
         observation = tf_expand_dims(tf_concat([node_state, cost_state], 0), axis=0)
         discount = self._discount ** self._discount_power
         if self._is_first_step:
@@ -191,7 +196,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
         # note that reward is update in next_step()
         # and that discount_power is updated in the _get_attribution()/_dont_get_attribution()
-        time_step = TimeStep(step_type=step_type,  # TODO remove
+        time_step = TimeStep(step_type=step_type,
                              reward=reward,
                              discount=discount,
                              observation=observation)
@@ -221,7 +226,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
 
 # here we can silent the pycharm error
-class LearningAgent(Td3Agent):  # TODO: implement this
+class LearningAgent(Td3Agent):
 
     # TODO write description
     def __init__(self,

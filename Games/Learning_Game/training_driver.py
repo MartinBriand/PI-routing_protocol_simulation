@@ -89,7 +89,7 @@ from Games.Learning_Game.initialize import load_env_and_agent
 # actor_update_period = 3
 # td_errors_loss_fn = None  # we  don't need any since already given by the algo (elementwise huber_loss)
 # gamma = 1
-# reward_scale_factor = 1  # TODO Change scale later
+# reward_scale_factor = 1
 # target_policy_noise = 0.2  # will default to 0.2
 # target_policy_noise_clip = 0.5  # will default to 0.5: this is the min max of the noise
 # gradient_clipping = None  # we don't want to clip the gradients (min max values)
@@ -209,7 +209,7 @@ training_data_set = learning_agent.replay_buffer.as_dataset(sample_batch_size=25
 training_data_set_iter = iter(training_data_set)
 train = tfa_function(learning_agent.train)
 # Defining the training loop
-for k in range(10):
+for k in range(100):
     e.iteration()
     # collect experience
     # agent.train(experience=, weights=None)
@@ -218,3 +218,4 @@ print('end')
 for k in range(10):
     experience, _ = next(training_data_set_iter)
     learning_agent.train(experience=experience, weights=None)
+    # TODO: look at what is passed to the networks (action/reward scales)
