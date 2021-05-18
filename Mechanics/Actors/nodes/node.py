@@ -106,6 +106,10 @@ class Node(abc.ABC):
         self._current_auction = None
 
     @property
+    def name(self) -> str:
+        return self._name
+
+    @property
     def waiting_loads(self) -> List['Load']:
         return self._waiting_loads
 
