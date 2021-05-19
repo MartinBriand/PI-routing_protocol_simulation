@@ -229,7 +229,6 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
             self._policy = self._learning_agent.policy
 
 
-# here we can silent the pycharm error
 class LearningAgent(Td3Agent):
     """
     This is an extension of the TD3Agent with
