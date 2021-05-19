@@ -128,12 +128,15 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
             self._is_first_step = False
 
         self._policy_step: Optional[PolicyStep] = policy_step
+        self._max_time_not_at_home = self._environment.max_time_not_at_home
 
-    def _decide_next_node(self) -> 'Node':  # Very simple function to get back home in 20% of the lost auctions
-        # This could get smarter later
-        """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
-        home = random() < 0.1
-        if home:
+    def _decide_next_node(self) -> 'Node':
+        """
+        Decide of a next nodes after losing an auction (can be the same nodes when needed)
+        Here the function is simple: go home in 10% of the cases.
+        """
+
+        if random() < 0.1:
             return self._home
         else:
             return self._next_node
@@ -175,6 +178,10 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._policy = policy
 
     def next_step(self) -> None:
+        """
+        This version of next step takes care of generating transitions and time steps.
+        If not at home for a too long time, we go home and don't record the transition.
+        """
         super().next_step()
         if not self._in_transit:
             next_time_step = self._generate_current_time_step()
@@ -182,6 +189,15 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                 self._generate_transition(next_time_step)
             self._time_step = next_time_step
             self._is_first_step = False
+            if self._time_not_at_home > self._max_time_not_at_home:  # we can have ==
+                new_next_node = self._home
+                self._is_first_step = True
+                # assert new_next_node != self._next_node  # this should always be True, removing for speed
+                self._in_transit = True
+                current_node = self._next_node
+                self._next_node = new_next_node
+                self._time_to_go = self._environment.get_distance(current_node, self._next_node)
+                current_node.remove_carrier_from_waiting_list(self)
 
     def _generate_transition(self, next_time_step: TimeStep) -> None:
         if self._policy_step:
@@ -195,10 +211,11 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
     def _generate_current_time_step(self) -> TimeStep:
         node_state = self._environment.this_node_state(self._next_node)
+        home_state = self._environment.this_node_state(self._home)
         cost_state = tf_constant([self._t_c_obs,
                                   self._ffh_c_obs,
                                   self._time_not_at_home/self._environment.tnah_divisor], dtype='float32')
-        observation = tf_expand_dims(tf_concat([node_state, cost_state], 0), axis=0)
+        observation = tf_expand_dims(tf_concat([node_state, home_state, cost_state], 0), axis=0)
         discount = self._discount ** self._discount_power
         if self._is_first_step:
             step_type = tf_constant([StepType.FIRST])

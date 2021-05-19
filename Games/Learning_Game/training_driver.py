@@ -209,7 +209,8 @@ e, learning_agent = load_env_and_agent(n_carriers=11*5,
                                        actor_update_period_p=2,
                                        reward_scale_factor_p=1/500,
                                        target_policy_noise_p=30,
-                                       target_policy_noise_clip_p=75)
+                                       target_policy_noise_clip_p=75,
+                                       max_time_not_at_home=1)
 
 training_data_set = learning_agent.replay_buffer.as_dataset(sample_batch_size=25,
                                                             num_steps=None,
@@ -224,6 +225,6 @@ for k in range(10):
     # agent.train(experience=, weights=None)
 print('end')
 
-for k in range(10):
+for k in range(50):
     experience, _ = next(training_data_set_iter)
     learning_agent.train(experience=experience, weights=None)

@@ -30,7 +30,8 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
                  ffh_c_sigma: float,
                  tnah_divisor: int,
                  action_min: float,
-                 action_max: float
+                 action_max: float,
+                 max_time_not_at_home: int
                  ) -> None:
         super().__init__(nb_hours_per_time_unit)
         self._t_c_mu: float = t_c_mu * self._nb_hours_per_time_unit
@@ -40,6 +41,7 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
         self._tnah_divisor: int = tnah_divisor
         self._action_min: float = action_min
         self._action_max: float = action_max
+        self._max_time_not_at_home = max_time_not_at_home
         self._node_states: NodeStates = {}
         self._learning_agent = None
 
@@ -53,7 +55,7 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
         for k in range(len(self._nodes)):
             var[k - 1] = 0
             var[k] = 1
-            self._node_states[self._nodes[k]] = constant(var)
+            self._node_states[self._nodes[k]] = constant(var.copy())
 
     def register_learning_agent(self, learning_agent: 'LearningAgent') -> None:
         """
@@ -92,3 +94,7 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
     @property
     def action_max(self) -> float:
         return self._action_max
+
+    @property
+    def max_time_not_at_home(self) -> int:
+        return self._max_time_not_at_home

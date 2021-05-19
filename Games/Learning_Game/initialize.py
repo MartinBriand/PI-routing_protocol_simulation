@@ -37,6 +37,7 @@ def load_env_and_agent(n_carriers: int,
                        reward_scale_factor_p: float,
                        target_policy_noise_p: float,
                        target_policy_noise_clip_p: float,
+                       max_time_not_at_home: int
                        ) -> (TFAEnvironment, LearningAgent):
     path = ""
     lambdas: np.ndarray = _read_csv(path + 'city_traffic_lambda_table.csv')
@@ -70,9 +71,10 @@ def load_env_and_agent(n_carriers: int,
                        t_c_sigma=4.15,
                        ffh_c_mu=20.,
                        ffh_c_sigma=1.00,  # multiplication by nb_hours occurs in init
-                       tnah_divisor=40,
+                       tnah_divisor=30,
                        action_min=100,
-                       action_max=20000)
+                       action_max=20000,
+                       max_time_not_at_home=max_time_not_at_home)
 
     # create nodes
     for name in lambdas.keys():
@@ -215,7 +217,7 @@ def init_learning_agent(e: TFAEnvironment,
                               reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
                               discount=BoundedTensorSpec(shape=(), dtype=dtype('float32'), name='discount',
                                                          minimum=0.0, maximum=1.0),
-                              observation=TensorSpec(shape=(len(e.nodes) + LearningCarrier.cost_dimension(),),
+                              observation=TensorSpec(shape=(2*len(e.nodes) + LearningCarrier.cost_dimension(),),
                                                      dtype=dtype('float32'), name='observation'))
 
     action_spec = BoundedTensorSpec(shape=(len(e.nodes),), dtype=dtype('float32'), name='action',
