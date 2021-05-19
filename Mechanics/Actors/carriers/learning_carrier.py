@@ -28,14 +28,17 @@ from random import random
 from tensorflow import constant as tf_constant, concat as tf_concat, Variable, expand_dims as tf_expand_dims
 from tensorflow.python.framework.ops import EagerTensor
 from tf_agents.agents.td3.td3_agent import Td3Agent
+from tf_agents.agents.tf_agent import LossInfo
 from tf_agents.networks import Network
 from tf_agents.policies.tf_policy import TFPolicy
 from tf_agents.replay_buffers.replay_buffer import ReplayBuffer
 from tf_agents.trajectories.policy_step import PolicyStep
 from tf_agents.trajectories.time_step import TimeStep, StepType
 from tf_agents.trajectories.trajectory import Transition
+from tf_agents.policies import actor_policy, gaussian_policy
 
 import tf_agents.typing.types as tfa_types
+from tf_agents.typing import types
 
 from Mechanics.Actors.carriers.carrier import CarrierWithCosts
 
@@ -67,8 +70,6 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'TFAEnvironment',
-                 action_min: float,
-                 action_max: float,
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
@@ -98,8 +99,8 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
 
-        self._action_scale: float = action_max - action_min
-        self._action_shift: float = action_min
+        self._action_scale: float = self._environment.action_max - self._environment.action_min
+        self._action_shift: float = self._environment.action_min
 
         self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
@@ -169,6 +170,10 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._discount_power = 1
         self._is_first_step = True  # the time_step will not be writen
 
+    def update_collect_policy(self, policy: gaussian_policy.GaussianPolicy):
+        assert self._is_learning, "update_collect_policy only if learning"
+        self._policy = policy
+
     def next_step(self) -> None:
         super().next_step()
         if not self._in_transit:
@@ -228,11 +233,15 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 class LearningAgent(Td3Agent):
     """
     This is an extension of the TD3Agent with
-        * a replay buffer  # TODO for the moment
-        * the ability to change its exploration over time  # TODO
+        * a replay buffer  # TODO for the moment but that will change
+        * the ability to change its exploration noise over time
     """
 
+    def _loss(self, experience: types.NestedTensor, weights: types.Tensor) -> Optional[LossInfo]:
+        raise NotImplementedError
+
     def __init__(self,
+                 environment: 'TFAEnvironment',
                  replay_buffer: ReplayBuffer,
                  time_step_spec: TimeStep,
                  action_spec: tfa_types.NestedTensor,
@@ -283,7 +292,29 @@ class LearningAgent(Td3Agent):
                          train_step_counter=train_step_counter,
                          name=name)
 
+        self._environment = environment
+
         self._replay_buffer: ReplayBuffer = replay_buffer
+
+        self._base_policy = actor_policy.ActorPolicy(
+            time_step_spec=time_step_spec, action_spec=action_spec,
+            actor_network=self._actor_network, clip=False)
+
+        self._environment.register_learning_agent(self)
+
+    def change_exploration_noise_std(self, value: float) -> None:
+        """
+        This is to change the collect policy for all learning agents
+        """
+        # change collect policy of the learner
+        self._exploration_noise_std = value/(self._environment.action_max - self._environment.action_min)
+        self._collect_policy = gaussian_policy.GaussianPolicy(self._base_policy,
+                                                              scale=self._exploration_noise_std,
+                                                              clip=True)
+
+        for carrier in self._environment.carriers:
+            if carrier.is_learning:
+                carrier.update_collect_policy(self._collect_policy)
 
     @property
     def replay_buffer(self) -> ReplayBuffer:

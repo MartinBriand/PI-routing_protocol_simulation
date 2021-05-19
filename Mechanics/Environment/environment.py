@@ -99,5 +99,9 @@ class Environment:
         return self._nodes
 
     @property
+    def carriers(self) -> List['Carrier']:
+        return self._carriers
+
+    @property
     def nb_hours_per_time_unit(self):
         return self._nb_hours_per_time_unit

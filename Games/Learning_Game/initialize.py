@@ -70,7 +70,9 @@ def load_env_and_agent(n_carriers: int,
                        t_c_sigma=4.15,
                        ffh_c_mu=20.,
                        ffh_c_sigma=1.00,  # multiplication by nb_hours occurs in init
-                       tnah_divisor=40)
+                       tnah_divisor=40,
+                       action_min=100,
+                       action_max=20000)
 
     # create nodes
     for name in lambdas.keys():
@@ -111,17 +113,17 @@ def load_env_and_agent(n_carriers: int,
         shipper.add_law(NodeLaw(owner=shipper, law=law, params=params))
 
     # create carriers
-    action_min, action_max = 100, 20000
-    learning_agent = init_learning_agent(e=e,
-                                         action_min=action_min,
-                                         action_max=action_max,
-                                         exploration_noise=exploration_noise,
-                                         target_update_tau_p=target_update_tau_p,
-                                         target_update_period_p=target_update_period_p,
-                                         actor_update_period_p=actor_update_period_p,
-                                         reward_scale_factor_p=reward_scale_factor_p,
-                                         target_policy_noise_p=target_policy_noise_p,
-                                         target_policy_noise_clip_p=target_policy_noise_clip_p)
+
+    init_learning_agent(e=e,
+                        exploration_noise=exploration_noise,
+                        target_update_tau_p=target_update_tau_p,
+                        target_update_period_p=target_update_period_p,
+                        actor_update_period_p=actor_update_period_p,
+                        reward_scale_factor_p=reward_scale_factor_p,
+                        target_policy_noise_p=target_policy_noise_p,
+                        target_policy_noise_clip_p=target_policy_noise_clip_p)
+
+    learning_agent = e.learning_agent
 
     counter = {}
     for k in range(n_carriers):
@@ -139,8 +141,6 @@ def load_env_and_agent(n_carriers: int,
                         time_to_go=0,
                         load=None,
                         environment=e,
-                        action_min=action_min,
-                        action_max=action_max,
                         episode_expenses=[],
                         episode_revenues=[],
                         this_episode_expenses=[],
@@ -203,15 +203,13 @@ def _to_node_keys(e: TFAEnvironment,
 
 
 def init_learning_agent(e: TFAEnvironment,
-                        action_min: float,
-                        action_max: float,
                         exploration_noise: float,
                         target_update_tau_p: float,
                         target_update_period_p: int,
                         actor_update_period_p: int,
                         reward_scale_factor_p: float,
                         target_policy_noise_p: float,
-                        target_policy_noise_clip_p: float) -> LearningAgent:
+                        target_policy_noise_clip_p: float) -> None:
     # Initializing the agents
     time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
                               reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
@@ -253,7 +251,7 @@ def init_learning_agent(e: TFAEnvironment,
 
     actor_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     critic_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-    exploration_noise_std = exploration_noise / (action_max - action_min)  # big enough for exploration
+    exploration_noise_std = exploration_noise / (e.action_max - e.action_min)  # big enough for exploration
     # it may even be reduced over time
     # TODO make sure we can change noise later on
     critic_network_2 = None
@@ -266,39 +264,38 @@ def init_learning_agent(e: TFAEnvironment,
     td_errors_loss_fn = None  # we  don't need any since already given by the algo (elementwise huber_loss)
     gamma = 1
     reward_scale_factor = reward_scale_factor_p
-    target_policy_noise = target_policy_noise_p / (action_max - action_min)  # noise of the actions
+    target_policy_noise = target_policy_noise_p / (e.action_max - e.action_min)  # noise of the actions
     target_policy_noise_clip = target_policy_noise_clip_p / (
-                action_max - action_min)  # will default to 0.5: this is the min max of the noise
+            e.action_max - e.action_min)  # will default to 0.5: this is the min max of the noise
     gradient_clipping = None  # we don't want to clip the gradients (min max values)
     debug_summaries = False
     summarize_grads_and_vars = False
     train_step_counter = None  # should be automatically initialized
     name = "TD3_Multi_Agents_Learner"
 
-    agent = LearningAgent(replay_buffer=buffer,
-                          time_step_spec=time_step_spec,
-                          action_spec=action_spec,
-                          actor_network=actor_network,
-                          critic_network=critic_network,
-                          actor_optimizer=actor_optimizer,
-                          critic_optimizer=critic_optimizer,
-                          exploration_noise_std=exploration_noise_std,
-                          critic_network_2=critic_network_2,
-                          target_actor_network=target_actor_network,
-                          target_critic_network=target_critic_network,
-                          target_critic_network_2=target_critic_network_2,
-                          target_update_tau=target_update_tau,
-                          target_update_period=target_update_period,
-                          actor_update_period=actor_update_period,
-                          td_errors_loss_fn=td_errors_loss_fn,
-                          gamma=gamma,
-                          reward_scale_factor=reward_scale_factor,
-                          target_policy_noise=target_policy_noise,
-                          target_policy_noise_clip=target_policy_noise_clip,
-                          gradient_clipping=gradient_clipping,
-                          debug_summaries=debug_summaries,
-                          summarize_grads_and_vars=summarize_grads_and_vars,
-                          train_step_counter=train_step_counter,
-                          name=name)
-
-    return agent
+    LearningAgent(environment=e,
+                  replay_buffer=buffer,
+                  time_step_spec=time_step_spec,
+                  action_spec=action_spec,
+                  actor_network=actor_network,
+                  critic_network=critic_network,
+                  actor_optimizer=actor_optimizer,
+                  critic_optimizer=critic_optimizer,
+                  exploration_noise_std=exploration_noise_std,
+                  critic_network_2=critic_network_2,
+                  target_actor_network=target_actor_network,
+                  target_critic_network=target_critic_network,
+                  target_critic_network_2=target_critic_network_2,
+                  target_update_tau=target_update_tau,
+                  target_update_period=target_update_period,
+                  actor_update_period=actor_update_period,
+                  td_errors_loss_fn=td_errors_loss_fn,
+                  gamma=gamma,
+                  reward_scale_factor=reward_scale_factor,
+                  target_policy_noise=target_policy_noise,
+                  target_policy_noise_clip=target_policy_noise_clip,
+                  gradient_clipping=gradient_clipping,
+                  debug_summaries=debug_summaries,
+                  summarize_grads_and_vars=summarize_grads_and_vars,
+                  train_step_counter=train_step_counter,
+                  name=name)
