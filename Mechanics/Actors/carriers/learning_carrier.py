@@ -53,10 +53,11 @@ if TYPE_CHECKING:
 # TODO Should we have different buffers?
 class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     """
-
+    It is a carrier but:
+        * getting normalized action info from agents and then bidding according to that
+        * set the discount power and generate time_steps and transitions
+        * is able to change its parameters
     """
-
-    # TODO: add description here
 
     def __init__(self,
                  name: str,
@@ -66,6 +67,8 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'TFAEnvironment',
+                 action_min: float,
+                 action_max: float,
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
@@ -94,6 +97,9 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                          transit_cost=transit_cost,
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
+
+        self._action_scale: float = action_max - action_min
+        self._action_shift: float = action_min
 
         self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
@@ -145,6 +151,8 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     def bid(self, node: 'Node') -> 'CarrierBid':
         self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
         action = self._policy_step.action.numpy()
+        action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
+        # actions in the env without interfering with TFA
         node_list = self._environment.nodes
         bid = {}
         for k in range(action.shape[-1]):
@@ -181,7 +189,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
             self._buffer.add_batch(transition)
 
     def _generate_current_time_step(self) -> TimeStep:
-        node_state = self._environment.this_node_state(self._next_node)  # silent the pycharm error
+        node_state = self._environment.this_node_state(self._next_node)
         cost_state = tf_constant([self._t_c_obs,
                                   self._ffh_c_obs,
                                   self._time_not_at_home/self._environment.tnah_divisor], dtype='float32')
@@ -201,15 +209,6 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                              discount=discount,
                              observation=observation)
 
-        # if self == self._environment._carriers[0]:
-        #     print('NEW TIME STEP ASKED!!:')
-        #     print('next_node:', self._next_node._name)
-        #     print('time not at home:', self._time_not_at_home)
-        #     print('time_step:')
-        #     print('  step type:', time_step.step_type)
-        #     print('  reward:', time_step.reward)
-        #     print('  discount:', time_step.discount)
-        #     print('  observation', time_step.observation)
         return time_step
 
     @property
@@ -227,8 +226,12 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
 # here we can silent the pycharm error
 class LearningAgent(Td3Agent):
+    """
+    This is an extension of the TD3Agent with
+        * a replay buffer  # TODO for the moment
+        * the ability to change its exploration over time  # TODO
+    """
 
-    # TODO write description
     def __init__(self,
                  replay_buffer: ReplayBuffer,
                  time_step_spec: TimeStep,

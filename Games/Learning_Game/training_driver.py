@@ -201,7 +201,16 @@ from Games.Learning_Game.initialize import load_env_and_agent
 #
 # del ps, bx, hh
 
-e, learning_agent = load_env_and_agent(n_carriers=11*5, discount=0.95)
+e, learning_agent = load_env_and_agent(n_carriers=11*5,
+                                       discount=0.95,
+                                       exploration_noise=500,
+                                       target_update_tau_p=0.1,
+                                       target_update_period_p=2,
+                                       actor_update_period_p=2,
+                                       reward_scale_factor_p=1/500,
+                                       target_policy_noise_p=30,
+                                       target_policy_noise_clip_p=75)
+
 training_data_set = learning_agent.replay_buffer.as_dataset(sample_batch_size=25,
                                                             num_steps=None,
                                                             num_parallel_calls=None,
@@ -209,7 +218,7 @@ training_data_set = learning_agent.replay_buffer.as_dataset(sample_batch_size=25
 training_data_set_iter = iter(training_data_set)
 train = tfa_function(learning_agent.train)
 # Defining the training loop
-for k in range(100):
+for k in range(10):
     e.iteration()
     # collect experience
     # agent.train(experience=, weights=None)
@@ -218,4 +227,3 @@ print('end')
 for k in range(10):
     experience, _ = next(training_data_set_iter)
     learning_agent.train(experience=experience, weights=None)
-    # TODO: look at what is passed to the networks (action/reward scales)

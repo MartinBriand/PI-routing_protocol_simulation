@@ -28,7 +28,16 @@ from Mechanics.Environment.tfa_environment import TFAEnvironment
 from Mechanics.Tools.load import Load
 
 
-def load_env_and_agent(n_carriers: int, discount: float) -> (TFAEnvironment, LearningAgent):
+def load_env_and_agent(n_carriers: int,
+                       discount: float,
+                       exploration_noise: float,
+                       target_update_tau_p: float,
+                       target_update_period_p: int,
+                       actor_update_period_p: int,
+                       reward_scale_factor_p: float,
+                       target_policy_noise_p: float,
+                       target_policy_noise_clip_p: float,
+                       ) -> (TFAEnvironment, LearningAgent):
     path = ""
     lambdas: np.ndarray = _read_csv(path + 'city_traffic_lambda_table.csv')
     attribution: np.ndarray = _read_csv(path + 'city_traffic_dest_attribution_table.csv')
@@ -102,7 +111,17 @@ def load_env_and_agent(n_carriers: int, discount: float) -> (TFAEnvironment, Lea
         shipper.add_law(NodeLaw(owner=shipper, law=law, params=params))
 
     # create carriers
-    learning_agent = init_learning_agent(e)
+    action_min, action_max = 100, 20000
+    learning_agent = init_learning_agent(e=e,
+                                         action_min=action_min,
+                                         action_max=action_max,
+                                         exploration_noise=exploration_noise,
+                                         target_update_tau_p=target_update_tau_p,
+                                         target_update_period_p=target_update_period_p,
+                                         actor_update_period_p=actor_update_period_p,
+                                         reward_scale_factor_p=reward_scale_factor_p,
+                                         target_policy_noise_p=target_policy_noise_p,
+                                         target_policy_noise_clip_p=target_policy_noise_clip_p)
 
     counter = {}
     for k in range(n_carriers):
@@ -120,6 +139,8 @@ def load_env_and_agent(n_carriers: int, discount: float) -> (TFAEnvironment, Lea
                         time_to_go=0,
                         load=None,
                         environment=e,
+                        action_min=action_min,
+                        action_max=action_max,
                         episode_expenses=[],
                         episode_revenues=[],
                         this_episode_expenses=[],
@@ -181,7 +202,16 @@ def _to_node_keys(e: TFAEnvironment,
     return new_lambdas, new_attribution, new_distances
 
 
-def init_learning_agent(e: TFAEnvironment) -> LearningAgent:
+def init_learning_agent(e: TFAEnvironment,
+                        action_min: float,
+                        action_max: float,
+                        exploration_noise: float,
+                        target_update_tau_p: float,
+                        target_update_period_p: int,
+                        actor_update_period_p: int,
+                        reward_scale_factor_p: float,
+                        target_policy_noise_p: float,
+                        target_policy_noise_clip_p: float) -> LearningAgent:
     # Initializing the agents
     time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
                               reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
@@ -191,8 +221,8 @@ def init_learning_agent(e: TFAEnvironment) -> LearningAgent:
                                                      dtype=dtype('float32'), name='observation'))
 
     action_spec = BoundedTensorSpec(shape=(len(e.nodes),), dtype=dtype('float32'), name='action',
-                                    minimum=[100 for k in range(len(e.nodes))],
-                                    maximum=[20000 for k in range(len(e.nodes))])
+                                    minimum=[0 for k in range(len(e.nodes))],
+                                    maximum=[1 for k in range(len(e.nodes))])
 
     policy_spec = PolicyStep(action=action_spec, state=(), info=())
     data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
@@ -223,19 +253,22 @@ def init_learning_agent(e: TFAEnvironment) -> LearningAgent:
 
     actor_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     critic_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-    exploration_noise_std = 0  # big enough for exploration, it may even be reduced over time
+    exploration_noise_std = exploration_noise / (action_max - action_min)  # big enough for exploration
+    # it may even be reduced over time
+    # TODO make sure we can change noise later on
     critic_network_2 = None
     target_actor_network = None
     target_critic_network = None
     target_critic_network_2 = None
-    target_update_tau = 1.0
-    target_update_period = 1
-    actor_update_period = 3
+    target_update_tau = target_update_tau_p  # default is 1 but books say better if small
+    target_update_period = target_update_period_p  # 1 (default) might also be a good option
+    actor_update_period = actor_update_period_p  # 1 (default) might also be a good option
     td_errors_loss_fn = None  # we  don't need any since already given by the algo (elementwise huber_loss)
     gamma = 1
-    reward_scale_factor = 1  # TODO Change scale for reward
-    target_policy_noise = 0.2  # will default to 0.2
-    target_policy_noise_clip = 0.5  # will default to 0.5: this is the min max of the noise
+    reward_scale_factor = reward_scale_factor_p
+    target_policy_noise = target_policy_noise_p / (action_max - action_min)  # noise of the actions
+    target_policy_noise_clip = target_policy_noise_clip_p / (
+                action_max - action_min)  # will default to 0.5: this is the min max of the noise
     gradient_clipping = None  # we don't want to clip the gradients (min max values)
     debug_summaries = False
     summarize_grads_and_vars = False
