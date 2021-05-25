@@ -2,12 +2,12 @@
 The most basic node you could think of
 """
 
-from PI_RPS.Mechanics.Actors.nodes.node import Node, NodeWeights
+from PI_RPS.Mechanics.Actors.Nodes.node import Node, NodeWeights
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from PI_RPS.Mechanics.Tools import Info
-    from PI_RPS.Mechanics.Environment import Environment
+    from PI_RPS.Mechanics.Tools.load import Info
+    from PI_RPS.Mechanics.Environment.environment import Environment
 
 
 class DummyNode(Node):  # Actually this is not so dummy and will perhaps not change in the future
@@ -34,7 +34,7 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
 
     def update_weights_with_new_infos(self, new_infos: List['Info']) -> None:
         """
-        This is the method where the nodes has some intelligence
+        This is the method where the Nodes has some intelligence
         should no ho to consume info where arrival and start are the same
         """
         for info in new_infos:

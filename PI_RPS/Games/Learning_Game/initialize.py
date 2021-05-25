@@ -3,10 +3,11 @@ This files defines a few functions to initialize the variables in exploitation_d
 """
 
 import csv
-import random
-
-import numpy as np
+import os
 from typing import List, Dict
+
+import random
+import numpy as np
 
 from numpy import dtype
 from tf_agents.agents.ddpg.actor_network import ActorNetwork
@@ -19,13 +20,13 @@ from tf_agents.trajectories.trajectory import Transition
 
 import tensorflow as tf
 
-from PI_RPS.Mechanics import LearningCarrier, LearningAgent
-from PI_RPS.Mechanics.Actors.nodes.dummy_node import DummyNode
-from PI_RPS.Mechanics.Actors.nodes.node import Node
-from PI_RPS.Mechanics.Actors.shippers import DummyShipper
-from PI_RPS.Mechanics.Actors.shippers.shipper import Shipper, NodeLaw
-from PI_RPS.Mechanics.Environment import TFAEnvironment
-from PI_RPS.Mechanics.Tools import Load
+from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningCarrier, LearningAgent
+from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode
+from PI_RPS.Mechanics.Actors.Nodes.node import Node
+from PI_RPS.Mechanics.Actors.Shippers.dummy_shipper import DummyShipper
+from PI_RPS.Mechanics.Actors.Shippers.shipper import Shipper, NodeLaw
+from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
+from PI_RPS.Mechanics.Tools.load import Load
 
 
 def load_env_and_agent(n_carriers: int,
@@ -39,10 +40,10 @@ def load_env_and_agent(n_carriers: int,
                        target_policy_noise_clip_p: float,
                        max_time_not_at_home: int
                        ) -> (TFAEnvironment, LearningAgent):
-    path = ""
-    lambdas: np.ndarray = _read_csv(path + 'city_traffic_lambda_table.csv')
-    attribution: np.ndarray = _read_csv(path + 'city_traffic_dest_attribution_table.csv')
-    distances: np.ndarray = _read_csv(path + 'city_distance_matrix_time_step.csv')
+    path = os.path.abspath(os.path.dirname(__file__))
+    lambdas: np.ndarray = _read_csv(os.path.join(path, 'city_traffic_lambda_table.csv'))
+    attribution: np.ndarray = _read_csv(os.path.join(path, 'city_traffic_dest_attribution_table.csv'))
+    distances: np.ndarray = _read_csv(os.path.join(path, 'city_distance_matrix_time_step.csv'))
 
     # check size
     lts = lambdas.shape
@@ -76,7 +77,7 @@ def load_env_and_agent(n_carriers: int,
                        action_max=20000,
                        max_time_not_at_home=max_time_not_at_home)
 
-    # create nodes
+    # create Nodes
     for name in lambdas.keys():
         DummyNode(name, {}, 100, [], e)
 
@@ -88,7 +89,7 @@ def load_env_and_agent(n_carriers: int,
     lambdas, attribution, distances = _to_node_keys(e, lambdas, attribution, distances)
     e.set_distance(distances)
 
-    # create shippers
+    # create Shippers
     shipper = DummyShipper(name='Shipper_arrete_de_shipper', laws=[], expenses=[], loads=[], environment=e)
 
     # create laws
@@ -114,7 +115,7 @@ def load_env_and_agent(n_carriers: int,
                   'weights': list(attribution[start].values())}
         shipper.add_law(NodeLaw(owner=shipper, law=law, params=params))
 
-    # create carriers
+    # create Carriers
 
     data_spec = init_learning_agent(e=e,
                                     exploration_noise=exploration_noise,

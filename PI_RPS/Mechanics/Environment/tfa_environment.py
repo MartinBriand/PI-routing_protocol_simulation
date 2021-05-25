@@ -8,14 +8,14 @@ from tensorflow import constant
 from numpy import zeros
 import random
 
-from PI_RPS.Mechanics.Environment import Environment
+from PI_RPS.Mechanics.Environment.environment import Environment
 
 from typing import TYPE_CHECKING, List
 from PI_RPS.prj_typing.types import NodeStates
 
 if TYPE_CHECKING:
-    from PI_RPS.Mechanics.Actors.nodes.node import Node
-    from PI_RPS.Mechanics import LearningAgent, LearningCarrier
+    from PI_RPS.Mechanics.Actors.Nodes.node import Node
+    from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningAgent, LearningCarrier
 
 
 class TFAEnvironment(Environment):  # , TFEnvironment):

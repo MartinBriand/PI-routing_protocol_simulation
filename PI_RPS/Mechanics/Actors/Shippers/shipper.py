@@ -3,21 +3,21 @@ Shipper file
 """
 
 import abc
-from PI_RPS.Mechanics.Tools import Load
+from PI_RPS.Mechanics.Tools.load import Load
 
 from typing import TYPE_CHECKING, List, Dict, Any
 from PI_RPS.prj_typing.types import Law
 
 if TYPE_CHECKING:
-    from PI_RPS.Mechanics.Actors.nodes.node import Node
-    from PI_RPS.Mechanics import Carrier
-    from PI_RPS.Mechanics.Environment import Environment
+    from PI_RPS.Mechanics.Actors.Nodes.node import Node
+    from PI_RPS.Mechanics.Actors.Carriers.carrier import Carrier
+    from PI_RPS.Mechanics.Environment.environment import Environment
 
 
 class Shipper(abc.ABC):
     """
     A Shipper is able to generate goods according to a law, generate reserve prices for each time one of its good is
-    auctioned at a nodes, and has to pay the nodes and the carriers
+    auctioned at a Nodes, and has to pay the Nodes and the Carriers
     """
 
     def __init__(self,
@@ -47,7 +47,7 @@ class Shipper(abc.ABC):
     @abc.abstractmethod
     def generate_reserve_price(self, load: Load, node: 'Node') -> float:
         """
-        To be called by the nodes before an auction
+        To be called by the Nodes before an auction
         """
 
     def proceed_to_payment(self,
@@ -76,8 +76,8 @@ class Shipper(abc.ABC):
 
 class NodeLaw:
     """
-    A law is an association of a nodes and a statistical law.
-    The only method is a call function to generate a number of load to be created by the shippers at a specific nodes
+    A law is an association of a Nodes and a statistical law.
+    The only method is a call function to generate a number of load to be created by the Shippers at a specific Nodes
     """
 
     def __init__(self,
