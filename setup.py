@@ -120,7 +120,7 @@ setup(
     extras_require=EXTRAS,
     include_package_data=True,
     package_data={"PI_RPS.Games.Learning_Game": ["data/*"]},
-    scripts=['Scripts/*.py'],
+    #scripts=['Scripts/*.py'],
     license=LICENSE,
     classifiers=[
         # Trove classifiers
