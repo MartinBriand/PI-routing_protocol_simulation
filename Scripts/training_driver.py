@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 This is the learning driver for the game with learning agents.
 As you may see, it is more a script than a class.
