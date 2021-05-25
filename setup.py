@@ -119,7 +119,7 @@ setup(
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     include_package_data=True,
-    package_data={"Learning_Game": ["data/*.csv"]},
+    package_data={"PI_RPS.Games.Learning_Game": ["data/*.csv"]},
     # scripts=['scripts/*'],
     license=LICENSE,
     classifiers=[
