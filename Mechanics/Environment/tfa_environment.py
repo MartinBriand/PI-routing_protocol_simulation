@@ -6,15 +6,16 @@ Not sure we will keep it...
 from tensorflow.python.framework.ops import EagerTensor
 from tensorflow import constant
 from numpy import zeros
+import random
 
 from Mechanics.Environment.environment import Environment
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from prj_typing.types import NodeStates
 
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Actors.carriers.learning_carrier import LearningAgent
+    from Mechanics.Actors.carriers.learning_carrier import LearningAgent, LearningCarrier
 
 
 class TFAEnvironment(Environment):  # , TFEnvironment):
@@ -42,6 +43,7 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
         self._action_min: float = action_min
         self._action_max: float = action_max
         self._max_time_not_at_home = max_time_not_at_home
+        self._new_transition_carriers: List['LearningCarrier'] = []
         self._node_states: NodeStates = {}
         self._learning_agent = None
 
@@ -62,6 +64,19 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
         Called by the learning agent to signal its presence to the environment
         """
         self._learning_agent = learning_agent
+
+    def add_carrier_to_new_transition(self, carrier: 'LearningCarrier') -> None:
+        """
+        To be called by the Learning Carrier to update the list
+        Do not forget to clean the list after training
+        """
+        self._new_transition_carriers.append(carrier)
+
+    def shuffle_new_transition_carriers(self) -> None:
+        random.shuffle(self._new_transition_carriers)
+
+    def clear_new_transition_carriers(self) -> None:
+        self._new_transition_carriers.clear()
 
     @property
     def t_c_mu(self) -> float:
@@ -98,3 +113,7 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
     @property
     def max_time_not_at_home(self) -> int:
         return self._max_time_not_at_home
+
+    @property
+    def new_transition_carriers(self) -> List['LearningCarrier']:
+        return self._new_transition_carriers

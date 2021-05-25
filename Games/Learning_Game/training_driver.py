@@ -212,19 +212,17 @@ e, learning_agent = load_env_and_agent(n_carriers=11*5,
                                        target_policy_noise_clip_p=75,
                                        max_time_not_at_home=1)
 
-training_data_set = learning_agent.replay_buffer.as_dataset(sample_batch_size=25,
-                                                            num_steps=None,
-                                                            num_parallel_calls=None,
-                                                            single_deterministic_pass=False)
-training_data_set_iter = iter(training_data_set)
+
 train = tfa_function(learning_agent.train)
 # Defining the training loop
-for k in range(10):
+for k in range(100):
+    print(k)
     e.iteration()
+    e.shuffle_new_transition_carriers()
+    for carrier in e.new_transition_carriers:
+        experience, _ = next(carrier.training_data_set_iter)
+        learning_agent.train(experience=experience, weights=None)
+    e.clear_new_transition_carriers()
     # collect experience
     # agent.train(experience=, weights=None)
 print('end')
-
-for k in range(50):
-    experience, _ = next(training_data_set_iter)
-    learning_agent.train(experience=experience, weights=None)

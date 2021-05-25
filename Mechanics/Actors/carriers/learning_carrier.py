@@ -26,6 +26,7 @@ During exploitation
 
 from random import random
 from tensorflow import constant as tf_constant, concat as tf_concat, Variable, expand_dims as tf_expand_dims
+from tensorflow.python.data import Dataset
 from tensorflow.python.framework.ops import EagerTensor
 from tf_agents.agents.td3.td3_agent import Td3Agent
 from tf_agents.agents.tf_agent import LossInfo
@@ -52,14 +53,13 @@ if TYPE_CHECKING:
     from Mechanics.Environment.tfa_environment import TFAEnvironment
 
 
-# TODO change to make the home part of the state
-# TODO Should we have different buffers?
 class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     """
     It is a carrier but:
         * getting normalized action info from agents and then bidding according to that
         * set the discount power and generate time_steps and transitions
         * is able to change its parameters
+        * go back home when not seeing your boss (or mother) for a too long time
     """
 
     def __init__(self,
@@ -78,6 +78,8 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                  far_from_home_cost: float,
                  time_not_at_home: int,
                  learning_agent: 'LearningAgent',
+                 replay_buffer: ReplayBuffer,
+                 replay_buffer_batch_size: int,
                  is_learning: bool,
                  discount: float,
                  discount_power: Optional[int],
@@ -106,7 +108,14 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
 
         self._learning_agent: 'LearningAgent' = learning_agent
-        self._buffer: ReplayBuffer = self._learning_agent.replay_buffer
+        self._replay_buffer: ReplayBuffer = replay_buffer
+        self._training_data_set: Dataset = self._replay_buffer.as_dataset(
+            sample_batch_size=replay_buffer_batch_size,
+            num_steps=None,
+            num_parallel_calls=None,
+            single_deterministic_pass=False
+        )
+        self._training_data_set_iter = iter(self._training_data_set)
 
         if discount > 1 or discount < 0:
             raise ValueError('Discount between 0 and 1')
@@ -166,10 +175,14 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         return bid
 
     def set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
+        """
+        Setting new parameters for learners and resetting buffers
+        """
         self._t_c = t_c
         self._ffh_c = ffh_c
-        self._t_c_obs = (self._t_c - self._environment.t_c_mu)/self._environment.t_c_sigma
-        self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu)/self._environment.ffh_c_sigma
+        self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
+        self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
+        self._replay_buffer.clear()
         self._discount_power = 1
         self._is_first_step = True  # the time_step will not be writen
 
@@ -207,14 +220,15 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
             # note that reward is update in next_step()
             # communicate trajectory
-            self._buffer.add_batch(transition)
+            self._replay_buffer.add_batch(transition)
+            self._environment.add_carrier_to_new_transition(self)
 
     def _generate_current_time_step(self) -> TimeStep:
         node_state = self._environment.this_node_state(self._next_node)
         home_state = self._environment.this_node_state(self._home)
         cost_state = tf_constant([self._t_c_obs,
                                   self._ffh_c_obs,
-                                  self._time_not_at_home/self._environment.tnah_divisor], dtype='float32')
+                                  self._time_not_at_home / self._environment.tnah_divisor], dtype='float32')
         observation = tf_expand_dims(tf_concat([node_state, home_state, cost_state], 0), axis=0)
         discount = self._discount ** self._discount_power
         if self._is_first_step:
@@ -245,11 +259,14 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         else:
             self._policy = self._learning_agent.policy
 
+    @property
+    def training_data_set_iter(self):
+        return self._training_data_set_iter
+
 
 class LearningAgent(Td3Agent):
     """
     This is an extension of the TD3Agent with
-        * a replay buffer  # TODO for the moment but that will change
         * the ability to change its exploration noise over time
     """
 
@@ -258,7 +275,6 @@ class LearningAgent(Td3Agent):
 
     def __init__(self,
                  environment: 'TFAEnvironment',
-                 replay_buffer: ReplayBuffer,
                  time_step_spec: TimeStep,
                  action_spec: tfa_types.NestedTensor,
                  actor_network: Network,
@@ -310,8 +326,6 @@ class LearningAgent(Td3Agent):
 
         self._environment = environment
 
-        self._replay_buffer: ReplayBuffer = replay_buffer
-
         self._base_policy = actor_policy.ActorPolicy(
             time_step_spec=time_step_spec, action_spec=action_spec,
             actor_network=self._actor_network, clip=False)
@@ -323,7 +337,7 @@ class LearningAgent(Td3Agent):
         This is to change the collect policy for all learning agents
         """
         # change collect policy of the learner
-        self._exploration_noise_std = value/(self._environment.action_max - self._environment.action_min)
+        self._exploration_noise_std = value / (self._environment.action_max - self._environment.action_min)
         self._collect_policy = gaussian_policy.GaussianPolicy(self._base_policy,
                                                               scale=self._exploration_noise_std,
                                                               clip=True)
@@ -331,7 +345,3 @@ class LearningAgent(Td3Agent):
         for carrier in self._environment.carriers:
             if carrier.is_learning:
                 carrier.update_collect_policy(self._collect_policy)
-
-    @property
-    def replay_buffer(self) -> ReplayBuffer:
-        return self._replay_buffer

@@ -116,47 +116,18 @@ def load_env_and_agent(n_carriers: int,
 
     # create carriers
 
-    init_learning_agent(e=e,
-                        exploration_noise=exploration_noise,
-                        target_update_tau_p=target_update_tau_p,
-                        target_update_period_p=target_update_period_p,
-                        actor_update_period_p=actor_update_period_p,
-                        reward_scale_factor_p=reward_scale_factor_p,
-                        target_policy_noise_p=target_policy_noise_p,
-                        target_policy_noise_clip_p=target_policy_noise_clip_p)
+    data_spec = init_learning_agent(e=e,
+                                    exploration_noise=exploration_noise,
+                                    target_update_tau_p=target_update_tau_p,
+                                    target_update_period_p=target_update_period_p,
+                                    actor_update_period_p=actor_update_period_p,
+                                    reward_scale_factor_p=reward_scale_factor_p,
+                                    target_policy_noise_p=target_policy_noise_p,
+                                    target_policy_noise_clip_p=target_policy_noise_clip_p)
 
     learning_agent = e.learning_agent
 
-    counter = {}
-    for k in range(n_carriers):
-        node = e.nodes[k % len(e.nodes)]
-        if node in counter.keys():
-            counter[node] += 1
-        else:
-            counter[node] = 1
-        road_costs = random.normalvariate(mu=e.t_c_mu, sigma=e.t_c_sigma)
-        drivers_costs = random.normalvariate(mu=e.ffh_c_mu, sigma=e.ffh_c_sigma)
-        LearningCarrier(name=node.name + '_' + str(counter[node]),
-                        home=node,
-                        in_transit=False,
-                        next_node=node,
-                        time_to_go=0,
-                        load=None,
-                        environment=e,
-                        episode_expenses=[],
-                        episode_revenues=[],
-                        this_episode_expenses=[],
-                        this_episode_revenues=0,
-                        transit_cost=road_costs,
-                        far_from_home_cost=drivers_costs,
-                        time_not_at_home=0,
-                        learning_agent=learning_agent,
-                        is_learning=True,
-                        discount=discount,
-                        discount_power=1,
-                        time_step=None,
-                        policy_step=None)
-        # note: admin_costs are defined in the CarrierWithCosts class
+    init_learning_carriers(data_spec, n_carriers, e, learning_agent, discount)
 
     return e, learning_agent
 
@@ -211,13 +182,13 @@ def init_learning_agent(e: TFAEnvironment,
                         actor_update_period_p: int,
                         reward_scale_factor_p: float,
                         target_policy_noise_p: float,
-                        target_policy_noise_clip_p: float) -> None:
+                        target_policy_noise_clip_p: float):
     # Initializing the agents
     time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
                               reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
                               discount=BoundedTensorSpec(shape=(), dtype=dtype('float32'), name='discount',
                                                          minimum=0.0, maximum=1.0),
-                              observation=TensorSpec(shape=(2*len(e.nodes) + LearningCarrier.cost_dimension(),),
+                              observation=TensorSpec(shape=(2 * len(e.nodes) + LearningCarrier.cost_dimension(),),
                                                      dtype=dtype('float32'), name='observation'))
 
     action_spec = BoundedTensorSpec(shape=(len(e.nodes),), dtype=dtype('float32'), name='action',
@@ -226,11 +197,6 @@ def init_learning_agent(e: TFAEnvironment,
 
     policy_spec = PolicyStep(action=action_spec, state=(), info=())
     data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
-
-    buffer = TFUniformReplayBuffer(data_spec=data_spec,
-                                   batch_size=1,  # the sample batch size is then different, but we add 1 by 1
-                                   max_length=3000,
-                                   dataset_drop_remainder=True)
 
     actor_network = ActorNetwork(input_tensor_spec=time_step_spec.observation,
                                  output_tensor_spec=action_spec,
@@ -276,7 +242,6 @@ def init_learning_agent(e: TFAEnvironment,
     name = "TD3_Multi_Agents_Learner"
 
     LearningAgent(environment=e,
-                  replay_buffer=buffer,
                   time_step_spec=time_step_spec,
                   action_spec=action_spec,
                   actor_network=actor_network,
@@ -301,3 +266,44 @@ def init_learning_agent(e: TFAEnvironment,
                   summarize_grads_and_vars=summarize_grads_and_vars,
                   train_step_counter=train_step_counter,
                   name=name)
+
+    return data_spec
+
+
+def init_learning_carriers(data_spec, n_carriers, e, learning_agent, discount) -> None:
+    counter = {}
+    for k in range(n_carriers):
+        node = e.nodes[k % len(e.nodes)]
+        if node in counter.keys():
+            counter[node] += 1
+        else:
+            counter[node] = 1
+        road_costs = random.normalvariate(mu=e.t_c_mu, sigma=e.t_c_sigma)
+        drivers_costs = random.normalvariate(mu=e.ffh_c_mu, sigma=e.ffh_c_sigma)
+        buffer = TFUniformReplayBuffer(data_spec=data_spec,
+                                       batch_size=1,  # the sample batch size is then different, but we add 1 by 1
+                                       max_length=30,
+                                       dataset_drop_remainder=True)
+        LearningCarrier(name=node.name + '_' + str(counter[node]),
+                        home=node,
+                        in_transit=False,
+                        next_node=node,
+                        time_to_go=0,
+                        load=None,
+                        environment=e,
+                        episode_expenses=[],
+                        episode_revenues=[],
+                        this_episode_expenses=[],
+                        this_episode_revenues=0,
+                        transit_cost=road_costs,
+                        far_from_home_cost=drivers_costs,
+                        time_not_at_home=0,
+                        learning_agent=learning_agent,
+                        replay_buffer=buffer,
+                        replay_buffer_batch_size=5,
+                        is_learning=True,
+                        discount=discount,
+                        discount_power=1,
+                        time_step=None,
+                        policy_step=None)
+        # note: admin_costs are defined in the CarrierWithCosts class
