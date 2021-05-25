@@ -75,8 +75,8 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
     def shuffle_new_transition_carriers(self) -> None:
         random.shuffle(self._new_transition_carriers)
 
-    def clear_new_transition_carriers(self) -> None:
-        self._new_transition_carriers.clear()
+    def pop_new_transition_carriers(self) -> 'LearningCarrier':
+        return self._new_transition_carriers.pop()
 
     @property
     def t_c_mu(self) -> float:

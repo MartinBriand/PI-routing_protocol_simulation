@@ -219,10 +219,10 @@ for k in range(100):
     print(k)
     e.iteration()
     e.shuffle_new_transition_carriers()
-    for carrier in e.new_transition_carriers:
+    for l in range(len(e.new_transition_carriers)):
+        carrier = e.pop_new_transition_carriers()
         experience, _ = next(carrier.training_data_set_iter)
         learning_agent.train(experience=experience, weights=None)
-    e.clear_new_transition_carriers()
     # collect experience
     # agent.train(experience=, weights=None)
 print('end')
