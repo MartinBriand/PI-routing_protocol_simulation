@@ -119,8 +119,8 @@ setup(
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     include_package_data=True,
-    package_data={"PI_RPS.Games.Learning_Game": ["data/*.csv"]},
-    # scripts=['scripts/*'],
+    package_data={"PI_RPS.Games.Learning_Game": ["data/*"]},
+    scripts=['Scripts/*.py'],
     license=LICENSE,
     classifiers=[
         # Trove classifiers
