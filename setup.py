@@ -13,14 +13,14 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'PI-routing_protocol_simulation'
+NAME = 'PI_routing_protocol_simulation'
 DESCRIPTION = 'Research project in which learning agents are used to evaluate the performance of a new SC routing ' \
               'protocol.'
 URL = 'https://github.com/MartinBriand/PI-routing_protocol_simulation'
 EMAIL = 'martin.briand23@gmail.com'
 AUTHOR = 'Martin Briand'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = 'b2.0.0'
+VERSION = '2.0.0'
 LICENSE = 'No License'
 
 
