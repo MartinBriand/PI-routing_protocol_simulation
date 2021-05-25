@@ -1,11 +1,13 @@
 """
 The most basic node you could think of
 """
+
 from Mechanics.Actors.nodes.node import Node, NodeWeights
 from typing import TYPE_CHECKING, List
+
 if TYPE_CHECKING:
     from Mechanics.Tools.load import Info
-    from Mechanics.environment import Environment
+    from Mechanics.Environment.environment import Environment
 
 
 class DummyNode(Node):  # Actually this is not so dummy and will perhaps not change in the future
@@ -37,12 +39,16 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         """
         for info in new_infos:
             if info.start == info.arrival or info.start == self or info.arrival == self:
-                continue
-            else:  # we update only when we have information which means that old info could be valuable if no new info
+                continue  # this is to avoid useless info to be taken
+            else:
                 w = self._weights[info.arrival][info.start]
-                w = w + (info.cost-w)/self._nb_infos  # we have an exponential smoothing of self.nb_infos
+                w += (info.cost - w) / self._nb_infos  # we have an exponential smoothing of self.nb_infos
                 self._weights[info.arrival][info.start] = w
+
+        for arrival in self._weights:  # decreasing with time
+            for intermediate in self._weights[arrival]:
+                self._weights[arrival][intermediate] *= ((self._nb_infos - 1) / self._nb_infos)
 
     def auction_cost(self) -> float:
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
-        return 5.  # yes this is not 0 but still not much
+        return 0.  # yes this is not 0 but still not much

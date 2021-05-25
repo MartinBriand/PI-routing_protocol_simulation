@@ -1,6 +1,7 @@
 """
 The most basic shipper you could think of
 """
+
 from Mechanics.Actors.shippers.shipper import Shipper
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -14,4 +15,4 @@ class DummyShipper(Shipper):
         """
         To be called by the nodes before an auction
         """
-        return 300  # Yes it is a lot ;)
+        return 50000.  # Yes it is a lot ;)

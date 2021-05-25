@@ -2,14 +2,15 @@
 Carrier file
 """
 import abc
-from abc import ABCMeta
-from typing import TYPE_CHECKING, Optional, List, Dict
+from typing import TYPE_CHECKING, Optional, List
+from math import exp
+
+from prj_typing.types import CarrierBid
+
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Tools.load import Load
-    from Mechanics.environment import Environment
-
-CarrierBid = Dict['Node', float]
+    from Mechanics.Environment.environment import Environment
 
 
 class Carrier(abc.ABC):
@@ -108,6 +109,7 @@ class Carrier(abc.ABC):
             self._episode_expenses.append(sum(self._this_episode_expenses))
             self._this_episode_revenues = 0
             self._this_episode_expenses.clear()
+            # And generate episode if needed in the LearningCarrier Method
 
     def _arrive_at_next_node(self) -> None:
         """Called by next_step to do all the variable settings when arrive at a next nodes
@@ -131,7 +133,10 @@ class Carrier(abc.ABC):
         """To update your far_from_home costs"""
 
 
-class CarrierWithCosts(Carrier, abc.ABC):  # The idea is to modify this class not to implement the cost again and again
+class CarrierWithCosts(Carrier, abc.ABC):
+    """The idea is to modify the Carrier class to have a single cost structure"""
+
+    _cost_dimension: int = 3
 
     def __init__(self,
                  name: str,
@@ -146,8 +151,8 @@ class CarrierWithCosts(Carrier, abc.ABC):  # The idea is to modify this class no
                  this_episode_expenses: List[float],
                  this_episode_revenues: float,
                  transit_cost: float,
-                 far_from_home_cost: float):
-
+                 far_from_home_cost: float,
+                 time_not_at_home: int) -> None:
         super().__init__(name,
                          home,
                          in_transit,
@@ -162,15 +167,24 @@ class CarrierWithCosts(Carrier, abc.ABC):  # The idea is to modify this class no
 
         self._t_c: float = transit_cost
         self._ffh_c: float = far_from_home_cost
+        self._time_not_at_home: int = time_not_at_home
 
     def _transit_costs(self) -> float:
         """The transit costs"""
         return self._t_c
 
-    def _far_from_home_costs(self) -> float:  # yes it is a constant, I told you it was dummy
+    def _far_from_home_costs(self) -> float:
         """The far from home costs"""
-        return self._ffh_c
+        return self._ffh_c + 53*(exp(self._environment.nb_hours_per_time_unit*0.0015*self._time_not_at_home) - 1)\
+            if self._time_not_at_home > 0 else 0.
 
     def _update_ffh_cost_functions(self) -> None:
         """Here we do nothing"""
-        pass
+        if not self._in_transit and self._next_node == self._home:
+            self._time_not_at_home = 0
+        else:
+            self._time_not_at_home += 1
+
+    @classmethod
+    def cost_dimension(cls) -> int:
+        return cls._cost_dimension

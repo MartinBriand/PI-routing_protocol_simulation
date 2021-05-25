@@ -1,15 +1,15 @@
 """
 Environment file
 """
-from typing import TYPE_CHECKING, List, Dict
+
+from typing import TYPE_CHECKING, List
+from prj_typing.types import Distance
 
 if TYPE_CHECKING:
     from Mechanics.Actors.carriers.carrier import Carrier
     from Mechanics.Tools.load import Load
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Actors.shippers.shipper import Shipper
-
-Distance = Dict['Node', Dict['Node', int]]
 
 
 class Environment:
@@ -19,7 +19,9 @@ class Environment:
     the Environment should be deleted.
     """
 
-    def __init__(self):
+    def __init__(self, nb_hours_per_time_unit: float):
+
+        self._nb_hours_per_time_unit: float = nb_hours_per_time_unit
 
         # for the four lists, the creation process add them to the list
         self._nodes: List[Node] = []
@@ -55,12 +57,12 @@ class Environment:
         for carrier in self._carriers:
             carrier.next_step()
 
-    def _get_and_broadcast_new_infos(self) -> None:  # FIXME: This can be clearly optimized
+    def _get_and_broadcast_new_infos(self) -> None:
         """Asking loads with new infos to communicate this and then broadcast the information to nodes"""
         new_infos = []
         for load in self._loads_with_new_infos:
             new_infos += load.communicate_infos()
-        for node in self._nodes:
+        for node in self._nodes:  # FIXME: This can be clearly optimized
             node.update_weights_with_new_infos(new_infos)
         self._loads_with_new_infos = []
 
@@ -95,3 +97,11 @@ class Environment:
     @property
     def nodes(self) -> List['Node']:
         return self._nodes
+
+    @property
+    def carriers(self) -> List['Carrier']:
+        return self._carriers
+
+    @property
+    def nb_hours_per_time_unit(self):
+        return self._nb_hours_per_time_unit

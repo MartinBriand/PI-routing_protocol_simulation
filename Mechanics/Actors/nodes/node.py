@@ -1,15 +1,17 @@
 """
 Node file
 """
-from Mechanics.Tools.auction import Auction
+
 import abc
-from typing import TYPE_CHECKING, Optional, List, Dict
+from Mechanics.Tools.auction import Auction
+
+from typing import TYPE_CHECKING, Optional, List
+from prj_typing.types import NodeWeights
+
 if TYPE_CHECKING:
     from Mechanics.Actors.carriers.carrier import Carrier
     from Mechanics.Tools.load import Load, Info
-    from Mechanics.environment import Environment
-
-NodeWeights = Dict['Node', Dict['Node', float]]
+    from Mechanics.Environment.environment import Environment
 
 
 class Node(abc.ABC):
@@ -102,6 +104,10 @@ class Node(abc.ABC):
     def signal_as_past_auction(self, auction: Auction) -> None:
         self._past_auctions.append(auction)
         self._current_auction = None
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def waiting_loads(self) -> List['Load']:

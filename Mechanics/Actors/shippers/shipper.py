@@ -1,15 +1,17 @@
 """
 Shipper file
 """
-from Mechanics.Tools.load import Load
+
 import abc
-from typing import TYPE_CHECKING, Callable, List, Dict
+from Mechanics.Tools.load import Load
+
+from typing import TYPE_CHECKING, List, Dict, Any
+from prj_typing.types import Law
+
 if TYPE_CHECKING:
     from Mechanics.Actors.nodes.node import Node
     from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.environment import Environment
-
-Law = Callable[..., int]
+    from Mechanics.Environment.environment import Environment
 
 
 class Shipper(abc.ABC):
@@ -40,9 +42,7 @@ class Shipper(abc.ABC):
         """
 
         for law in self._laws:
-            n = law.call()
-            for k in range(n):
-                Load(law.departure_node, law.arrival_node, self, self._environment)
+            law.call()
 
     @abc.abstractmethod
     def generate_reserve_price(self, load: Load, node: 'Node') -> float:
@@ -68,6 +68,11 @@ class Shipper(abc.ABC):
         """called by the load to signal to the shipper"""
         self._loads.append(load)
 
+    def add_law(self, law: 'NodeLaw'):
+        """Called during initialization to add load to load list"""
+        assert law.owner == self, "Please add only laws whose owner is self"
+        self._laws.append(law)
+
 
 class NodeLaw:
     """
@@ -76,27 +81,20 @@ class NodeLaw:
     """
 
     def __init__(self,
-                 departure_node: 'Node',
-                 arrival_node: 'Node',
+                 owner: Shipper,
                  law: Law,
-                 params: Dict):
+                 params: Dict[str, Any]) -> None:
         """
-        The nodes is just the nodes reference
-        The law should be a numpy.random.Generator.law (or anything else)
-        The params should be the parameters to be called by the law
+        Generate loads
         """
-        self._departure_node: 'Node' = departure_node
-        self._arrival_node: 'Node' = arrival_node
-        self._law: Callable[[None], int] = lambda: law(**params)
+        self._owner: Shipper = owner
+        self._law: Law = law
+        self._params = params
 
-    def call(self) -> int:
-        """Calling the law to generate a number"""
-        return self._law()
+    def call(self) -> None:
+        """Calling the law to generate loads"""
+        self._law(**self._params)
 
     @property
-    def departure_node(self) -> 'Node':
-        return self._departure_node
-
-    @property
-    def arrival_node(self) -> 'Node':
-        return self._arrival_node
+    def owner(self) -> Shipper:
+        return self._owner
