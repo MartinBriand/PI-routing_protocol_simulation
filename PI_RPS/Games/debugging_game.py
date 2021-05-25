@@ -6,14 +6,14 @@ It is supposed to:
     * run an iteration loop on the environment
 """
 
-from Mechanics.Environment.environment import Environment
-from Mechanics.Actors.nodes.dummy_node import DummyNode
-from Mechanics.Actors.carriers.dummy_carrier import DummyCarrier
-from Mechanics.Actors.shippers.dummy_shipper import DummyShipper
-from Mechanics.Actors.shippers.shipper import NodeLaw
-from Mechanics.Tools.load import Load
+from PI_RPS.Mechanics.Environment.environment import Environment
+from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode
+from PI_RPS.Mechanics.Actors.Carriers.dummy_carrier import DummyCarrier
+from PI_RPS.Mechanics.Actors.Shippers.dummy_shipper import DummyShipper
+from PI_RPS.Mechanics.Actors.Shippers.shipper import NodeLaw
+from PI_RPS.Mechanics.Tools.load import Load
 
-e = Environment()
+e = Environment(nb_hours_per_time_unit=30)
 
 ps = DummyNode('Paris', {}, 100, [], e)
 bx = DummyNode('Brussels', {}, 100, [], e)

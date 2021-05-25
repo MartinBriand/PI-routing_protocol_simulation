@@ -5,12 +5,12 @@ Auction file
 import random
 
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict
-from prj_typing.types import AuctionWeights, AuctionReservePrice, AuctionBid
+from PI_RPS.prj_typing.types import AuctionWeights, AuctionReservePrice, AuctionBid
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Tools.load import Load
-    from Mechanics.Actors.carriers.carrier import Carrier
+    from PI_RPS.Mechanics.Actors.Nodes.node import Node
+    from PI_RPS.Mechanics.Tools.load import Load
+    from PI_RPS.Mechanics.Actors.Carriers.carrier import Carrier
 
 
 class Auction:
@@ -30,17 +30,17 @@ class Auction:
         self._weights: 'AuctionWeights' = {}
         self._reserve_prices: 'AuctionReservePrice' = {}
         self._bids: 'AuctionBid' = {}
-        self._results: Dict = {'loads': {}, 'carriers': {}}
+        self._results: Dict = {'loads': {}, 'Carriers': {}}
 
         self._source.signal_as_current_auction(self)
 
     def run(self) -> None:
-        """The only function to be called in the auction by another class instance (namely a nodes here)"""
+        """The only function to be called in the auction by another class instance (namely a Nodes here)"""
         random.shuffle(self._carriers)  # No waiting list since they can decide to leave when they want
         # Don't randomize load waiting list so that we have a queue
         while len(self._loads) > 0 and len(self._carriers) > 0:
             load = self._loads[0]
-            nb_carriers_involved = max(1, len(self._carriers) - len(self._loads) + 1)  # to keep some carriers for later
+            nb_carriers_involved = max(1, len(self._carriers) - len(self._loads) + 1)  # to keep some Carriers for later
             self._calculate_auction_weights(load)
             self._get_reserve_price(load)
             self._get_bids(load, nb_carriers_involved)
@@ -61,7 +61,7 @@ class Auction:
 
     def _calculate_auction_weights(self, load: 'Load') -> None:
         """
-        Build the dictionary of weights. The first key is the auctioned load, the second is the intermediary nodes
+        Build the dictionary of weights. The first key is the auctioned load, the second is the intermediary Nodes
         The value is the weight
         """
         self._weights[load] = self._source.weights[load.arrival]
@@ -90,14 +90,14 @@ class Auction:
             load.discard()  # if later load expects something else, we can use **d['kwargs'] as an argument
 
     def _notify_winning_carrier(self, winning_carrier: 'Carrier') -> None:
-        """Notify the carriers after making the attribution"""
-        d = self._results['carriers'][winning_carrier]
+        """Notify the Carriers after making the attribution"""
+        d = self._results['Carriers'][winning_carrier]
         winning_carrier.get_attribution(**d['kwargs'])
 
     def _write_loosing_carriers(self) -> None:
-        """Notify the remaining carriers in the auction list that they """
+        """Notify the remaining Carriers in the auction list that they """
         for carrier in self._carriers:
-            self._results['carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
+            self._results['Carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
 
     def _ask_payment(self, load: 'Load') -> None:
         """Ask the shipper to pay the carrier and the node"""
@@ -111,12 +111,12 @@ class Auction:
                                         nb_carriers_involved: int) -> Tuple[bool, Optional['Carrier']]:
         """
         This is the auction process. It builds the result dictionary
-        the first key is either 'loads' or 'carriers'
+        the first key is either 'loads' or 'Carriers'
         In the 'loads' dictionary, we have, for each load key:
             * an 'is_attributed' key with a boolean value associated
             * a 'kwargs' dictionary with the exact format of the kw of the get_attribution function of the load package
                 (or an empty dictionary to call the discard function if need be)
-        In the 'carriers' dictionary, we have, for each carriers key:
+        In the 'Carriers' dictionary, we have, for each Carriers key:
             * an 'is_attributed' key with a boolean value associated
             * a 'kwargs' dictionary with the exact format of the kw of the get_attribution function of the load package
                 (or an empty dictionary to call the dont_get_attribution function if need be)
@@ -151,7 +151,7 @@ class Auction:
                             'next_node': winning_next_node,
                             'carrier_cost': carrier_cost,
                             'previous_node_cost': self._source.auction_cost()}}
-            self._results['carriers'][winning_carrier] = \
+            self._results['Carriers'][winning_carrier] = \
                 {'is_attributed': True,
                  'kwargs': {'load': load, 'next_node': winning_next_node}}
             return True, winning_carrier

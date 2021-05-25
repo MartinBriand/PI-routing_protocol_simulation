@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 This is the learning driver for the game with learning agents.
 As you may see, it is more a script than a class.
@@ -8,16 +10,16 @@ One may not that it is not a tf_agents.driver.Driver because this class is a bit
 
 It is supposed to:
     * Instantiate everything
-    * Run an iteration loop on the environment (During which the carriers will share their experience
+    * Run an iteration loop on the environment (During which the Carriers will share their experience
         in a replay buffer)
     * Regularly ask the learning agent to update
-    * Regularly change the costs parameters of the carriers
+    * Regularly change the costs parameters of the Carriers
     * Save the model if we are satisfied
 """
 
 from tf_agents.utils.common import function as tfa_function
 
-from Games.Learning_Game.initialize import load_env_and_agent
+from PI_RPS.Games.Learning_Game.initialize import load_env_and_agent
 
 # e = TFAEnvironment()
 #
@@ -25,7 +27,7 @@ from Games.Learning_Game.initialize import load_env_and_agent
 # bx = DummyNode('Brussels', {}, 100, [], e)
 # hh = DummyNode('Hamburg', {}, 100, [], e)
 #
-# for node in e.nodes:
+# for node in e.Nodes:
 #     node.initialize_weights()
 # del node
 #
@@ -43,12 +45,12 @@ from Games.Learning_Game.initialize import load_env_and_agent
 #                           reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
 #                           discount=BoundedTensorSpec(shape=(), dtype=dtype('float32'), name='discount',
 #                                                      minimum=0.0, maximum=1.0),
-#                           observation=TensorSpec(shape=(len(e.nodes) + LearningCarrier.cost_dimension(),),
+#                           observation=TensorSpec(shape=(len(e.Nodes) + LearningCarrier.cost_dimension(),),
 #                                                  dtype=dtype('float32'), name='observation'))
 #
-# action_spec = BoundedTensorSpec(shape=(len(e.nodes),), dtype=dtype('float32'), name='action',
-#                                 minimum=[100 for k in range(len(e.nodes))],
-#                                 maximum=[20000 for k in range(len(e.nodes))])
+# action_spec = BoundedTensorSpec(shape=(len(e.Nodes),), dtype=dtype('float32'), name='action',
+#                                 minimum=[100 for k in range(len(e.Nodes))],
+#                                 maximum=[20000 for k in range(len(e.Nodes))])
 #
 # policy_spec = PolicyStep(action=action_spec, state=(), info=())
 # data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)

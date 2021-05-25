@@ -2,7 +2,7 @@
 Learning Carrier:
 We define two objects:
     * A learning agent
-    * The carriers
+    * The Carriers
 
 Their behavior will be different during learning and exploiting
 
@@ -10,8 +10,8 @@ During learning:
     * The agent
         * Learns according to the orders of the driver. It is the extension of a TD3 tf_agents.
         * The driver will feed the agent with data from a replay buffer and ask him to learn
-        * The driver will answer requests from carriers to know what to do next
-    * The carriers
+        * The driver will answer requests from Carriers to know what to do next
+    * The Carriers
         * Will ask agent what to bid
         * Will generate the transition to be stored in the replay buffer
         * Will have internal parameter being changed by the driver to help the agent learn with all possible parameters
@@ -19,8 +19,8 @@ During learning:
 
 During exploitation
     * The agent will not learn anymore
-    * The driver won't change the parameters of the carriers on the way
-    * The carriers won't generate episodes or these episodes won't be added to a replay buffer
+    * The driver won't change the parameters of the Carriers on the way
+    * The Carriers won't generate episodes or these episodes won't be added to a replay buffer
 """
 # TODO: is this description correct at the end of the implementation?
 
@@ -41,16 +41,16 @@ from tf_agents.policies import actor_policy, gaussian_policy
 import tf_agents.typing.types as tfa_types
 from tf_agents.typing import types
 
-from Mechanics.Actors.carriers.carrier import CarrierWithCosts
+from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts
 
 from typing import TYPE_CHECKING, Optional, List
 
-from prj_typing.types import CarrierBid
+from PI_RPS.prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Tools.load import Load
-    from Mechanics.Environment.tfa_environment import TFAEnvironment
+    from PI_RPS.Mechanics.Actors.Nodes.node import Node
+    from PI_RPS.Mechanics.Tools.load import Load
+    from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
 
 
 class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
@@ -141,7 +141,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
     def _decide_next_node(self) -> 'Node':
         """
-        Decide of a next nodes after losing an auction (can be the same nodes when needed)
+        Decide of a next Nodes after losing an auction (can be the same Nodes when needed)
         Here the function is simple: go home in 10% of the cases.
         """
 
