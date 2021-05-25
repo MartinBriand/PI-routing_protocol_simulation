@@ -2,11 +2,11 @@
 The most basic shipper you could think of
 """
 
-from Mechanics.Actors.shippers.shipper import Shipper
+from PI_RPS.Mechanics.Actors.shippers.shipper import Shipper
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Tools.load import Load
+    from PI_RPS.Mechanics.Actors.nodes.node import Node
+    from PI_RPS.Mechanics.Tools import Load
 
 
 class DummyShipper(Shipper):

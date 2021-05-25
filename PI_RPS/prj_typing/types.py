@@ -6,9 +6,7 @@ from tensorflow.python.framework.ops import EagerTensor
 from typing import TYPE_CHECKING, TypeVar, Dict, Callable, Tuple
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.Tools.load import Load
+    pass
 
 
 # for Carrier

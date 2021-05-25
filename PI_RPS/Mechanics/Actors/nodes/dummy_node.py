@@ -2,12 +2,12 @@
 The most basic node you could think of
 """
 
-from Mechanics.Actors.nodes.node import Node, NodeWeights
+from PI_RPS.Mechanics.Actors.nodes.node import Node, NodeWeights
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from Mechanics.Tools.load import Info
-    from Mechanics.Environment.environment import Environment
+    from PI_RPS.Mechanics.Tools import Info
+    from PI_RPS.Mechanics.Environment import Environment
 
 
 class DummyNode(Node):  # Actually this is not so dummy and will perhaps not change in the future

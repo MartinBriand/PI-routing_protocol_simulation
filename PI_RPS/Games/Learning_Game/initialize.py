@@ -19,13 +19,13 @@ from tf_agents.trajectories.trajectory import Transition
 
 import tensorflow as tf
 
-from Mechanics.Actors.carriers.learning_carrier import LearningCarrier, LearningAgent
-from Mechanics.Actors.nodes.dummy_node import DummyNode
-from Mechanics.Actors.nodes.node import Node
-from Mechanics.Actors.shippers.dummy_shipper import DummyShipper
-from Mechanics.Actors.shippers.shipper import Shipper, NodeLaw
-from Mechanics.Environment.tfa_environment import TFAEnvironment
-from Mechanics.Tools.load import Load
+from PI_RPS.Mechanics import LearningCarrier, LearningAgent
+from PI_RPS.Mechanics.Actors.nodes.dummy_node import DummyNode
+from PI_RPS.Mechanics.Actors.nodes.node import Node
+from PI_RPS.Mechanics.Actors.shippers import DummyShipper
+from PI_RPS.Mechanics.Actors.shippers.shipper import Shipper, NodeLaw
+from PI_RPS.Mechanics.Environment import TFAEnvironment
+from PI_RPS.Mechanics.Tools import Load
 
 
 def load_env_and_agent(n_carriers: int,

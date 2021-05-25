@@ -3,13 +3,13 @@ The most basic carrier you could think of
 """
 
 from random import random, expovariate
-from Mechanics.Actors.carriers.carrier import CarrierWithCosts
+from PI_RPS.Mechanics import CarrierWithCosts
 
 from typing import TYPE_CHECKING
-from prj_typing.types import CarrierBid
+from PI_RPS.prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
+    from PI_RPS.Mechanics.Actors.nodes.node import Node
 
 
 class DummyCarrier(CarrierWithCosts):

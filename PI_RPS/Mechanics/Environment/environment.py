@@ -3,13 +3,13 @@ Environment file
 """
 
 from typing import TYPE_CHECKING, List
-from prj_typing.types import Distance
+from PI_RPS.prj_typing.types import Distance
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.Tools.load import Load
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Actors.shippers.shipper import Shipper
+    from PI_RPS.Mechanics import Carrier
+    from PI_RPS.Mechanics.Tools import Load
+    from PI_RPS.Mechanics.Actors.nodes.node import Node
+    from PI_RPS.Mechanics.Actors.shippers.shipper import Shipper
 
 
 class Environment:

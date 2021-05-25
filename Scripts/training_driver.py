@@ -17,7 +17,7 @@ It is supposed to:
 
 from tf_agents.utils.common import function as tfa_function
 
-from Games.Learning_Game.initialize import load_env_and_agent
+from PI_RPS.Games import load_env_and_agent
 
 # e = TFAEnvironment()
 #

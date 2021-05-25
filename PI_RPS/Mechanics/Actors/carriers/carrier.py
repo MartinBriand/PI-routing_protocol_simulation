@@ -5,12 +5,12 @@ import abc
 from typing import TYPE_CHECKING, Optional, List
 from math import exp
 
-from prj_typing.types import CarrierBid
+from PI_RPS.prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Tools.load import Load
-    from Mechanics.Environment.environment import Environment
+    from PI_RPS.Mechanics.Actors.nodes.node import Node
+    from PI_RPS.Mechanics.Tools import Load
+    from PI_RPS.Mechanics.Environment import Environment
 
 
 class Carrier(abc.ABC):

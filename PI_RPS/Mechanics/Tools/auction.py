@@ -5,12 +5,12 @@ Auction file
 import random
 
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict
-from prj_typing.types import AuctionWeights, AuctionReservePrice, AuctionBid
+from PI_RPS.prj_typing.types import AuctionWeights, AuctionReservePrice, AuctionBid
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Tools.load import Load
-    from Mechanics.Actors.carriers.carrier import Carrier
+    from PI_RPS.Mechanics.Actors.nodes.node import Node
+    from PI_RPS.Mechanics.Tools import Load
+    from PI_RPS.Mechanics import Carrier
 
 
 class Auction:

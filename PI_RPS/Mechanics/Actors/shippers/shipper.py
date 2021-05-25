@@ -3,15 +3,15 @@ Shipper file
 """
 
 import abc
-from Mechanics.Tools.load import Load
+from PI_RPS.Mechanics.Tools import Load
 
 from typing import TYPE_CHECKING, List, Dict, Any
-from prj_typing.types import Law
+from PI_RPS.prj_typing.types import Law
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.Environment.environment import Environment
+    from PI_RPS.Mechanics.Actors.nodes.node import Node
+    from PI_RPS.Mechanics import Carrier
+    from PI_RPS.Mechanics.Environment import Environment
 
 
 class Shipper(abc.ABC):

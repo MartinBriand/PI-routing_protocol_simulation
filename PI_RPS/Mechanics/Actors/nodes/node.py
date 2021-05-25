@@ -3,15 +3,15 @@ Node file
 """
 
 import abc
-from Mechanics.Tools.auction import Auction
+from PI_RPS.Mechanics.Tools.auction import Auction
 
 from typing import TYPE_CHECKING, Optional, List
-from prj_typing.types import NodeWeights
+from PI_RPS.prj_typing.types import NodeWeights
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.Tools.load import Load, Info
-    from Mechanics.Environment.environment import Environment
+    from PI_RPS.Mechanics import Carrier
+    from PI_RPS.Mechanics.Tools import Load, Info
+    from PI_RPS.Mechanics.Environment import Environment
 
 
 class Node(abc.ABC):

@@ -41,16 +41,16 @@ from tf_agents.policies import actor_policy, gaussian_policy
 import tf_agents.typing.types as tfa_types
 from tf_agents.typing import types
 
-from Mechanics.Actors.carriers.carrier import CarrierWithCosts
+from PI_RPS.Mechanics import CarrierWithCosts
 
 from typing import TYPE_CHECKING, Optional, List
 
-from prj_typing.types import CarrierBid
+from PI_RPS.prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Tools.load import Load
-    from Mechanics.Environment.tfa_environment import TFAEnvironment
+    from PI_RPS.Mechanics.Actors.nodes.node import Node
+    from PI_RPS.Mechanics.Tools import Load
+    from PI_RPS.Mechanics.Environment import TFAEnvironment
 
 
 class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
