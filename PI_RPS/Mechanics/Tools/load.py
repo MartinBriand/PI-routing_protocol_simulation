@@ -3,18 +3,18 @@ Load file
 """
 
 from typing import TYPE_CHECKING, Optional, List
-from prj_typing.types import Cost
+from PI_RPS.prj_typing.types import Cost
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Actors.shippers.shipper import Shipper
-    from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.Environment.environment import Environment
+    from PI_RPS.Mechanics.Actors.Nodes.node import Node
+    from PI_RPS.Mechanics.Actors.Shippers.shipper import Shipper
+    from PI_RPS.Mechanics.Actors.Carriers.carrier import Carrier
+    from PI_RPS.Mechanics.Environment.environment import Environment
 
 
 class Load:
     """
-    A load tracks what is happening to it. It has a shippers, a current carriers, and a route with its associated costs
+    A load tracks what is happening to it. It has a Shippers, a current Carriers, and a route with its associated costs
     """
 
     def __init__(self,
@@ -29,7 +29,7 @@ class Load:
         self._environment: 'Environment' = environment
 
         self._current_carrier: Optional['Carrier'] = None
-        self._next_node: 'Node' = self._start  # note that if you are not in transit you are at a nodes,
+        self._next_node: 'Node' = self._start  # note that if you are not in transit you are at a Nodes,
         # and your next_node is also your current node then
 
         self._in_transit: bool = False
@@ -41,7 +41,7 @@ class Load:
         self._previous_infos: List['Info'] = [Info(self._start, self._start, 0)]  # to calculate the new info, use the
         # old info and add the cost of the current step
 
-        # And now add it to the start nodes and the environment
+        # And now add it to the start Nodes and the environment
         self._shipper.add_load(self)
         self._start.add_load_to_waiting_list(self)
         self._environment.add_load(self)
@@ -53,7 +53,7 @@ class Load:
                         carrier_cost: float,
                         previous_node_cost: float) -> None:
         """
-        To be called by the nodes each time a load which was waiting at a nodes get attributed for a next hop
+        To be called by the Nodes each time a load which was waiting at a Nodes get attributed for a next hop
         """
         self._in_transit = True
         self._current_carrier = carrier
@@ -89,7 +89,7 @@ class Load:
 
     def arrive_at_next_node(self) -> None:
         """
-        to be called by the carriers each time it arrives at a next nodes
+        to be called by the Carriers each time it arrives at a next Nodes
         """
         self._current_carrier = None
         self._in_transit = False
@@ -100,8 +100,8 @@ class Load:
 
     def discard(self) -> None:
         """
-        Set the load as discarded. Called by the nodes when auction run but no result
-        (A shippers could eventually also call it but it is not implemented yet (and will probably not be))
+        Set the load as discarded. Called by the Nodes when auction run but no result
+        (A Shippers could eventually also call it but it is not implemented yet (and will probably not be))
         """
         self._is_discarded = True
         self._next_node.remove_load_from_waiting_list(self)

@@ -5,21 +5,21 @@ import abc
 from typing import TYPE_CHECKING, Optional, List
 from math import exp
 
-from prj_typing.types import CarrierBid
+from PI_RPS.prj_typing.types import CarrierBid
 
 if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Tools.load import Load
-    from Mechanics.Environment.environment import Environment
+    from PI_RPS.Mechanics.Actors.Nodes.node import Node
+    from PI_RPS.Mechanics.Tools.load import Load
+    from PI_RPS.Mechanics.Environment.environment import Environment
 
 
 class Carrier(abc.ABC):
     """
-    A carriers has two states:
+    A Carriers has two states:
         * it is either in transit, if so, it is forced to finish it journey
-        * If not, it is because it is at a nodes, where, it can participate in an auction, and depending on the result
-            * will either be attributed a good to transport and will have to carry it to the next nodes
-            * Or will not get a good and may decide to stay or move to another nodes
+        * If not, it is because it is at a Nodes, where, it can participate in an auction, and depending on the result
+            * will either be attributed a good to transport and will have to carry it to the next Nodes
+            * Or will not get a good and may decide to stay or move to another Nodes
     """
 
     def __init__(self,
@@ -37,7 +37,7 @@ class Carrier(abc.ABC):
 
         self._name: str = name
         self._home: 'Node' = home
-        # state: if not in transit, we are at nodes next_node, ef not time_to_go > 0 and we are going to next_node
+        # state: if not in transit, we are at Nodes next_node, ef not time_to_go > 0 and we are going to next_node
         self._in_transit: bool = in_transit
         self._next_node: 'Node' = next_node  # instantiated after the creation of the node
         self._time_to_go: int = time_to_go
@@ -55,19 +55,19 @@ class Carrier(abc.ABC):
 
         self._environment.add_carrier(self)
 
-        if not self._in_transit:  # should be instantiated after the creations of the nodes
+        if not self._in_transit:  # should be instantiated after the creations of the Nodes
             self._next_node.add_carrier_to_waiting_list(self)
 
     @abc.abstractmethod
     def bid(self, node: 'Node') -> CarrierBid:
-        """To be called by the nodes before an auction"""
+        """To be called by the Nodes before an auction"""
 
     @abc.abstractmethod
     def _decide_next_node(self) -> 'Node':
-        """Decide of a next nodes after losing an auction (can be the same nodes when needed)"""
+        """Decide of a next Nodes after losing an auction (can be the same Nodes when needed)"""
 
     def get_attribution(self, load: 'Load', next_node: 'Node') -> None:
-        """To be called by the nodes after an auction if a load was attributed to the carriers"""
+        """To be called by the Nodes after an auction if a load was attributed to the Carriers"""
         self._in_transit = True
         current_node = self._next_node
         current_node.remove_carrier_from_waiting_list(self)
@@ -76,12 +76,12 @@ class Carrier(abc.ABC):
         self._load = load  # note that the get_attribution of the load is called by the auction of the node
 
     def receive_payment(self, value: float) -> None:
-        """To be called by the shippers after an auction if a load was attributed"""
+        """To be called by the Shippers after an auction if a load was attributed"""
         self._this_episode_revenues += value
         self._total_revenues += value
 
     def dont_get_attribution(self) -> None:
-        """To be called by the nodes after an auction if the carriers lost"""
+        """To be called by the Nodes after an auction if the Carriers lost"""
         new_next_node = self._decide_next_node()
         if new_next_node != self._next_node:
             self._in_transit = True
@@ -112,7 +112,7 @@ class Carrier(abc.ABC):
             # And generate episode if needed in the LearningCarrier Method
 
     def _arrive_at_next_node(self) -> None:
-        """Called by next_step to do all the variable settings when arrive at a next nodes
+        """Called by next_step to do all the variable settings when arrive at a next Nodes
         Note: cost calculations and episode generation are not made here"""
         self._in_transit = False
         if self._load:  # is not none
