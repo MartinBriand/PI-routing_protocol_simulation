@@ -41,9 +41,9 @@ def load_env_and_agent(n_carriers: int,
                        max_time_not_at_home: int
                        ) -> (TFAEnvironment, LearningAgent):
     path = os.path.abspath(os.path.dirname(__file__))
-    lambdas: np.ndarray = _read_csv(os.path.join(path, 'city_traffic_lambda_table.csv'))
-    attribution: np.ndarray = _read_csv(os.path.join(path, 'city_traffic_dest_attribution_table.csv'))
-    distances: np.ndarray = _read_csv(os.path.join(path, 'city_distance_matrix_time_step.csv'))
+    lambdas: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_lambda_table.csv'))
+    attribution: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_dest_attribution_table.csv'))
+    distances: np.ndarray = _read_csv(os.path.join(path, 'data/city_distance_matrix_time_step.csv'))
 
     # check size
     lts = lambdas.shape

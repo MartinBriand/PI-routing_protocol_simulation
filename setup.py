@@ -119,6 +119,8 @@ setup(
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     include_package_data=True,
+    package_data={"Learning_Game": ["data/*.csv"]},
+    scripts=['scripts/*'],
     license=LICENSE,
     classifiers=[
         # Trove classifiers
