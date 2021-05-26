@@ -104,7 +104,7 @@ def load_env_and_agent(n_carriers: int,
         nb_loads = generator.poisson(lamb)
         for k in range(nb_loads):
             arrival_node = random.choices(population=population, weights=weights)[0]
-            Load(start=start_node, arrival=arrival_node, shipper=load_shipper, environment=environment)
+            Load(departure=start_node, arrival=arrival_node, shipper=load_shipper, environment=environment)
 
     for start in lambdas.keys():
         params = {'load_shipper': shipper,
