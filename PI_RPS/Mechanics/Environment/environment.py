@@ -94,6 +94,35 @@ class Environment:
         """to be called by load with new info to signal the new information"""
         self._loads_with_new_infos.append(load)
 
+    def clear_node_auctions(self) -> None:
+        """Called by training loop before tests"""
+        for node in self._nodes:
+            node.clear_past_auctions()
+
+    def clear_loads(self) -> None:
+        """Called by training loop before tests"""
+        self._loads.clear()
+        self._loads_with_new_infos.clear()
+        for carrier in self._carriers:
+            carrier.clear_load()
+        for node in self._nodes:
+            node.clear_waiting_loads()
+        for shipper in self._shippers:
+            shipper.clear_loads()
+
+    def clear_carrier_profits(self) -> None:
+        """Called by training loop before tests"""
+        for carrier in self._carriers:
+            carrier.clear_profit()
+
+    def clear_shipper_expenses(self) -> None:
+        """Called by training loop before tests"""
+        for shipper in self._shippers:
+            shipper.clear_expenses()
+
+    def check_carriers_first_steps(self) -> None:
+        raise NotImplementedError
+
     @property
     def nodes(self) -> List['Node']:
         return self._nodes
@@ -101,6 +130,10 @@ class Environment:
     @property
     def carriers(self) -> List['Carrier']:
         return self._carriers
+
+    @property
+    def loads(self) -> List['Load']:
+        return self._loads
 
     @property
     def nb_hours_per_time_unit(self):

@@ -110,6 +110,19 @@ class Load:
         """access the has new infos variable. Called by the environment"""
         return self._has_new_infos
 
+    def total_delivery_cost(self) -> float:
+        assert self._is_arrived, "Only call this function when arrived"
+        return sum([element[2] for element in self._route_costs]) + sum([element[3] for element in self._route_costs])
+
+    def nb_hops(self) -> int:
+        assert self._is_arrived, "Only call this function when arrived"
+        return len(self._route_costs)
+
+    def delivery_time(self) -> int:
+        assert self._is_arrived, "Only call this function when arrived"
+        return sum([self._environment.get_distance(departure, arrival)
+                    for departure, arrival, _, _ in self._route_costs])
+
     @property
     def arrival(self) -> 'Node':
         return self._arrival
@@ -117,6 +130,10 @@ class Load:
     @property
     def shipper(self) -> 'Shipper':
         return self._shipper
+
+    @property
+    def is_arrived(self) -> bool:
+        return self._is_arrived
 
 
 class Info:

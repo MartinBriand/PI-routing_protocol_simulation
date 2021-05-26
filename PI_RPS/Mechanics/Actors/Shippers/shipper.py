@@ -68,6 +68,15 @@ class Shipper(abc.ABC):
         """called by the load to signal to the shipper"""
         self._loads.append(load)
 
+    def clear_loads(self) -> None:
+        """Called by the environment"""
+        self._loads.clear()
+
+    def clear_expenses(self) -> None:
+        """Called by the environment"""
+        self._expenses.clear()
+        self._total_expenses = 0
+
     def add_law(self, law: 'NodeLaw'):
         """Called during initialization to add load to load list"""
         assert law.owner == self, "Please add only laws whose owner is self"

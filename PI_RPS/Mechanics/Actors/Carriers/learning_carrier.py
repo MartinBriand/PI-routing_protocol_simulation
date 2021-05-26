@@ -134,9 +134,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._is_first_step: bool = (time_step is None)
         if not self._is_first_step:
             self._time_step: Optional[TimeStep] = time_step
-        elif not self._in_transit:
-            self._time_step: Optional[TimeStep] = self._generate_current_time_step()
-            self._is_first_step = False
+        self.init_first_step()
 
         self._policy_step: Optional[PolicyStep] = policy_step
         self._max_time_not_at_home = self._environment.max_time_not_at_home
@@ -192,9 +190,8 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._replay_buffer.clear()
         self._discount_power = 1
         self._is_first_step = True  # the time_step will not be written if in transit
-        if not self._in_transit:
-            self._time_step: Optional[TimeStep] = self._generate_current_time_step()
-            self._is_first_step = False
+        self.clear_profit()
+        self.init_first_step()
 
     def update_collect_policy(self):
         assert self._is_learning, "update_collect_policy only if learning"
@@ -267,17 +264,17 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
         return time_step
 
+    def init_first_step(self):
+        if not self._in_transit:
+            self._is_first_step = True
+            self._time_step: Optional[TimeStep] = self._generate_current_time_step()
+            self._is_first_step = False
+        else:
+            self._is_first_step = True
+
     @property
     def is_learning(self) -> bool:
         return self._is_learning
-
-    @is_learning.setter
-    def is_learning(self, value: bool) -> None:
-        self._is_learning = value
-        if self._is_learning:
-            self._policy = self._learning_agent.collect_policy
-        else:
-            self._policy = self._learning_agent.policy
 
     @property
     def training_data_set_iter(self):
@@ -375,6 +372,14 @@ class LearningAgent(Td3Agent):
         for carrier in self._carriers:
             if carrier.is_learning:
                 carrier.update_collect_policy()
+
+    def set_carriers_to_learning(self):
+        for carrier in self._carriers:
+            carrier.set_learning()
+
+    def set_carriers_to_not_learning(self):
+        for carrier in self._carriers:
+            carrier.set_not_learning()
 
     @property
     def carriers(self) -> List['LearningCarrier']:

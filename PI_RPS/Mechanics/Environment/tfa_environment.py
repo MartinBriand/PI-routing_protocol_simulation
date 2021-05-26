@@ -78,6 +78,10 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
     def pop_new_transition_carriers(self) -> 'LearningCarrier':
         return self._new_transition_carriers.pop()
 
+    def check_carriers_first_steps(self) -> None:
+        for carrier in self._carriers:
+            carrier.init_first_step()
+
     @property
     def t_c_mu(self) -> float:
         return self._t_c_mu

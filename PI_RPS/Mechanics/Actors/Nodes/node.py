@@ -99,11 +99,21 @@ class Node(abc.ABC):
         """May not be called by always, but there in case it is needed for new games"""
 
     def signal_as_current_auction(self, auction: Auction) -> None:
+        """Called by the auction at creation"""
         self._current_auction = auction
 
     def signal_as_past_auction(self, auction: Auction) -> None:
+        """Called by the auction at termination"""
         self._past_auctions.append(auction)
         self._current_auction = None
+
+    def clear_past_auctions(self) -> None:
+        """Called by the environment"""
+        self._past_auctions.clear()
+
+    def clear_waiting_loads(self) -> None:
+        """Called by the environment"""
+        self._waiting_loads.clear()
 
     @property
     def name(self) -> str:

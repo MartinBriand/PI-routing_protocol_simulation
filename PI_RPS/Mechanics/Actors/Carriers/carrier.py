@@ -120,6 +120,26 @@ class Carrier(abc.ABC):
         self._load = None
         self._next_node.add_carrier_to_waiting_list(self)
 
+    def clear_load(self) -> None:
+        """Called by the environment"""
+        self._load = None
+
+    def clear_profit(self) -> None:
+        """Called by the environment"""
+        self._total_expenses -= sum(self._episode_expenses)  # the expenses of the current episode are still here
+        # we will have to delete them at extraction time
+        self._episode_expenses.clear()
+        self._total_revenues -= sum(self._episode_revenues)  # same
+        self._episode_revenues.clear()
+
+    @property
+    def episode_revenues(self) -> List[float]:
+        return self._episode_revenues
+
+    @property
+    def episode_expenses(self) -> List[float]:
+        return self._episode_expenses
+
     @abc.abstractmethod
     def _transit_costs(self) -> float:
         """Calculating the transit costs depending on the states"""
