@@ -108,6 +108,8 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
 
         self._learning_agent: 'LearningAgent' = learning_agent
+        self._learning_agent.add_carrier(self)
+
         self._replay_buffer: ReplayBuffer = replay_buffer
         self._training_data_set: Dataset = self._replay_buffer.as_dataset(
             sample_batch_size=replay_buffer_batch_size,
@@ -186,9 +188,19 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._discount_power = 1
         self._is_first_step = True  # the time_step will not be writen
 
-    def update_collect_policy(self, policy: gaussian_policy.GaussianPolicy):
+    def update_collect_policy(self):
         assert self._is_learning, "update_collect_policy only if learning"
-        self._policy = policy
+        self._policy = self._learning_agent.collect_policy
+
+    def set_not_learning(self):
+        assert self._is_learning, "Set only learning agents to non-learning"
+        self._is_learning = False
+        self._policy = self._learning_agent.policy
+
+    def set_learning(self):
+        assert not self._is_learning, "Set only non-learning agent to learning"
+        self._is_learning = True
+        self._policy = self._learning_agent.collect_policy
 
     def next_step(self) -> None:
         """
@@ -331,6 +343,16 @@ class LearningAgent(Td3Agent):
             actor_network=self._actor_network, clip=False)
 
         self._environment.register_learning_agent(self)
+        self._carriers: List['LearningCarrier'] = []
+        # This list is going to be a copy of the carriers of the tfaenvironment, but i keep this for two reasons:
+        #   * we may want in future version to make them different (learning from different structures)
+        #   * It is better to make a reference to the learning agent when changing properties linked to the learning
+        #       process (costs, is_learning) but it makes more sense to access them via environment
+        #       when environment related (home...)
+
+    def add_carrier(self, carrier: 'LearningCarrier'):
+        """To be called by the learning agent at creation to signal its presence"""
+        self._carriers.append(carrier)
 
     def change_exploration_noise_std(self, value: float) -> None:
         """
@@ -342,6 +364,6 @@ class LearningAgent(Td3Agent):
                                                               scale=self._exploration_noise_std,
                                                               clip=True)
 
-        for carrier in self._environment.carriers:
+        for carrier in self._carriers:
             if carrier.is_learning:
-                carrier.update_collect_policy(self._collect_policy)
+                carrier.update_collect_policy()

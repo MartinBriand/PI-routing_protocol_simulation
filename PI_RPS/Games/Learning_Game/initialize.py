@@ -193,8 +193,8 @@ def init_learning_agent(e: TFAEnvironment,
                                                      dtype=dtype('float32'), name='observation'))
 
     action_spec = BoundedTensorSpec(shape=(len(e.nodes),), dtype=dtype('float32'), name='action',
-                                    minimum=[0 for k in range(len(e.nodes))],
-                                    maximum=[1 for k in range(len(e.nodes))])
+                                    minimum=[0 for _ in range(len(e.nodes))],
+                                    maximum=[1 for _ in range(len(e.nodes))])
 
     policy_spec = PolicyStep(action=action_spec, state=(), info=())
     data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
@@ -242,31 +242,33 @@ def init_learning_agent(e: TFAEnvironment,
     train_step_counter = None  # should be automatically initialized
     name = "TD3_Multi_Agents_Learner"
 
-    LearningAgent(environment=e,
-                  time_step_spec=time_step_spec,
-                  action_spec=action_spec,
-                  actor_network=actor_network,
-                  critic_network=critic_network,
-                  actor_optimizer=actor_optimizer,
-                  critic_optimizer=critic_optimizer,
-                  exploration_noise_std=exploration_noise_std,
-                  critic_network_2=critic_network_2,
-                  target_actor_network=target_actor_network,
-                  target_critic_network=target_critic_network,
-                  target_critic_network_2=target_critic_network_2,
-                  target_update_tau=target_update_tau,
-                  target_update_period=target_update_period,
-                  actor_update_period=actor_update_period,
-                  td_errors_loss_fn=td_errors_loss_fn,
-                  gamma=gamma,
-                  reward_scale_factor=reward_scale_factor,
-                  target_policy_noise=target_policy_noise,
-                  target_policy_noise_clip=target_policy_noise_clip,
-                  gradient_clipping=gradient_clipping,
-                  debug_summaries=debug_summaries,
-                  summarize_grads_and_vars=summarize_grads_and_vars,
-                  train_step_counter=train_step_counter,
-                  name=name)
+    learning_agent = LearningAgent(environment=e,
+                                   time_step_spec=time_step_spec,
+                                   action_spec=action_spec,
+                                   actor_network=actor_network,
+                                   critic_network=critic_network,
+                                   actor_optimizer=actor_optimizer,
+                                   critic_optimizer=critic_optimizer,
+                                   exploration_noise_std=exploration_noise_std,
+                                   critic_network_2=critic_network_2,
+                                   target_actor_network=target_actor_network,
+                                   target_critic_network=target_critic_network,
+                                   target_critic_network_2=target_critic_network_2,
+                                   target_update_tau=target_update_tau,
+                                   target_update_period=target_update_period,
+                                   actor_update_period=actor_update_period,
+                                   td_errors_loss_fn=td_errors_loss_fn,
+                                   gamma=gamma,
+                                   reward_scale_factor=reward_scale_factor,
+                                   target_policy_noise=target_policy_noise,
+                                   target_policy_noise_clip=target_policy_noise_clip,
+                                   gradient_clipping=gradient_clipping,
+                                   debug_summaries=debug_summaries,
+                                   summarize_grads_and_vars=summarize_grads_and_vars,
+                                   train_step_counter=train_step_counter,
+                                   name=name)
+
+    learning_agent.initialize()
 
     return data_spec
 
