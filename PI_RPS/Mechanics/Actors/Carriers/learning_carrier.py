@@ -191,7 +191,10 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
         self._replay_buffer.clear()
         self._discount_power = 1
-        self._is_first_step = True  # the time_step will not be writen
+        self._is_first_step = True  # the time_step will not be written if in transit
+        if not self._in_transit:
+            self._time_step: Optional[TimeStep] = self._generate_current_time_step()
+            self._is_first_step = False
 
     def update_collect_policy(self):
         assert self._is_learning, "update_collect_policy only if learning"
