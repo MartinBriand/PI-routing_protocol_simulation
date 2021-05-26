@@ -81,13 +81,13 @@ def load_env_and_agent(n_carriers: int,
     for name in lambdas.keys():
         DummyNode(name, {}, 100, [], e)
 
-    for node in e.nodes:
-        node.initialize_weights()
-
     e.build_node_state()
 
     lambdas, attribution, distances = _to_node_keys(e, lambdas, attribution, distances)
-    e.set_distance(distances)
+    e.set_distances(distances)
+
+    for node in e.nodes:
+        node.initialize_weights()
 
     # create Shippers
     shipper = DummyShipper(name='Shipper_arrete_de_shipper', laws=[], expenses=[], loads=[], environment=e)

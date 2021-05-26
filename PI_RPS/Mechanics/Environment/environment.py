@@ -66,11 +66,11 @@ class Environment:
             node.update_weights_with_new_infos(new_infos)
         self._loads_with_new_infos = []
 
-    def get_distance(self, start: 'Node', end: 'Node') -> int:
+    def get_distance(self, departure: 'Node', arrival: 'Node') -> int:
         """to be called by Carriers to know the remaining time"""
-        return self._distances[start][end]
+        return self._distances[departure][arrival]
 
-    def set_distance(self, distances: 'Distance') -> None:
+    def set_distances(self, distances: 'Distance') -> None:
         """the set distance function"""
         self._distances = distances
 

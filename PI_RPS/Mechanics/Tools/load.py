@@ -18,18 +18,18 @@ class Load:
     """
 
     def __init__(self,
-                 start: 'Node',
+                 departure: 'Node',
                  arrival: 'Node',
                  shipper: 'Shipper',
                  environment: 'Environment') -> None:
 
-        self._start: 'Node' = start
+        self._departure: 'Node' = departure
         self._arrival: 'Node' = arrival
         self._shipper: 'Shipper' = shipper
         self._environment: 'Environment' = environment
 
         self._current_carrier: Optional['Carrier'] = None
-        self._next_node: 'Node' = self._start  # note that if you are not in transit you are at a Nodes,
+        self._next_node: 'Node' = self._departure  # note that if you are not in transit you are at a Nodes,
         # and your next_node is also your current node then
 
         self._in_transit: bool = False
@@ -38,12 +38,12 @@ class Load:
         self._has_new_infos: bool = False
 
         self._route_costs: List[Cost] = []  # cost is tuple (previous_node, next_node, carrier_cost, previous_node_cost)
-        self._previous_infos: List['Info'] = [Info(self._start, self._start, 0)]  # to calculate the new info, use the
+        self._previous_infos: List['Info'] = [Info(self._departure, self._departure, 0)]  # to calculate the new info, use the
         # old info and add the cost of the current step
 
-        # And now add it to the start Nodes and the environment
+        # And now add it to the departure Nodes and the environment
         self._shipper.add_load(self)
-        self._start.add_load_to_waiting_list(self)
+        self._departure.add_load_to_waiting_list(self)
         self._environment.add_load(self)
 
     def get_attribution(self,

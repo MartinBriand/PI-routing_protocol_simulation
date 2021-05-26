@@ -23,14 +23,19 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         self._nb_infos: int = nb_info
 
     def initialize_weights(self) -> None:
-        """create structure and initialize the weights and the number of visits to 0. Should be called by the game"""
+        """create structure and initialize the weights and the number of visits to distance*2000.
+        Should be called by the initializer AFTER registering the distance matrix"""
         self._weights = {}
-        for node_i in self._environment.nodes:
-            if node_i != self:
-                self._weights[node_i] = {}
-                for node_j in self._environment.nodes:
-                    if node_j != self:
-                        self._weights[node_i][node_j] = 0.  # exponential smoothing starting at 0.
+        for arrival in self._environment.nodes:
+            if arrival != self:
+                self._weights[arrival] = {}
+                for departure in self._environment.nodes:
+                    if departure != self:  # exponential smoothing starting at 2000*distance
+                        if departure != arrival:
+                            self._weights[arrival][departure] = self._environment.get_distance(departure=departure,
+                                                                                               arrival=arrival)*2000.
+                        else:
+                            self._weights[arrival][departure] = 0.
 
     def update_weights_with_new_infos(self, new_infos: List['Info']) -> None:
         """
