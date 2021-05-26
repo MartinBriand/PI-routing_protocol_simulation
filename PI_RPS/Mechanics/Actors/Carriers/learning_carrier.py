@@ -24,7 +24,7 @@ During exploitation
 """
 # TODO: is this description correct at the end of the implementation?
 
-from random import random
+import random
 from tensorflow import constant as tf_constant, concat as tf_concat, Variable, expand_dims as tf_expand_dims
 from tensorflow.python.data import Dataset
 from tensorflow.python.framework.ops import EagerTensor
@@ -147,7 +147,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         Here the function is simple: go home in 10% of the cases.
         """
 
-        if random() < 0.1:
+        if random.random() < 0.1:
             return self._home
         else:
             return self._next_node
@@ -176,7 +176,12 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                 bid[next_node] = action[0, k]  # 0 because of the first dimension
         return bid
 
-    def set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
+    def random_new_cost_parameters(self) -> None:
+        road_costs = random.normalvariate(mu=self._environment.t_c_mu, sigma=self._environment.t_c_sigma)
+        drivers_costs = random.normalvariate(mu=self._environment.ffh_c_mu, sigma=self._environment.ffh_c_sigma)
+        self._set_new_cost_parameters(t_c=road_costs, ffh_c=drivers_costs)
+
+    def _set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
         """
         Setting new parameters for learners and resetting buffers
         """
@@ -367,3 +372,7 @@ class LearningAgent(Td3Agent):
         for carrier in self._carriers:
             if carrier.is_learning:
                 carrier.update_collect_policy()
+
+    @property
+    def carriers(self) -> List['LearningCarrier']:
+        return self._carriers
