@@ -22,7 +22,6 @@ During exploitation
     * The driver won't change the parameters of the Carriers on the way
     * The Carriers won't generate episodes or these episodes won't be added to a replay buffer
 """
-# TODO: is this description correct at the end of the implementation?
 
 import random
 from tensorflow import constant as tf_constant, concat as tf_concat, Variable, expand_dims as tf_expand_dims
@@ -111,8 +110,9 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self._learning_agent.add_carrier(self)
 
         self._replay_buffer: ReplayBuffer = replay_buffer
+        self._replay_buffer_batch_size: int = replay_buffer_batch_size
         self._training_data_set: Dataset = self._replay_buffer.as_dataset(
-            sample_batch_size=replay_buffer_batch_size,
+            sample_batch_size=self._replay_buffer_batch_size,
             num_steps=None,
             num_parallel_calls=None,
             single_deterministic_pass=False
@@ -238,7 +238,9 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
             # note that reward is update in next_step()
             # communicate trajectory
             self._replay_buffer.add_batch(transition)
-            self._environment.add_carrier_to_new_transition(self)
+            if self._replay_buffer.num_frames().numpy() >= self._replay_buffer_batch_size:
+                # to avoid training on repeated transitions
+                self._environment.add_carrier_to_enough_transitions(self)
 
     def _generate_current_time_step(self) -> TimeStep:
         node_state = self._environment.this_node_state(self._next_node)

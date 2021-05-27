@@ -4,7 +4,7 @@ This files defines a few functions to initialize the variables in exploitation_d
 
 import csv
 import os
-from typing import List, Dict
+from typing import List, Dict, Tuple, Union
 
 import random
 import numpy as np
@@ -30,7 +30,10 @@ from PI_RPS.Mechanics.Tools.load import Load
 
 
 def load_env_and_agent(n_carriers: int,
+                       action_min: float,
+                       action_max: float,
                        discount: float,
+                       tnah_divisor: float,
                        exploration_noise: float,
                        target_update_tau_p: float,
                        target_update_period_p: int,
@@ -38,8 +41,18 @@ def load_env_and_agent(n_carriers: int,
                        reward_scale_factor_p: float,
                        target_policy_noise_p: float,
                        target_policy_noise_clip_p: float,
-                       max_time_not_at_home: int
-                       ) -> (TFAEnvironment, LearningAgent):
+                       max_time_not_at_home: int,
+                       actor_fc_layer_params: Tuple,
+                       actor_dropout_layer_params: Union[float, None],
+                       critic_observation_fc_layer_params: Union[Tuple, None],
+                       critic_action_fc_layer_params: Union[Tuple, None],
+                       critic_joint_fc_layer_params: Tuple,
+                       critic_joint_dropout_layer_params: Union[float, None],
+                       actor_learning_rate: float,
+                       critic_learning_rate: float,
+                       buffer_max_length: int,
+                       replay_buffer_batch_size: int
+                       ) -> Tuple[TFAEnvironment, LearningAgent]:
     path = os.path.abspath(os.path.dirname(__file__))
     lambdas: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_lambda_table.csv'))
     attribution: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_dest_attribution_table.csv'))
@@ -72,9 +85,9 @@ def load_env_and_agent(n_carriers: int,
                        t_c_sigma=4.15,
                        ffh_c_mu=20.,
                        ffh_c_sigma=1.00,  # multiplication by nb_hours occurs in init
-                       tnah_divisor=30,
-                       action_min=100,
-                       action_max=20000,
+                       tnah_divisor=tnah_divisor,
+                       action_min=action_min,
+                       action_max=action_max,
                        max_time_not_at_home=max_time_not_at_home)
 
     # create Nodes
@@ -117,18 +130,32 @@ def load_env_and_agent(n_carriers: int,
 
     # create Carriers
 
-    data_spec = init_learning_agent(e=e,
-                                    exploration_noise=exploration_noise,
-                                    target_update_tau_p=target_update_tau_p,
-                                    target_update_period_p=target_update_period_p,
-                                    actor_update_period_p=actor_update_period_p,
-                                    reward_scale_factor_p=reward_scale_factor_p,
-                                    target_policy_noise_p=target_policy_noise_p,
-                                    target_policy_noise_clip_p=target_policy_noise_clip_p)
+    data_spec = _init_learning_agent(e=e,
+                                     exploration_noise=exploration_noise,
+                                     target_update_tau_p=target_update_tau_p,
+                                     target_update_period_p=target_update_period_p,
+                                     actor_update_period_p=actor_update_period_p,
+                                     reward_scale_factor_p=reward_scale_factor_p,
+                                     target_policy_noise_p=target_policy_noise_p,
+                                     target_policy_noise_clip_p=target_policy_noise_clip_p,
+                                     actor_fc_layer_params=actor_fc_layer_params,
+                                     actor_dropout_layer_params=actor_dropout_layer_params,
+                                     critic_observation_fc_layer_params=critic_observation_fc_layer_params,
+                                     critic_action_fc_layer_params=critic_action_fc_layer_params,
+                                     critic_joint_fc_layer_params=critic_joint_fc_layer_params,
+                                     critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
+                                     actor_learning_rate=actor_learning_rate,
+                                     critic_learning_rate=critic_learning_rate)
 
     learning_agent = e.learning_agent
 
-    init_learning_carriers(data_spec, n_carriers, e, learning_agent, discount)
+    _init_learning_carriers(data_spec=data_spec,
+                            n_carriers=n_carriers,
+                            environment=e,
+                            learning_agent=learning_agent,
+                            discount=discount,
+                            buffer_max_length=buffer_max_length,
+                            replay_buffer_batch_size=replay_buffer_batch_size)
 
     return e, learning_agent
 
@@ -176,14 +203,23 @@ def _to_node_keys(e: TFAEnvironment,
     return new_lambdas, new_attribution, new_distances
 
 
-def init_learning_agent(e: TFAEnvironment,
-                        exploration_noise: float,
-                        target_update_tau_p: float,
-                        target_update_period_p: int,
-                        actor_update_period_p: int,
-                        reward_scale_factor_p: float,
-                        target_policy_noise_p: float,
-                        target_policy_noise_clip_p: float):
+def _init_learning_agent(e: TFAEnvironment,
+                         exploration_noise: float,
+                         target_update_tau_p: float,
+                         target_update_period_p: int,
+                         actor_update_period_p: int,
+                         reward_scale_factor_p: float,
+                         target_policy_noise_p: float,
+                         target_policy_noise_clip_p: float,
+                         actor_fc_layer_params: Tuple,
+                         actor_dropout_layer_params: Union[float, None],  # not sure for the float
+                         critic_observation_fc_layer_params: Union[Tuple, None],
+                         critic_action_fc_layer_params: Union[Tuple, None],
+                         critic_joint_fc_layer_params: Tuple,
+                         critic_joint_dropout_layer_params: Union[float, None],
+                         actor_learning_rate: float,
+                         critic_learning_rate: float
+                         ):
     # Initializing the agents
     time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
                               reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
@@ -194,35 +230,34 @@ def init_learning_agent(e: TFAEnvironment,
 
     action_spec = BoundedTensorSpec(shape=(len(e.nodes),), dtype=dtype('float32'), name='action',
                                     minimum=[0 for _ in range(len(e.nodes))],
-                                    maximum=[1 for _ in range(len(e.nodes))])
+                                    maximum=[1 for _ in range(len(e.nodes))])  # they are normalized in the game
 
     policy_spec = PolicyStep(action=action_spec, state=(), info=())
     data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
 
     actor_network = ActorNetwork(input_tensor_spec=time_step_spec.observation,
                                  output_tensor_spec=action_spec,
-                                 fc_layer_params=(64, 64),
-                                 dropout_layer_params=None,
+                                 fc_layer_params=actor_fc_layer_params,
+                                 dropout_layer_params=actor_dropout_layer_params,
                                  activation_fn=tf.keras.activations.relu,
                                  kernel_initializer='glorot_uniform',
                                  last_kernel_initializer='glorot_uniform'
                                  )
 
     critic_network = CriticNetwork(input_tensor_spec=(time_step_spec.observation, action_spec),
-                                   observation_fc_layer_params=None,
-                                   action_fc_layer_params=None,
-                                   joint_fc_layer_params=(64, 64),
-                                   joint_dropout_layer_params=None,
+                                   observation_fc_layer_params=critic_observation_fc_layer_params,
+                                   action_fc_layer_params=critic_action_fc_layer_params,
+                                   joint_fc_layer_params=critic_joint_fc_layer_params,
+                                   joint_dropout_layer_params=critic_joint_dropout_layer_params,
                                    activation_fn=tf.nn.relu,
                                    kernel_initializer='glorot_uniform',
                                    last_kernel_initializer='glorot_uniform',
                                    name='Critic_network')
 
-    actor_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-    critic_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    actor_optimizer = tf.keras.optimizers.Adam(learning_rate=actor_learning_rate)
+    critic_optimizer = tf.keras.optimizers.Adam(learning_rate=critic_learning_rate)
     exploration_noise_std = exploration_noise / (e.action_max - e.action_min)  # big enough for exploration
     # it may even be reduced over time
-    # TODO make sure we can change noise later on
     critic_network_2 = None
     target_actor_network = None
     target_critic_network = None
@@ -273,19 +308,26 @@ def init_learning_agent(e: TFAEnvironment,
     return data_spec
 
 
-def init_learning_carriers(data_spec, n_carriers, e, learning_agent, discount) -> None:
+def _init_learning_carriers(data_spec,
+                            n_carriers: int,
+                            environment: TFAEnvironment,
+                            learning_agent: LearningAgent,
+                            discount: float,
+                            buffer_max_length: int,
+                            replay_buffer_batch_size: int
+                            ) -> None:
     counter = {}
     for k in range(n_carriers):
-        node = e.nodes[k % len(e.nodes)]
+        node = environment.nodes[k % len(environment.nodes)]
         if node in counter.keys():
             counter[node] += 1
         else:
             counter[node] = 1
-        road_costs = random.normalvariate(mu=e.t_c_mu, sigma=e.t_c_sigma)
-        drivers_costs = random.normalvariate(mu=e.ffh_c_mu, sigma=e.ffh_c_sigma)
+        road_costs = random.normalvariate(mu=environment.t_c_mu, sigma=environment.t_c_sigma)
+        drivers_costs = random.normalvariate(mu=environment.ffh_c_mu, sigma=environment.ffh_c_sigma)
         buffer = TFUniformReplayBuffer(data_spec=data_spec,
                                        batch_size=1,  # the sample batch size is then different, but we add 1 by 1
-                                       max_length=30,
+                                       max_length=buffer_max_length,
                                        dataset_drop_remainder=True)
         LearningCarrier(name=node.name + '_' + str(counter[node]),
                         home=node,
@@ -293,7 +335,7 @@ def init_learning_carriers(data_spec, n_carriers, e, learning_agent, discount) -
                         next_node=node,
                         time_to_go=0,
                         load=None,
-                        environment=e,
+                        environment=environment,
                         episode_expenses=[],
                         episode_revenues=[],
                         this_episode_expenses=[],
@@ -303,7 +345,7 @@ def init_learning_carriers(data_spec, n_carriers, e, learning_agent, discount) -
                         time_not_at_home=0,
                         learning_agent=learning_agent,
                         replay_buffer=buffer,
-                        replay_buffer_batch_size=5,
+                        replay_buffer_batch_size=replay_buffer_batch_size,
                         is_learning=True,
                         discount=discount,
                         discount_power=1,

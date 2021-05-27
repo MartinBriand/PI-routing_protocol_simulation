@@ -22,33 +22,62 @@ from PI_RPS.Games.Learning_Game.initialize import load_env_and_agent
 import numpy as np
 
 n_carriers_per_node = 15  # @param {type:"integer"}
+action_min = 100  # @param {type:"number"}
+action_max = 20000  # @param {type:"number"}
 discount = 0.95  # @param {type:"number"}
+
+max_time_not_at_home = 30  # @param {type:"integer"}
+tnah_divisor = 30  # keep at 30, not a parameter
+reward_scale_factor_p = 1 / 500  # keep at 1/500, not a parameter
+
+replay_buffer_batch_size = 5  # @param {type:"integer"}
+buffer_max_length = 25  # @param{type:"integer"}
 
 starting_exploration_noise = 500  # @param {type:"number"}
 final_exploration_noise = 30  # @param {type:"number"}
-exploration_noise = starting_exploration_noise
+exploration_noise = starting_exploration_noise  # not a param
+
+actor_fc_layer_params = (64, 64)  # @param
+actor_dropout_layer_params = None  # @param
+critic_observation_fc_layer_params = None  # @param
+critic_action_fc_layer_params = None  # @param
+critic_joint_fc_layer_params = (64, 64)  # @param
+critic_joint_dropout_layer_params = None  # @param
 
 target_update_tau_p = 0.1  # @param {type:"number"}
 target_update_period_p = 2  # @param {type:"number"}
 actor_update_period_p = 2  # @param {type:"integer"}
-
-reward_scale_factor_p = 1 / 500  # do not change, keep fixed at 500
+actor_learning_rate = 0.001  # @param{type:"number"}
+critic_learning_rate = 0.001  # @param{type:"number"}
 
 target_policy_noise_p = 30.  # @param {type:"number"}
 target_policy_noise_clip_p = 75.  # @param {type:"number"}
 
-max_time_not_at_home = 30  # @param {type:"integer"}
 
 e, learning_agent = load_env_and_agent(n_carriers=11 * n_carriers_per_node,
                                        discount=discount,
-                                       exploration_noise=starting_exploration_noise,
+                                       exploration_noise=exploration_noise,
                                        target_update_tau_p=target_update_tau_p,
                                        target_update_period_p=target_update_period_p,
                                        actor_update_period_p=actor_update_period_p,
                                        reward_scale_factor_p=reward_scale_factor_p,
                                        target_policy_noise_p=target_policy_noise_p,
                                        target_policy_noise_clip_p=target_policy_noise_clip_p,
-                                       max_time_not_at_home=max_time_not_at_home)
+                                       max_time_not_at_home=max_time_not_at_home,
+                                       action_min=action_min,
+                                       action_max=action_max,
+                                       tnah_divisor=tnah_divisor,
+                                       replay_buffer_batch_size=replay_buffer_batch_size,
+                                       buffer_max_length=buffer_max_length,
+                                       actor_learning_rate=actor_learning_rate,
+                                       critic_learning_rate=critic_learning_rate,
+                                       actor_fc_layer_params=actor_fc_layer_params,
+                                       actor_dropout_layer_params=actor_dropout_layer_params,
+                                       critic_observation_fc_layer_params=critic_observation_fc_layer_params,
+                                       critic_action_fc_layer_params=critic_action_fc_layer_params,
+                                       critic_joint_fc_layer_params=critic_joint_fc_layer_params,
+                                       critic_joint_dropout_layer_params=critic_joint_dropout_layer_params
+                                       )
 
 train = tfa_function(learning_agent.train)
 
@@ -176,8 +205,7 @@ def add_results(results) -> None:
 
 num_rounds = 25  # @param {type:"integer"}
 num_cost_pass = 4  # @param {type:"integer"}
-num_train_per_pass = 2  # @param {type:"integer"}
-num_iteration_before_train = 3  # @param {type:"integer"}
+num_train_per_pass = 10  # @param {type:"integer"}
 num_iteration_per_test = 3  # @param{type:"integer"}
 
 exploration_noise_update = (starting_exploration_noise - final_exploration_noise) / (num_rounds - 1)
@@ -191,26 +219,22 @@ def change_costs():
 # initialize the test lists to []
 # add an ETA
 for i in range(num_rounds):
-    print("Test", i, '/', num_rounds - 1)
+    print("Test", i+1, '/', num_rounds)
     change_costs()
     test_results = test(num_iteration_per_test)
     print(test_results)
     add_results(test_results)
     for j in range(num_cost_pass):
-        print("Pass", j, "/", num_cost_pass - 1)
+        print("Pass", j+1, "/", num_cost_pass)
         change_costs()
-        for k in range(num_train_per_pass + num_iteration_before_train):
-            print("Training",
-                  k, "/",
-                  num_train_per_pass + num_iteration_before_train - 1,
-                  "(including {1} preparation iteration)".format(num_train_per_pass, num_iteration_before_train))
+        for k in range(num_train_per_pass):  # + num_iteration_before_train):
+            print("Training", k+1, "/", num_train_per_pass)
             e.iteration()
-            e.shuffle_new_transition_carriers()
-            n = len(e.new_transition_carriers)
-            if k > num_iteration_before_train-1:
-                for _ in range(n):
-                    carrier = e.pop_new_transition_carriers()
-                    experience, _ = next(carrier.training_data_set_iter)
-                    train(experience=experience, weights=None)
+            e.shuffle_enough_transitions_carriers()
+            n = len(e.enough_transitions_carriers)
+            for _ in range(n):
+                carrier = e.pop_enough_transitions_carriers()
+                experience, _ = next(carrier.training_data_set_iter)
+                train(experience=experience, weights=None)
     exploration_noise -= exploration_noise_update
     learning_agent.change_exploration_noise_std(exploration_noise)
