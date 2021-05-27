@@ -137,6 +137,14 @@ class Load:
     def is_arrived(self) -> bool:
         return self._is_arrived
 
+    @property
+    def is_discarded(self) -> bool:
+        return self._is_discarded
+
+    @property
+    def in_transit(self) -> bool:
+        return self._in_transit
+
 
 class Info:
     """

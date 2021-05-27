@@ -18,7 +18,8 @@ class DummyShipper(Shipper):
                  expenses: List[float],
                  loads: List['Load'],
                  environment: 'Environment',
-                 reserve_price: float) -> None:
+                 reserve_price_per_distance: float,
+                 default_reserve_price: float) -> None:
 
         super().__init__(name,
                          laws,  # forward reference
@@ -26,10 +27,14 @@ class DummyShipper(Shipper):
                          loads,
                          environment)
 
-        self._reserve_price: float = reserve_price
+        self._reserve_price_per_distance: float = reserve_price_per_distance
+        self._default_reserve_price: float = default_reserve_price
 
     def generate_reserve_price(self, load: 'Load', node: 'Node') -> float:  # this should be a float
         """
         To be called by the Nodes before an auction
         """
-        return self._reserve_price  # Yes it is a lot ;)
+        if self._environment.default_reserve_price:
+            return self._default_reserve_price
+        else:
+            return self._reserve_price_per_distance * self._environment.get_distance(node, load.arrival)

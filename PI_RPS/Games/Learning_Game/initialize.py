@@ -33,7 +33,8 @@ def load_env_and_agent(n_carriers: int,
                        action_min: float,
                        action_max: float,
                        discount: float,
-                       shippers_reserve_price: float,
+                       shippers_reserve_price_per_distance: float,
+                       shipper_default_reserve_price: float,
                        node_nb_info: int,
                        info_cost_max_factor_increase: float,
                        init_node_weights_distance_scaling_factor: float,
@@ -120,7 +121,8 @@ def load_env_and_agent(n_carriers: int,
                            expenses=[],
                            loads=[],
                            environment=e,
-                           reserve_price=shippers_reserve_price)
+                           reserve_price_per_distance=shippers_reserve_price_per_distance,
+                           default_reserve_price=shipper_default_reserve_price)
 
     # create laws
     generator = np.random.default_rng()

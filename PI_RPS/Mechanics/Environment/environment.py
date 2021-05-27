@@ -38,6 +38,8 @@ class Environment:
 
         self._distances: Distance = {}  # should be a dictionary of dictionaries with Nodes as keys
 
+        self._default_reserve_price: bool = True
+
     def iteration(self) -> None:
         """This is the main function of the Environment class. It represents the operation of the game for one unit of
         time. It should be called in a loop after initializing the game."""
@@ -151,3 +153,14 @@ class Environment:
     @property
     def init_node_weights_distance_scaling_factor(self):
         return self._init_node_weights_distance_scaling_factor
+
+    @property
+    def default_reserve_price(self) -> bool:
+        return self._default_reserve_price
+
+    @default_reserve_price.setter
+    def default_reserve_price(self, value: bool) -> None:
+        assert type(value) == bool
+        assert value == (not self._default_reserve_price)
+        self._default_reserve_price = value
+

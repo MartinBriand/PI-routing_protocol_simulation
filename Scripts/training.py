@@ -12,24 +12,27 @@ Before executing anything, if you are on google colab using google computational
 # Installation and import
 """
 
+#! pip uninstall PI-routing-protocol-simulation
 #! pip install https://github.com/MartinBriand/PI-routing_protocol_simulation/archive/develop.tar.gz
 
 from tf_agents.utils.common import function as tfa_function
 from PI_RPS.Games.Learning_Game.initialize import load_env_and_agent
 import numpy as np
+import time
 
 """# Initialization"""
 
 n_carriers_per_node = 15 # @param {type:"integer"}
-action_min = 100. # @param {type:"number"}
+action_min = 0. # @param {type:"number"}
 action_max = 20000. # @param {type:"number"}
 discount = 0.95 # @param {type:"number"}
 
-shippers_reserve_price = 20000. # @param{type:"number"}
+shippers_reserve_price_per_distance = 1200. # @param{type:"number"}
+shipper_default_reserve_price = 20000. # @param{type:"number"}
 init_node_weights_distance_scaling_factor = 1500. # @param{type:"number"}
 node_nb_info = 100 # @param{type:"integer"}
-info_cost_max_factor_increase = 1.3 # @param{type:"integer"}
 max_nb_infos_per_load = 5 # @param{type:"integer"}
+info_cost_max_factor_increase = 1.3 # @param{type:"number"}
 
 max_time_not_at_home = 30 # @param {type:"integer"}
 tnah_divisor = 30. # keep at 30, not a parameter
@@ -59,11 +62,12 @@ target_policy_noise_p = 30. # @param {type:"number"}
 target_policy_noise_clip_p = 75. # @param {type:"number"}
 
 e, learning_agent = load_env_and_agent(n_carriers=11*n_carriers_per_node, # 11 is the number of nodes
-                                       shippers_reserve_price=shippers_reserve_price,
+                                       shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                        init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
+                                       shipper_default_reserve_price=shipper_default_reserve_price,
                                        node_nb_info=node_nb_info,
-                                       info_cost_max_factor_increase=info_cost_max_factor_increase,
                                        max_nb_infos_per_load=max_nb_infos_per_load,
+                                       info_cost_max_factor_increase=info_cost_max_factor_increase,
                                        discount=discount,
                                        exploration_noise=exploration_noise,
                                        target_update_tau_p=target_update_tau_p,
@@ -102,6 +106,8 @@ all_results = {'carriers_profit': {'min': [],
                                    'mean': []},
                'nb_loads': [],
                'nb_arrived_loads': [],
+               'nb_discarded_loads': [],
+               'nb_in_transit_loads': [],
                'delivery_costs': {'min': [],
                                   'quartile1': [],
                                   'quartile2': [],
@@ -156,6 +162,8 @@ def test(num_iter_per_test):
 
     nb_loads = len(e.loads)
     nb_arrived_loads = 0
+    nb_discarded_loads = 0
+    nb_in_transit_loads = 0
     total_delivery_costs = []
     nb_hops = []
     delivery_times = []
@@ -165,7 +173,11 @@ def test(num_iter_per_test):
             total_delivery_costs.append(load_p.total_delivery_cost())
             nb_hops.append(load_p.nb_hops())
             delivery_times.append(load_p.delivery_time())
-    delivery_costs = np.array(total_delivery_costs)
+        if load_p.is_discarded:
+            nb_discarded_loads += 1
+        if load_p.in_transit:
+            nb_in_transit_loads += 1
+    total_delivery_costs = np.array(total_delivery_costs)
     nb_hops = np.array(nb_hops)
     delivery_times = np.array(delivery_times)
 
@@ -177,12 +189,14 @@ def test(num_iter_per_test):
                                    'mean': np.mean(carriers_profit)},
                'nb_loads': nb_loads,
                'nb_arrived_loads': nb_arrived_loads,
-               'delivery_costs': {'min': np.min(delivery_costs),
-                                  'quartile1': np.quantile(delivery_costs, 0.25),
-                                  'quartile2': np.quantile(delivery_costs, 0.5),
-                                  'quartile3': np.quantile(delivery_costs, 0.75),
-                                  'max': np.max(delivery_costs),
-                                  'mean': np.mean(delivery_costs)},
+               'nb_discarded_loads': nb_discarded_loads,
+               'nb_in_transit_loads': nb_in_transit_loads,
+               'delivery_costs': {'min': np.min(total_delivery_costs),
+                                  'quartile1': np.quantile(total_delivery_costs, 0.25),
+                                  'quartile2': np.quantile(total_delivery_costs, 0.5),
+                                  'quartile3': np.quantile(total_delivery_costs, 0.75),
+                                  'max': np.max(total_delivery_costs),
+                                  'mean': np.mean(total_delivery_costs)},
                'nb_hops': {'min': np.min(nb_hops),
                            'quartile1': np.quantile(nb_hops, 0.25),
                            'quartile2': np.quantile(nb_hops, 0.5),
@@ -203,7 +217,7 @@ def test(num_iter_per_test):
     return results
 
 keys_with_stats = ['carriers_profit', 'delivery_costs', 'nb_hops', 'delivery_times']
-keys_without_stat = ['nb_loads', 'nb_arrived_loads']
+keys_without_stat = ['nb_loads', 'nb_arrived_loads', 'nb_discarded_loads', 'nb_in_transit_loads']
 stat_keys = ['min', 'quartile1', 'quartile2', 'quartile3', 'max', 'mean']
 
 
@@ -217,7 +231,7 @@ def add_results(results) -> None:
 """## Loop"""
 
 num_rounds = 25 # @param {type:"integer"}
-num_cost_pass = 1 # @param {type:"integer"}
+num_cost_pass = 10 # @param {type:"integer"}
 num_train_per_pass = 10 # @param {type:"integer"}
 num_iteration_per_test = 10 # @param{type:"integer"}
 
@@ -227,8 +241,16 @@ def change_costs():
     for carrier_p in learning_agent.carriers:
         carrier_p.random_new_cost_parameters()
 
-# add an ETA
+start_time = time.time()
 for i in range(num_rounds):
+    now = time.time()
+    if i > 0:
+        eta = int((now - start_time)*(num_rounds-i)/i)
+        eta_h = eta//3600
+        eta_m = (eta%3600)//60
+        eta_s = (eta%3600)%60
+        print("ETA:", "{}h{}m{}s".format(eta_h, eta_m, eta_s))
+        e.default_reserve_price = False
     print("Test", i+1, '/', num_rounds)
     change_costs()
     print(e.nodes[0].readable_weights())
@@ -257,8 +279,7 @@ test_results = test(num_iteration_per_test)
 print(test_results)
 add_results(test_results)
 
-
-
-print(read_weights(e.nodes[0]))
-print(read_weights(e.nodes[1]))
+"""do not forget to add:
+* better reserve_prices
+"""
 
