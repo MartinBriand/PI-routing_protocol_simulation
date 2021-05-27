@@ -35,6 +35,8 @@ def load_env_and_agent(n_carriers: int,
                        discount: float,
                        shippers_reserve_price: float,
                        node_nb_info: int,
+                       info_cost_max_factor_increase: float,
+                       init_node_weights_distance_scaling_factor: float,
                        max_nb_infos_per_load: int,
                        tnah_divisor: float,
                        exploration_noise: float,
@@ -96,7 +98,12 @@ def load_env_and_agent(n_carriers: int,
 
     # create Nodes
     for name in lambdas.keys():
-        DummyNode(name, {}, node_nb_info, [], e)
+        DummyNode(name=name,
+                  weights={},
+                  nb_info=node_nb_info,
+                  info_cost_max_factor_increase=info_cost_max_factor_increase,
+                  revenues=[],
+                  environment=e)
 
     e.build_node_state()
 
@@ -104,7 +111,7 @@ def load_env_and_agent(n_carriers: int,
     e.set_distances(distances)
 
     for node in e.nodes:
-        node.initialize_weights()
+        node.initialize_weights(distance_scaling_factor=init_node_weights_distance_scaling_factor)
 
     # create Shippers
     shipper = DummyShipper(name='Shipper_arrete_de_shipper',

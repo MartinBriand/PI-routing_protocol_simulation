@@ -94,10 +94,6 @@ class Node(abc.ABC):
     def auction_cost(self) -> float:
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
 
-    @abc.abstractmethod
-    def initialize_weights(self) -> None:
-        """May not be called by always, but there in case it is needed for new games"""
-
     def signal_as_current_auction(self, auction: Auction) -> None:
         """Called by the auction at creation"""
         self._current_auction = auction

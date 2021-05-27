@@ -72,10 +72,10 @@ class Load:
         """
         infos = []
         if len(self._previous_infos) >= self._environment.max_nb_infos_per_load:
+            # Avoid recording ping-pong
             self._previous_infos = self._previous_infos[1-self._environment.max_nb_infos_per_load:]
         for info in self._previous_infos:
             infos.append(Info(info.start, next_node, info.cost + cost))
-            # tolerance for not writing getters on the info class
             # Even if you go back to yourself, it is important to have the info
 
         infos.append(Info(next_node, next_node, 0))

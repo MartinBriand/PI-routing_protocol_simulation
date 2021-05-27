@@ -26,7 +26,9 @@ action_max = 20000. # @param {type:"number"}
 discount = 0.95 # @param {type:"number"}
 
 shippers_reserve_price = 20000. # @param{type:"number"}
-node_nb_info = 200 # @param{type:"integer"}
+init_node_weights_distance_scaling_factor = 2000. # @param{type:"number"}
+node_nb_info = 100 # @param{type:"integer"}
+info_cost_max_factor_increase = 1.3 # @param{type:"integer"}
 max_nb_infos_per_load = 5 # @param{type:"integer"}
 
 max_time_not_at_home = 30 # @param {type:"integer"}
@@ -58,7 +60,9 @@ target_policy_noise_clip_p = 75. # @param {type:"number"}
 
 e, learning_agent = load_env_and_agent(n_carriers=11*n_carriers_per_node, # 11 is the number of nodes
                                        shippers_reserve_price=shippers_reserve_price,
+                                       init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
                                        node_nb_info=node_nb_info,
+                                       info_cost_max_factor_increase=info_cost_max_factor_increase,
                                        max_nb_infos_per_load=max_nb_infos_per_load,
                                        discount=discount,
                                        exploration_noise=exploration_noise,
