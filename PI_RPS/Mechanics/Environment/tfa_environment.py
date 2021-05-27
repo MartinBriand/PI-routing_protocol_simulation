@@ -33,9 +33,10 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
                  tnah_divisor: float,
                  action_min: float,
                  action_max: float,
+                 init_node_weights_distance_scaling_factor: float,
                  max_time_not_at_home: int
                  ) -> None:
-        super().__init__(nb_hours_per_time_unit, max_nb_infos_per_load)
+        super().__init__(nb_hours_per_time_unit, max_nb_infos_per_load, init_node_weights_distance_scaling_factor)
         self._t_c_mu: float = t_c_mu * self._nb_hours_per_time_unit
         self._t_c_sigma: float = t_c_sigma * self._nb_hours_per_time_unit
         self._ffh_c_mu: float = ffh_c_mu * self._nb_hours_per_time_unit

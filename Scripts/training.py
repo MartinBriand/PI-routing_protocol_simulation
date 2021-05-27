@@ -26,7 +26,7 @@ action_max = 20000. # @param {type:"number"}
 discount = 0.95 # @param {type:"number"}
 
 shippers_reserve_price = 20000. # @param{type:"number"}
-init_node_weights_distance_scaling_factor = 2000. # @param{type:"number"}
+init_node_weights_distance_scaling_factor = 1500. # @param{type:"number"}
 node_nb_info = 100 # @param{type:"integer"}
 info_cost_max_factor_increase = 1.3 # @param{type:"integer"}
 max_nb_infos_per_load = 5 # @param{type:"integer"}
@@ -217,7 +217,7 @@ def add_results(results) -> None:
 """## Loop"""
 
 num_rounds = 25 # @param {type:"integer"}
-num_cost_pass = 10 # @param {type:"integer"}
+num_cost_pass = 1 # @param {type:"integer"}
 num_train_per_pass = 10 # @param {type:"integer"}
 num_iteration_per_test = 10 # @param{type:"integer"}
 

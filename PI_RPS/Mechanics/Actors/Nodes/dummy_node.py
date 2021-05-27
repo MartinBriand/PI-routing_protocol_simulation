@@ -24,7 +24,7 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         self._nb_infos: int = nb_info
         self._info_cost_max_factor_increase: float = info_cost_max_factor_increase
 
-    def initialize_weights(self, distance_scaling_factor: float) -> None:
+    def initialize_weights(self) -> None:
         """create structure and initialize the weights and the number of visits to distance*2000.
         Should be called by the initializer AFTER registering the distance matrix"""
         self._weights = {}
@@ -34,9 +34,10 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                 for departure in self._environment.nodes:
                     if departure != self:  # exponential smoothing starting at 2000*distance
                         if departure != arrival:
-                            self._weights[arrival][departure] = (distance_scaling_factor *
-                                                                 self._environment.get_distance(departure=departure,
-                                                                                                arrival=arrival))
+                            self._weights[arrival][departure] = \
+                                (self._environment.init_node_weights_distance_scaling_factor *
+                                 self._environment.get_distance(departure=departure,
+                                                                arrival=arrival))
                         else:
                             self._weights[arrival][departure] = 0.
 
@@ -53,18 +54,19 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                 if info.arrival not in info_arrival_start_dict.keys():
                     info_arrival_start_dict[info.arrival] = []
 
-                w = self._weights[info.arrival][info.start]
-                if info.cost <= w * self._info_cost_max_factor_increase:
+                if info.cost <= (self._environment.init_node_weights_distance_scaling_factor *
+                                 self._info_cost_max_factor_increase *
+                                 self._environment.get_distance(info.start, info.arrival)):
                     if info.start not in info_arrival_start_dict[info.arrival]:
                         info_arrival_start_dict[info.arrival].append(info.start)
+                    w = self._weights[info.arrival][info.start]
                     w += (info.cost - w) / self._nb_infos  # we have an exponential smoothing of self.nb_infos
                     self._weights[info.arrival][info.start] = w
 
-        for arrival in info_arrival_start_dict:  # decreasing SLOWER with time
-            for intermediate in self._weights[arrival]:
-                if intermediate not in info_arrival_start_dict[arrival]:
-                    self._weights[arrival][intermediate] *= ((self._nb_infos - 1) / (self._nb_infos)/3)
-
+        # for arrival in info_arrival_start_dict:  # decreasing 3*SLOWER with time for the other
+        #     for intermediate in self._weights[arrival]:
+        #         if intermediate not in info_arrival_start_dict[arrival]:
+        #             self._weights[arrival][intermediate] *= ((self._nb_infos - 1) / (self._nb_infos * 3))
 
     def auction_cost(self) -> float:
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""

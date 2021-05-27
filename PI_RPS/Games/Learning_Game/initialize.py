@@ -94,6 +94,7 @@ def load_env_and_agent(n_carriers: int,
                        tnah_divisor=tnah_divisor,
                        action_min=action_min,
                        action_max=action_max,
+                       init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
                        max_time_not_at_home=max_time_not_at_home)
 
     # create Nodes
@@ -111,7 +112,7 @@ def load_env_and_agent(n_carriers: int,
     e.set_distances(distances)
 
     for node in e.nodes:
-        node.initialize_weights(distance_scaling_factor=init_node_weights_distance_scaling_factor)
+        node.initialize_weights()
 
     # create Shippers
     shipper = DummyShipper(name='Shipper_arrete_de_shipper',
