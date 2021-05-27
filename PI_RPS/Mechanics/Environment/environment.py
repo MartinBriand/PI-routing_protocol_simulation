@@ -141,5 +141,5 @@ class Environment:
         return self._nb_hours_per_time_unit
 
     @property
-    def _max_nb_infos_per_load(self) -> int:
+    def max_nb_infos_per_load(self) -> int:
         return self._max_nb_infos_per_load
