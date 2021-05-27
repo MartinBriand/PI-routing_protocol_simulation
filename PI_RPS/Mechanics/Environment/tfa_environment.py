@@ -29,12 +29,13 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
                  t_c_sigma: float,
                  ffh_c_mu: float,
                  ffh_c_sigma: float,
+                 max_nb_infos_per_load: int,
                  tnah_divisor: float,
                  action_min: float,
                  action_max: float,
                  max_time_not_at_home: int
                  ) -> None:
-        super().__init__(nb_hours_per_time_unit)
+        super().__init__(nb_hours_per_time_unit, max_nb_infos_per_load)
         self._t_c_mu: float = t_c_mu * self._nb_hours_per_time_unit
         self._t_c_sigma: float = t_c_sigma * self._nb_hours_per_time_unit
         self._ffh_c_mu: float = ffh_c_mu * self._nb_hours_per_time_unit

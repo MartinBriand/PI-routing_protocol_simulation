@@ -71,6 +71,8 @@ class Load:
         Generate new info after the attribution and tell the environment it has new info
         """
         infos = []
+        if len(self._previous_infos) >= self._environment.max_nb_infos_per_load:
+            self._previous_infos = self._previous_infos[1-self._environment.max_nb_infos_per_load:]
         for info in self._previous_infos:
             infos.append(Info(info.start, next_node, info.cost + cost))
             # tolerance for not writing getters on the info class

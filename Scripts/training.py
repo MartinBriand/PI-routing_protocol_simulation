@@ -26,6 +26,8 @@ action_max = 20000. # @param {type:"number"}
 discount = 0.95 # @param {type:"number"}
 
 shippers_reserve_price = 20000. # @param{type:"number"}
+node_nb_info = 200 # @param{type:"integer"}
+max_nb_infos_per_load = 5 # @param{type:"integer"}
 
 max_time_not_at_home = 30 # @param {type:"integer"}
 tnah_divisor = 30. # keep at 30, not a parameter
@@ -56,6 +58,8 @@ target_policy_noise_clip_p = 75. # @param {type:"number"}
 
 e, learning_agent = load_env_and_agent(n_carriers=11*n_carriers_per_node, # 11 is the number of nodes
                                        shippers_reserve_price=shippers_reserve_price,
+                                       node_nb_info=node_nb_info,
+                                       max_nb_infos_per_load=max_nb_infos_per_load,
                                        discount=discount,
                                        exploration_noise=exploration_noise,
                                        target_update_tau_p=target_update_tau_p,

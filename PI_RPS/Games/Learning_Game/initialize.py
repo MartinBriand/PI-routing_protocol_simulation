@@ -34,6 +34,8 @@ def load_env_and_agent(n_carriers: int,
                        action_max: float,
                        discount: float,
                        shippers_reserve_price: float,
+                       node_nb_info: int,
+                       max_nb_infos_per_load: int,
                        tnah_divisor: float,
                        exploration_noise: float,
                        target_update_tau_p: float,
@@ -86,6 +88,7 @@ def load_env_and_agent(n_carriers: int,
                        t_c_sigma=4.15,
                        ffh_c_mu=20.,
                        ffh_c_sigma=1.00,  # multiplication by nb_hours occurs in init
+                       max_nb_infos_per_load=max_nb_infos_per_load,
                        tnah_divisor=tnah_divisor,
                        action_min=action_min,
                        action_max=action_max,
@@ -93,7 +96,7 @@ def load_env_and_agent(n_carriers: int,
 
     # create Nodes
     for name in lambdas.keys():
-        DummyNode(name, {}, 100, [], e)
+        DummyNode(name, {}, node_nb_info, [], e)
 
     e.build_node_state()
 
