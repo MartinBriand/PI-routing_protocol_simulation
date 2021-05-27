@@ -216,7 +216,6 @@ def change_costs():
         carrier_p.random_new_cost_parameters()
 
 
-# initialize the test lists to []
 # add an ETA
 for i in range(num_rounds):
     print("Test", i+1, '/', num_rounds)
