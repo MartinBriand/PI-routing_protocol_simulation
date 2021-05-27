@@ -1,5 +1,5 @@
 """
-This files defines a few functions to initialize the variables in exploitation_driver.py and training_driver.py
+This files defines a few functions to initialize the variables in notebooks.
 """
 
 import csv
@@ -33,6 +33,7 @@ def load_env_and_agent(n_carriers: int,
                        action_min: float,
                        action_max: float,
                        discount: float,
+                       shippers_reserve_price: float,
                        tnah_divisor: float,
                        exploration_noise: float,
                        target_update_tau_p: float,
@@ -103,7 +104,12 @@ def load_env_and_agent(n_carriers: int,
         node.initialize_weights()
 
     # create Shippers
-    shipper = DummyShipper(name='Shipper_arrete_de_shipper', laws=[], expenses=[], loads=[], environment=e)
+    shipper = DummyShipper(name='Shipper_arrete_de_shipper',
+                           laws=[],
+                           expenses=[],
+                           loads=[],
+                           environment=e,
+                           reserve_price=shippers_reserve_price)
 
     # create laws
     generator = np.random.default_rng()
