@@ -279,7 +279,3 @@ test_results = test(num_iteration_per_test)
 print(test_results)
 add_results(test_results)
 
-"""do not forget to add:
-* better reserve_prices
-"""
-

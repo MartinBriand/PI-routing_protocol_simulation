@@ -150,11 +150,24 @@ class Auction:
                             'previous_node': self._source,
                             'next_node': winning_next_node,
                             'carrier_cost': carrier_cost,
-                            'previous_node_cost': self._source.auction_cost()}}
+                            'previous_node_cost': self._source.auction_cost()},
+                 'previous_node': self._source,
+                 'winning_next_node': winning_next_node,
+                 'winning_transformed_bid': winning_value,
+                 'weight': this_auction_weights[winning_next_node],
+                 'reserve_price': this_auction_reserve_price
+                 }
             self._results['Carriers'][winning_carrier] = \
                 {'is_attributed': True,
                  'kwargs': {'load': load, 'next_node': winning_next_node}}
             return True, winning_carrier
         else:
-            self._results['loads'][load] = {'is_attributed': False, 'kwargs': {}}
+            self._results['loads'][load] = {'is_attributed': False,
+                                            'kwargs': {},
+                                            'previous_node': self._source,
+                                            'winning_next_node': winning_next_node,
+                                            'winning_transformed_bid': winning_value,
+                                            'weight': this_auction_weights[winning_next_node],
+                                            'reserve_price': this_auction_reserve_price
+                                            }
             return False, None

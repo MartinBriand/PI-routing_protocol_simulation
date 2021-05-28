@@ -126,3 +126,7 @@ class Node(abc.ABC):
     @property
     def weights(self) -> NodeWeights:
         return self._weights
+
+    @property
+    def past_auctions(self):
+        return self._past_auctions
