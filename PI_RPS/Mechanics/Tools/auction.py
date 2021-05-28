@@ -171,3 +171,7 @@ class Auction:
                                             'reserve_price': this_auction_reserve_price
                                             }
             return False, None
+
+    @property
+    def results(self):
+        return self._results
