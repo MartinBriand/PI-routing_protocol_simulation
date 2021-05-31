@@ -193,13 +193,17 @@ class CarrierWithCosts(Carrier, abc.ABC):
         """The transit costs"""
         return self._t_c
 
-    def _far_from_home_costs(self) -> float:
-        """The far from home costs"""
-        return self._ffh_c + 53*(exp(self._environment.nb_hours_per_time_unit*0.0015*self._time_not_at_home) - 1)\
-            if self._time_not_at_home > 0 else 0.
+    def _far_from_home_costs(self, time_not_at_home=None) -> float:
+        """
+        The far from home costs,m calculated with the given value if given, else, calculated with the current
+        context
+        """
+        t = time_not_at_home if time_not_at_home is not None else self._time_not_at_home
+        return self._ffh_c + 53.*(exp(self._environment.nb_hours_per_time_unit*0.0015*t) - 1.)\
+            if t > 0 else 0.
 
     def _update_ffh_cost_functions(self) -> None:
-        """Here we do nothing"""
+        """Here we update the cost parameter AFTER calculating the costs of the current time step"""
         if not self._in_transit and self._next_node == self._home:
             self._time_not_at_home = 0
         else:

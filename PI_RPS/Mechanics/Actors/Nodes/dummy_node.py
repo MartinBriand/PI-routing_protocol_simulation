@@ -16,13 +16,11 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                  name: str,
                  weights: NodeWeights,
                  nb_info: int,
-                 info_cost_max_factor_increase: float,
                  revenues: List[float],
                  environment: 'Environment'):
         super().__init__(name, weights, revenues, environment)
 
         self._nb_infos: int = nb_info
-        self._info_cost_max_factor_increase: float = info_cost_max_factor_increase
 
     def initialize_weights(self) -> None:
         """create structure and initialize the weights and the number of visits to distance*2000.
@@ -46,22 +44,27 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         This is the method where the Nodes has some intelligence
         should no ho to consume info where arrival and start are the same
         """
-        info_arrival_start_dict = {}  # not to reduce the other
+        info_start_arrival_dict = {}  # not to reduce the other
         for info in new_infos:
             if info.start == info.arrival or info.start == self or info.arrival == self:
                 continue  # this is to avoid useless info to be taken
             else:
-                if info.arrival not in info_arrival_start_dict.keys():
-                    info_arrival_start_dict[info.arrival] = []
+                if info.cost <= self._environment.get_distance(info.start, info.arrival) * \
+                        self._environment.max_node_weights_distance_scaling_factor:
+                    if info.start not in info_start_arrival_dict:
+                        info_start_arrival_dict[info.start] = {}
+                    if info.arrival not in info_start_arrival_dict[info.start].keys():
+                        info_start_arrival_dict[info.start][info.arrival] = []
+                    info_start_arrival_dict[info.start][info.arrival].append(info.cost)
+        for start in info_start_arrival_dict.keys():
+            for arrival in info_start_arrival_dict[start].keys():
+                w = self._weights[arrival][start]
+                infos = info_start_arrival_dict[start][arrival]
+                nb_infos = len(infos)
+                value = sum(infos)/nb_infos
 
-                if info.cost <= (self._environment.init_node_weights_distance_scaling_factor *
-                                 self._info_cost_max_factor_increase *
-                                 self._environment.get_distance(info.start, info.arrival)):
-                    if info.start not in info_arrival_start_dict[info.arrival]:
-                        info_arrival_start_dict[info.arrival].append(info.start)
-                    w = self._weights[info.arrival][info.start]
-                    w += (info.cost - w) / self._nb_infos  # we have an exponential smoothing of self.nb_infos
-                    self._weights[info.arrival][info.start] = w
+                w += (value - w) / (self._nb_infos ** (1/nb_infos))  # we have an exponential smoothing of self.nb_infos
+                self._weights[arrival][start] = w
 
         # for arrival in info_arrival_start_dict:  # decreasing 3*SLOWER with time for the other
         #     for intermediate in self._weights[arrival]:
