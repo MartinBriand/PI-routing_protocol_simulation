@@ -25,6 +25,7 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                                              node_nb_info: int,
                                              shippers_reserve_price_per_distance: float,
                                              shipper_default_reserve_price: float,
+                                             node_auction_cost: float
                                              ) -> None:
     path = os.path.abspath(os.path.dirname(__file__))
     lambdas: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_lambda_table.csv'))
@@ -59,7 +60,8 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
         DummyNode(name=name,
                   weight_master=weight_master,
                   revenues=[],
-                  environment=e)
+                  environment=e,
+                  auction_cost=node_auction_cost)
 
     if isinstance(e, TFAEnvironment):
         e.build_node_state()

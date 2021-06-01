@@ -1,8 +1,7 @@
 """
-
+This is a carrier that bids the cost for each lane except if it has to go home. If so, it bids 0 on its home lane and
+very high (higher than reserve price) on the other lanes and go home whatever the result
 """
-
-# TODO write description
 
 import random
 

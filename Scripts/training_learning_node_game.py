@@ -1,7 +1,6 @@
 """
-
+This is a learning script to learn the weights of the game with non learning carriers
 """
-# TODO write description
 
 
 import numpy as np
@@ -13,14 +12,14 @@ from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, f
 from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import CostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
-
 n_carriers_per_node = 15  # @param {type:"integer"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
-init_node_weights_distance_scaling_factor = 500  # @param{type:"number"}
-max_node_weights_distance_scaling_factor = 500  # @param{type:"number"}
+init_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
+max_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
 # should be big enough to be unrealistic.
+node_auction_cost = 0.  # @param{type:"number"}
 node_nb_info = 100  # @param{type:"integer"}
 max_nb_infos_per_load = 15  # @param{type:"integer"}
 
@@ -34,7 +33,8 @@ e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
 load_realistic_nodes_and_shippers_to_env(e=e,
                                          node_nb_info=node_nb_info,
                                          shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
-                                         shipper_default_reserve_price=shipper_default_reserve_price)
+                                         shipper_default_reserve_price=shipper_default_reserve_price,
+                                         node_auction_cost=node_auction_cost)
 
 weight_master = e.nodes[0].weight_master
 
@@ -119,7 +119,7 @@ def test(num_iter_per_test):
     clear_env()
 
     # Running environment
-    for counter in range(num_iter_per_test):
+    for _ in range(num_iter_per_test):
         e.iteration()
 
     # Getting data
@@ -204,7 +204,7 @@ def add_results(results) -> None:
 
 """## Loop"""
 
-num_rounds = 300  # @param {type:"integer"}
+# num_rounds = 300  # @param {type:"integer"}
 num_cost_pass = 5  # @param {type:"integer"}
 num_train_per_pass = 100  # @param {type:"integer"}
 num_iteration_per_test = 100  # @param{type:"integer"}
@@ -215,31 +215,68 @@ def change_costs():
         carrier_p.random_new_cost_parameters()
 
 
+init_readable_weights = weight_master.readable_weights()
+
+not_converged = {arrival: [departure
+                           for departure in init_readable_weights[arrival].keys() if departure != arrival]
+                 for arrival in init_readable_weights.keys()}
+
+previous_weights = {arrival: {departure: [init_readable_weights[arrival][departure]]
+                              for departure in init_readable_weights[arrival].keys()}
+                    for arrival in init_readable_weights.keys()}
+
+
+def add_weights_to_lists():
+    readable_weights = weight_master.readable_weights()
+    for arrival in readable_weights.keys():
+        for departure in readable_weights[arrival].keys():
+            previous_weights[arrival][departure].append(readable_weights[arrival][departure])
+    
+    has_converged = {}
+    for arrival in not_converged.keys():
+        has_converged[arrival] = []
+        for departure in not_converged[arrival]:
+            this_previous_weights = previous_weights[arrival][departure]
+            if this_previous_weights[-2] < this_previous_weights[-1]:
+                has_converged[arrival].append(departure)
+    for arrival in has_converged.keys():
+        for departure in has_converged[arrival]:
+            not_converged[arrival].remove(departure)
+        if len(not_converged[arrival]) == 0:
+            del not_converged[arrival]
+            
+
 start_time = time.time()
-for i in range(num_rounds):
-    now = time.time()
-    if i > 0:
-        eta = int((now - start_time) * (num_rounds - i) / i)
-        eta_h = eta // 3600
-        eta_m = (eta % 3600) // 60
-        eta_s = (eta % 3600) % 60
-        print("ETA:", "{}h{}m{}s".format(eta_h, eta_m, eta_s))
-    print("Test", i + 1, '/', num_rounds)
+loop_counter = 0
+
+
+def loop_fn(loop_counter):
+    print("Test", loop_counter + 1)
     change_costs()
     print(weight_master.readable_weights())
+    print(not_converged)
     test_results = test(num_iteration_per_test)
     print(test_results)
     add_results(test_results)
-    for j in range(num_cost_pass):
-        # print("Pass", j+1, "/", num_cost_pass)
+    for _ in range(num_cost_pass):
         change_costs()
-        for k in range(num_train_per_pass):
-            # print("Training", k+1, "/", num_train_per_pass)
+        for _ in range(num_train_per_pass):
             e.iteration()
+    add_weights_to_lists()
 
-print("Final test")
-change_costs()
-print(weight_master.readable_weights())
-test_results = test(num_iteration_per_test)
-print(test_results)
-add_results(test_results)
+
+while len(not_converged.keys()) > 0:
+    loop_fn(loop_counter)
+    loop_counter += 1
+print("Converged !!")
+print("15 more for better convergence")
+for _ in range(15):
+    loop_fn(loop_counter)
+    loop_counter += 1
+
+end_time = time.time()
+delta = int(end_time - start_time)
+delta_h = delta // 3600
+delta_m = (delta % 3600) // 60
+delta_s = (delta % 3600) % 60
+print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))

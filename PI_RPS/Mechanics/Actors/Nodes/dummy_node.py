@@ -16,9 +16,11 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                  name: str,
                  weight_master: 'DummyNodeWeightMaster',
                  revenues: List[float],
-                 environment: 'Environment'):
+                 environment: 'Environment',
+                 auction_cost: float):
         super().__init__(name, {}, revenues, environment)
 
+        self._auction_cost: float = auction_cost
         self._weight_master: 'DummyNodeWeightMaster' = weight_master
         self._weight_master.register_node(self)
 
@@ -27,7 +29,7 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
 
     def auction_cost(self) -> float:
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
-        return 0.  # yes this is not 0 but still not much
+        return self._auction_cost
 
     def set_weight(self, departure: 'DummyNode', arrival: 'DummyNode', value: float) -> None:
         """Called by the weight master to change the weights"""
@@ -142,7 +144,7 @@ class DummyNodeWeightMaster:
 
     def _broadcast_weights(self) -> None:
         """
-        # TODO
+        Broadcast the weights to the DummyNodes
         """
         for node in self._nodes:
             for arrival in self._weights.keys():
@@ -153,7 +155,7 @@ class DummyNodeWeightMaster:
 
     def _broadcast_init_weights(self) -> None:
         """
-        # TODO
+        Broadcast the weights to the DummyNodes at initialization
         """
         for node in self._nodes:
             for arrival in self._weights.keys():
