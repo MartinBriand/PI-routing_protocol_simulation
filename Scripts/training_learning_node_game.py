@@ -7,7 +7,7 @@ import numpy as np
 import random
 import time
 
-from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env
+from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
 from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import CostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
@@ -17,7 +17,7 @@ n_carriers_per_node = 15  # @param {type:"integer"}
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
 init_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
-max_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
+max_node_weights_distance_scaling_factor = 500. * 1.3  # @param{type:"number"}
 # should be big enough to be unrealistic.
 node_auction_cost = 0.  # @param{type:"number"}
 node_nb_info = 100  # @param{type:"integer"}
@@ -34,7 +34,8 @@ load_realistic_nodes_and_shippers_to_env(e=e,
                                          node_nb_info=node_nb_info,
                                          shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                          shipper_default_reserve_price=shipper_default_reserve_price,
-                                         node_auction_cost=node_auction_cost)
+                                         node_auction_cost=node_auction_cost,
+                                         weights_file_name='weights_' + str(node_auction_cost) + '.json')
 
 weight_master = e.nodes[0].weight_master
 
@@ -265,12 +266,12 @@ def loop_fn(loop_counter):
     add_weights_to_lists()
 
 
-while len(not_converged.keys()) > 0:
-    loop_fn(loop_counter)
-    loop_counter += 1
-print("Converged !!")
-print("15 more for better convergence")
-for _ in range(15):
+# while len(not_converged.keys()) > 0:
+#     loop_fn(loop_counter)
+#     loop_counter += 1
+# print("Converged !!")
+# print("15 more for better convergence")
+for _ in range(2):
     loop_fn(loop_counter)
     loop_counter += 1
 
@@ -279,4 +280,6 @@ delta = int(end_time - start_time)
 delta_h = delta // 3600
 delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
+final_readable_weights = weight_master.readable_weights()
+write_readable_weights_json(final_readable_weights, 'weights_' + str(node_auction_cost) + '.json')
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))

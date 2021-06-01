@@ -1,8 +1,8 @@
 """Loaders common to all games"""
 
-import os, csv
+import os, csv, json
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Optional
 import random
 
 from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode, DummyNodeWeightMaster
@@ -12,7 +12,7 @@ from PI_RPS.Mechanics.Actors.Shippers.shipper import Shipper, NodeLaw
 from PI_RPS.Mechanics.Environment.environment import Environment
 from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
 from PI_RPS.Mechanics.Tools.load import Load
-
+from PI_RPS.prj_typing.types import NodeWeights
 
 nb_hours_per_time_unit: float = 6.147508  # 390 km at an average speed of 39.42 km/h)
 t_c_mu: float = 33. * nb_hours_per_time_unit
@@ -25,12 +25,14 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                                              node_nb_info: int,
                                              shippers_reserve_price_per_distance: float,
                                              shipper_default_reserve_price: float,
-                                             node_auction_cost: float
+                                             node_auction_cost: float,
+                                             weights_file_name: str = None
                                              ) -> None:
     path = os.path.abspath(os.path.dirname(__file__))
     lambdas: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_lambda_table.csv'))
     attribution: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_dest_attribution_table.csv'))
     distances: np.ndarray = _read_csv(os.path.join(path, 'data/city_distance_matrix_time_step.csv'))
+    weights = _read_weights_json(weights_file_name) if weights_file_name else None
 
     # check size
     lts = lambdas.shape
@@ -50,12 +52,23 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     assert (lambdas[:, 0] == distances[0, 1:]).sum() == n, \
         "keys do not match:\n{}\n{}".format(lambdas[:, 0], distances[0, 1:])
 
+    # check keys and lengths at the same time for weights
+    if weights:
+        level1_keys = np.array(list(weights.keys()))
+        assert (lambdas[:, 0] == level1_keys).sum() == n, \
+            "keys do not match:\n{}\n{}".format(lambdas[:, 0], level1_keys)
+        for key1 in level1_keys:
+            level2_keys = np.array(list(weights[key1].keys()))
+            assert (level1_keys == level2_keys).sum() == n, \
+                "keys do not match:\n{}\n{}".format(level1_keys, level2_keys)
+
     # make dicts
     lambdas, attribution, distances = _to_dicts(lambdas[:, 0], lambdas, attribution, distances)
 
     # create Nodes
     weight_master = DummyNodeWeightMaster(environment=e,
-                                          nb_infos=node_nb_info)
+                                          nb_infos=node_nb_info,
+                                          )
     for name in lambdas.keys():
         DummyNode(name=name,
                   weight_master=weight_master,
@@ -66,10 +79,10 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     if isinstance(e, TFAEnvironment):
         e.build_node_state()
 
-    lambdas, attribution, distances = _to_node_keys(e, lambdas, attribution, distances)
+    lambdas, attribution, distances, weights = _to_node_keys(e, lambdas, attribution, distances, weights)
     e.set_distances(distances)
 
-    weight_master.initialize()
+    weight_master.initialize(weights)
 
     # create Shippers
     shipper = DummyShipper(name='Shipper_arrete_de_shipper',
@@ -134,14 +147,38 @@ def _to_dicts(keys: np.ndarray,
 def _to_node_keys(e: TFAEnvironment,
                   lambdas: Dict[str, float],
                   attribution: Dict[str, Dict[str, float]],
-                  distances: Dict[str, Dict[str, int]]) -> (Dict[Node, float],
-                                                            Dict[Node, Dict[Node, float]],
-                                                            Dict[Node, Dict[Node, int]]):
+                  distances: Dict[str, Dict[str, int]],
+                  weights) -> (Dict[Node, float],
+                               Dict[Node, Dict[Node, float]],
+                               Dict[Node, Dict[Node, int]],
+                               Optional[NodeWeights]):
+
     node_name_dict = {node.name: node for node in e.nodes}
     new_lambdas = {node_name_dict[name]: lamb for name, lamb in lambdas.items()}
     new_attribution = {node_name_dict[name1]: {node_name_dict[name2]: att for name2, att in obj.items()}
                        for name1, obj in attribution.items()}
     new_distances = {node_name_dict[name1]: {node_name_dict[name2]: dist for name2, dist in obj.items()}
                      for name1, obj in distances.items()}
+    if weights:
+        new_weights = {node_name_dict[name1]: {node_name_dict[name2]: att for name2, att in obj.items()}
+                       for name1, obj in weights.items()}
+    else:
+        new_weights = None
 
-    return new_lambdas, new_attribution, new_distances
+    return new_lambdas, new_attribution, new_distances, new_weights
+
+
+def _read_weights_json(file_name) -> Dict:
+    """Read from a json"""
+    path = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(path, 'data/' + file_name)
+    with open(path, 'r') as f:
+        return json.load(f)
+
+
+def write_readable_weights_json(readable_weights, file_name) -> None:
+    """"Write weights to json"""
+    path = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(path, 'data/' + file_name)
+    with open(path, 'w') as f:
+        json.dump(readable_weights, f)

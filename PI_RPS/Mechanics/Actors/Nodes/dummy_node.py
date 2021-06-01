@@ -55,18 +55,13 @@ class DummyNodeWeightMaster:
     def __init__(self,
                  environment: 'Environment',
                  nb_infos: int,
-                 weights: Optional[NodeWeights] = None,
                  nodes: Optional[List['DummyNode']] = None) -> None:
 
         self._environment: 'Environment' = environment
         self._nb_infos: int = nb_infos
 
-        if weights:
-            self._weights: NodeWeights = weights
-            self._is_initialized: bool = True
-        else:
-            self._weights: NodeWeights = {}
-            self._is_initialized: bool = False
+        self._weights: NodeWeights = {}
+        self._is_initialized: bool = False
 
         self._nodes: List['DummyNode'] = nodes if nodes else []
 
@@ -83,22 +78,26 @@ class DummyNodeWeightMaster:
         self._nodes.append(node)
         self._has_asked_to_learn[node] = False
 
-    def initialize(self) -> None:
+    def initialize(self, weights: Optional['NodeWeights'] = None) -> None:
         """create structure and initialize the weights and the number of visits to distance*2000.
         Should be called by the initializer AFTER registering the distance matrix"""
         assert not self._is_initialized, "Can initialize only once"
-        assert self._weights == {}, "Can only initialize empty weights"
         assert all(not i for i in self._has_asked_to_learn.values()), "No learning"
-        for arrival in self._environment.nodes:
-            self._weights[arrival] = {}
-            for departure in self._environment.nodes:
-                if departure != arrival:
-                    self._weights[arrival][departure] = \
-                        (self._environment.init_node_weights_distance_scaling_factor *
-                         self._environment.get_distance(departure=departure,
-                                                        arrival=arrival))
-                else:
-                    self._weights[arrival][departure] = 0.
+        if weights:
+            self._weights = weights
+        else:
+            self._weights = {}
+            for arrival in self._environment.nodes:
+                self._weights[arrival] = {}
+                for departure in self._environment.nodes:
+                    if departure != arrival:
+                        self._weights[arrival][departure] = \
+                            (self._environment.init_node_weights_distance_scaling_factor *
+                             self._environment.get_distance(departure=departure,
+                                                            arrival=arrival))
+                    else:
+                        self._weights[arrival][departure] = 0.
+
         self._broadcast_init_weights()
         self._is_initialized = True
 
