@@ -35,7 +35,7 @@ load_realistic_nodes_and_shippers_to_env(e=e,
                                          shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                          shipper_default_reserve_price=shipper_default_reserve_price,
                                          node_auction_cost=node_auction_cost,
-                                         weights_file_name='weights_' + str(node_auction_cost) + '.json')
+                                         weights_file_name=None)
 
 weight_master = e.nodes[0].weight_master
 
@@ -266,12 +266,12 @@ def loop_fn(loop_counter):
     add_weights_to_lists()
 
 
-# while len(not_converged.keys()) > 0:
-#     loop_fn(loop_counter)
-#     loop_counter += 1
-# print("Converged !!")
-# print("15 more for better convergence")
-for _ in range(2):
+while len(not_converged.keys()) > 0:
+    loop_fn(loop_counter)
+    loop_counter += 1
+print("Converged !!")
+print("15 more for better convergence")
+for _ in range(15):
     loop_fn(loop_counter)
     loop_counter += 1
 
