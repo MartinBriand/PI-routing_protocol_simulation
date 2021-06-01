@@ -36,6 +36,8 @@ load_realistic_nodes_and_shippers_to_env(e=e,
                                          shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                          shipper_default_reserve_price=shipper_default_reserve_price)
 
+weight_master = e.nodes[0].weight_master
+
 counter = {}
 for k in range(n_carriers_per_node * len(e.nodes)):
     node = e.nodes[k % len(e.nodes)]
@@ -224,7 +226,7 @@ for i in range(num_rounds):
         print("ETA:", "{}h{}m{}s".format(eta_h, eta_m, eta_s))
     print("Test", i + 1, '/', num_rounds)
     change_costs()
-    print(e.nodes[0].readable_weights())
+    print(weight_master.readable_weights())
     test_results = test(num_iteration_per_test)
     print(test_results)
     add_results(test_results)
@@ -237,7 +239,7 @@ for i in range(num_rounds):
 
 print("Final test")
 change_costs()
-print(e.nodes[0].readable_weights())
+print(weight_master.readable_weights())
 test_results = test(num_iteration_per_test)
 print(test_results)
 add_results(test_results)

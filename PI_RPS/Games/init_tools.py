@@ -5,7 +5,7 @@ import numpy as np
 from typing import List, Dict
 import random
 
-from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode
+from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode, DummyNodeWeightMaster
 from PI_RPS.Mechanics.Actors.Nodes.node import Node
 from PI_RPS.Mechanics.Actors.Shippers.dummy_shipper import DummyShipper
 from PI_RPS.Mechanics.Actors.Shippers.shipper import Shipper, NodeLaw
@@ -53,10 +53,11 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     lambdas, attribution, distances = _to_dicts(lambdas[:, 0], lambdas, attribution, distances)
 
     # create Nodes
+    weight_master = DummyNodeWeightMaster(environment=e,
+                                          nb_infos=node_nb_info)
     for name in lambdas.keys():
         DummyNode(name=name,
-                  weights={},
-                  nb_info=node_nb_info,
+                  weight_master=weight_master,
                   revenues=[],
                   environment=e)
 
@@ -66,8 +67,7 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     lambdas, attribution, distances = _to_node_keys(e, lambdas, attribution, distances)
     e.set_distances(distances)
 
-    for node in e.nodes:
-        node.initialize_weights()
+    weight_master.initialize()
 
     # create Shippers
     shipper = DummyShipper(name='Shipper_arrete_de_shipper',

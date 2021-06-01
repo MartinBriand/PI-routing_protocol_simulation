@@ -71,7 +71,7 @@ class Environment:
         new_infos = []
         for load in self._loads_with_new_infos:
             new_infos += load.communicate_infos()
-        for node in self._nodes:  # FIXME: This can be clearly optimized
+        for node in self._nodes:  # optimize in the node structure with master implementation (see DummyNode for ex)
             node.update_weights_with_new_infos(new_infos)
         self._loads_with_new_infos = []
 
