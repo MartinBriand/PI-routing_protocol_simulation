@@ -17,6 +17,7 @@ n_carriers_per_node = 15  # @param {type:"integer"}
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
 init_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
+# not used if initialized by artificial weights
 max_node_weights_distance_scaling_factor = 500. * 1.3  # @param{type:"number"}
 # should be big enough to be unrealistic.
 node_auction_cost = 0.  # @param{type:"number"}
@@ -205,7 +206,6 @@ def add_results(results) -> None:
 
 """## Loop"""
 
-# num_rounds = 300  # @param {type:"integer"}
 num_cost_pass = 5  # @param {type:"integer"}
 num_train_per_pass = 100  # @param {type:"integer"}
 num_iteration_per_test = 100  # @param{type:"integer"}
@@ -281,5 +281,6 @@ delta_h = delta // 3600
 delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
 final_readable_weights = weight_master.readable_weights()
-write_readable_weights_json(final_readable_weights, 'weights_' + str(node_auction_cost) + '.json')
+write_readable_weights_json(final_readable_weights, 'weights_' + str(node_auction_cost) + '_' +
+                            str(n_carriers_per_node) + '.json')
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))

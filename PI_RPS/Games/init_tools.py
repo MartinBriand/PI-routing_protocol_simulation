@@ -171,7 +171,7 @@ def _to_node_keys(e: TFAEnvironment,
 def _read_weights_json(file_name) -> Dict:
     """Read from a json"""
     path = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(path, 'data/' + file_name)
+    path = os.path.join(path, 'data/experimental/' + file_name)
     with open(path, 'r') as f:
         return json.load(f)
 
@@ -179,6 +179,6 @@ def _read_weights_json(file_name) -> Dict:
 def write_readable_weights_json(readable_weights, file_name) -> None:
     """"Write weights to json"""
     path = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(path, 'data/' + file_name)
+    path = os.path.join(path, 'data/experimental/' + file_name)
     with open(path, 'w') as f:
         json.dump(readable_weights, f)
