@@ -1,0 +1,3 @@
+tensorflow==2.4.1
+numpy==1.19.2
+tf_agents==0.7.1

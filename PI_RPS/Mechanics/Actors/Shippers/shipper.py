@@ -1,21 +1,23 @@
 """
 Shipper file
 """
-from Mechanics.Tools.load import Load
-import abc
-from typing import TYPE_CHECKING, Callable, List, Dict
-if TYPE_CHECKING:
-    from Mechanics.Actors.nodes.node import Node
-    from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.environment import Environment
 
-Law = Callable[..., int]
+import abc
+from PI_RPS.Mechanics.Tools.load import Load
+
+from typing import TYPE_CHECKING, List, Dict, Any
+from PI_RPS.prj_typing.types import Law
+
+if TYPE_CHECKING:
+    from PI_RPS.Mechanics.Actors.Nodes.node import Node
+    from PI_RPS.Mechanics.Actors.Carriers.carrier import Carrier
+    from PI_RPS.Mechanics.Environment.environment import Environment
 
 
 class Shipper(abc.ABC):
     """
     A Shipper is able to generate goods according to a law, generate reserve prices for each time one of its good is
-    auctioned at a nodes, and has to pay the nodes and the carriers
+    auctioned at a Nodes, and has to pay the Nodes and the Carriers
     """
 
     def __init__(self,
@@ -40,14 +42,12 @@ class Shipper(abc.ABC):
         """
 
         for law in self._laws:
-            n = law.call()
-            for k in range(n):
-                Load(law.departure_node, law.arrival_node, self, self._environment)
+            law.call()
 
     @abc.abstractmethod
     def generate_reserve_price(self, load: Load, node: 'Node') -> float:
         """
-        To be called by the nodes before an auction
+        To be called by the Nodes before an auction
         """
 
     def proceed_to_payment(self,
@@ -68,35 +68,42 @@ class Shipper(abc.ABC):
         """called by the load to signal to the shipper"""
         self._loads.append(load)
 
+    def clear_loads(self) -> None:
+        """Called by the environment"""
+        self._loads.clear()
+
+    def clear_expenses(self) -> None:
+        """Called by the environment"""
+        self._expenses.clear()
+        self._total_expenses = 0
+
+    def add_law(self, law: 'NodeLaw'):
+        """Called during initialization to add load to load list"""
+        assert law.owner == self, "Please add only laws whose owner is self"
+        self._laws.append(law)
+
 
 class NodeLaw:
     """
-    A law is an association of a nodes and a statistical law.
-    The only method is a call function to generate a number of load to be created by the shippers at a specific nodes
+    A law is an association of a Nodes and a statistical law.
+    The only method is a call function to generate a number of load to be created by the Shippers at a specific Nodes
     """
 
     def __init__(self,
-                 departure_node: 'Node',
-                 arrival_node: 'Node',
+                 owner: Shipper,
                  law: Law,
-                 params: Dict):
+                 params: Dict[str, Any]) -> None:
         """
-        The nodes is just the nodes reference
-        The law should be a numpy.random.Generator.law (or anything else)
-        The params should be the parameters to be called by the law
+        Generate loads
         """
-        self._departure_node: 'Node' = departure_node
-        self._arrival_node: 'Node' = arrival_node
-        self._law: Callable[[None], int] = lambda: law(**params)
+        self._owner: Shipper = owner
+        self._law: Law = law
+        self._params = params
 
-    def call(self) -> int:
-        """Calling the law to generate a number"""
-        return self._law()
+    def call(self) -> None:
+        """Calling the law to generate loads"""
+        self._law(**self._params)
 
     @property
-    def departure_node(self) -> 'Node':
-        return self._departure_node
-
-    @property
-    def arrival_node(self) -> 'Node':
-        return self._arrival_node
+    def owner(self) -> Shipper:
+        return self._owner

@@ -1,23 +1,25 @@
 """
 Node file
 """
-from Mechanics.Tools.auction import Auction
-import abc
-from typing import TYPE_CHECKING, Optional, List, Dict
-if TYPE_CHECKING:
-    from Mechanics.Actors.carriers.carrier import Carrier
-    from Mechanics.Tools.load import Load, Info
-    from Mechanics.environment import Environment
 
-NodeWeights = Dict['Node', Dict['Node', float]]
+import abc
+from PI_RPS.Mechanics.Tools.auction import Auction
+
+from typing import TYPE_CHECKING, Optional, List
+from PI_RPS.prj_typing.types import NodeWeights
+
+if TYPE_CHECKING:
+    from PI_RPS.Mechanics.Actors.Carriers.carrier import Carrier
+    from PI_RPS.Mechanics.Tools.load import Load, Info
+    from PI_RPS.Mechanics.Environment.environment import Environment
 
 
 class Node(abc.ABC):
     """
-    This is the nodes class. A nodes should:
+    This is the Nodes class. A Nodes should:
         * Generate weights
         * Run auctions for the available loads
-            * Ask shippers for reserve prices
+            * Ask Shippers for reserve prices
             * Ask Carriers for bids
             * Run the auction
             * Make the attribution
@@ -25,8 +27,8 @@ class Node(abc.ABC):
             * Ask everyone to proceed to payment
         * Make the attribution and ask for payment
 
-    Important note: the waiting lists are only managed by the loads and the carriers themselves. A load signal when it
-    wants to be auctioned, remove itself after being auctioned, and similarly for the carriers.
+    Important note: the waiting lists are only managed by the loads and the Carriers themselves. A load signal when it
+    wants to be auctioned, remove itself after being auctioned, and similarly for the Carriers.
     """
 
     def __init__(self,
@@ -46,8 +48,8 @@ class Node(abc.ABC):
         self._revenues: List[float] = revenues
         self._total_revenues: float = sum(self._revenues)
 
-        self._weights: NodeWeights = weights  # this is a dictionary of dictionaries. First key is FINAL nodes,
-        # second key is NEXT nodes to avoid cyclic weights, we avoid having NEXT_NODE == THIS_NODE or
+        self._weights: NodeWeights = weights  # this is a dictionary of dictionaries. First key is FINAL Nodes,
+        # second key is NEXT Nodes to avoid cyclic weights, we avoid having NEXT_NODE == THIS_NODE or
         # FINAL_NODE == THIS_NODE however, it is clear that we can have NEXT_NODE == FINAL_NODE
         # MUST be initialized with all the structure, because not going to be created
 
@@ -64,15 +66,15 @@ class Node(abc.ABC):
     @abc.abstractmethod
     def update_weights_with_new_infos(self, new_infos: List['Info']) -> None:
         """
-        This is the method where the nodes has some intelligence.
+        This is the method where the Nodes has some intelligence.
         """
 
     def remove_carrier_from_waiting_list(self, carrier: 'Carrier') -> None:
-        """To be called by carriers to be removed from auction waiting list"""
+        """To be called by Carriers to be removed from auction waiting list"""
         self._waiting_carriers.remove(carrier)
 
     def add_carrier_to_waiting_list(self, carrier: 'Carrier') -> None:
-        """To be called by carriers to be added to the auction waiting list"""
+        """To be called by Carriers to be added to the auction waiting list"""
         self._waiting_carriers.append(carrier)
 
     def remove_load_from_waiting_list(self, load: 'Load') -> None:
@@ -92,16 +94,26 @@ class Node(abc.ABC):
     def auction_cost(self) -> float:
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
 
-    @abc.abstractmethod
-    def initialize_weights(self) -> None:
-        """May not be called by always, but there in case it is needed for new games"""
-
     def signal_as_current_auction(self, auction: Auction) -> None:
+        """Called by the auction at creation"""
         self._current_auction = auction
 
     def signal_as_past_auction(self, auction: Auction) -> None:
+        """Called by the auction at termination"""
         self._past_auctions.append(auction)
         self._current_auction = None
+
+    def clear_past_auctions(self) -> None:
+        """Called by the environment"""
+        self._past_auctions.clear()
+
+    def clear_waiting_loads(self) -> None:
+        """Called by the environment"""
+        self._waiting_loads.clear()
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def waiting_loads(self) -> List['Load']:
@@ -114,3 +126,7 @@ class Node(abc.ABC):
     @property
     def weights(self) -> NodeWeights:
         return self._weights
+
+    @property
+    def past_auctions(self):
+        return self._past_auctions
