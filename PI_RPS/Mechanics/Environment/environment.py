@@ -22,11 +22,13 @@ class Environment:
     def __init__(self,
                  nb_hours_per_time_unit: float,
                  max_nb_infos_per_load: int,
-                 init_node_weights_distance_scaling_factor: float):
+                 init_node_weights_distance_scaling_factor: float,
+                 max_node_weights_distance_scaling_factor: float):
 
         self._nb_hours_per_time_unit: float = nb_hours_per_time_unit
         self._max_nb_infos_per_load: int = max_nb_infos_per_load
         self._init_node_weights_distance_scaling_factor: float = init_node_weights_distance_scaling_factor
+        self._max_node_weights_distance_scaling_factor: float = max_node_weights_distance_scaling_factor
 
         # for the four lists, the creation process add them to the list
         self._nodes: List[Node] = []
@@ -69,7 +71,7 @@ class Environment:
         new_infos = []
         for load in self._loads_with_new_infos:
             new_infos += load.communicate_infos()
-        for node in self._nodes:  # FIXME: This can be clearly optimized
+        for node in self._nodes:  # optimize in the node structure with master implementation (see DummyNode for ex)
             node.update_weights_with_new_infos(new_infos)
         self._loads_with_new_infos = []
 
@@ -153,6 +155,10 @@ class Environment:
     @property
     def init_node_weights_distance_scaling_factor(self):
         return self._init_node_weights_distance_scaling_factor
+
+    @property
+    def max_node_weights_distance_scaling_factor(self):
+        return self._max_node_weights_distance_scaling_factor
 
     @property
     def default_reserve_price(self) -> bool:

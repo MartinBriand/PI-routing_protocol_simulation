@@ -12,85 +12,84 @@ Before executing anything, if you are on google colab using google computational
 # Installation and import
 """
 
-#! pip uninstall PI-routing-protocol-simulation
-#! pip install https://github.com/MartinBriand/PI-routing_protocol_simulation/archive/develop.tar.gz
+# ! pip uninstall PI-routing-protocol-simulation
+# ! pip install https://github.com/MartinBriand/PI-routing_protocol_simulation/archive/develop.tar.gz
 
 from tf_agents.utils.common import function as tfa_function
-from PI_RPS.Games.Learning_Game.initialize import load_env_and_agent
+from PI_RPS.Games.Learning_Game.initialize import load_tfa_env_and_agent
 import numpy as np
 import time
 
 """# Initialization"""
 
-n_carriers_per_node = 15 # @param {type:"integer"}
-action_min = 0. # @param {type:"number"}
-action_max = 20000. # @param {type:"number"}
-discount = 0.95 # @param {type:"number"}
+n_carriers_per_node = 15  # @param {type:"integer"}
+action_min = 0.  # @param {type:"number"}
+action_max = 20000.  # @param {type:"number"}
+discount = 0.95  # @param {type:"number"}
 
-shippers_reserve_price_per_distance = 1200. # @param{type:"number"}
-shipper_default_reserve_price = 20000. # @param{type:"number"}
-init_node_weights_distance_scaling_factor = 1500. # @param{type:"number"}
-node_nb_info = 100 # @param{type:"integer"}
-max_nb_infos_per_load = 5 # @param{type:"integer"}
-info_cost_max_factor_increase = 1.3 # @param{type:"number"}
+shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
+shipper_default_reserve_price = 20000.  # @param{type:"number"}
+init_node_weights_distance_scaling_factor = 1500.  # @param{type:"number"}
+node_nb_info = 100  # @param{type:"integer"}
+max_nb_infos_per_load = 5  # @param{type:"integer"}
+info_cost_max_factor_increase = 1.3  # @param{type:"number"}
 
-max_time_not_at_home = 30 # @param {type:"integer"}
-tnah_divisor = 30. # keep at 30, not a parameter
-reward_scale_factor_p = 1. / 500. # keep at 1./500., not a parameter
+max_time_not_at_home = 30  # @param {type:"integer"}
+tnah_divisor = 30.  # keep at 30, not a parameter
+reward_scale_factor_p = 1. / 500.  # keep at 1./500., not a parameter
 
-replay_buffer_batch_size = 5 # @param {type:"integer"}
-buffer_max_length = 25 # @param{type:"integer"}
+replay_buffer_batch_size = 5  # @param {type:"integer"}
+buffer_max_length = 25  # @param{type:"integer"}
 
-starting_exploration_noise = 500. # @param {type:"number"}
-final_exploration_noise = 20. # @param {type:"number"}
-exploration_noise = starting_exploration_noise # not a param
+starting_exploration_noise = 500.  # @param {type:"number"}
+final_exploration_noise = 20.  # @param {type:"number"}
+exploration_noise = starting_exploration_noise  # not a param
 
-actor_fc_layer_params = (64, 64) # @param
-actor_dropout_layer_params = None # @param
-critic_observation_fc_layer_params = None # @param
-critic_action_fc_layer_params = None # @param
-critic_joint_fc_layer_params = (64, 64) # @param
-critic_joint_dropout_layer_params = None # @param
+actor_fc_layer_params = (64, 64)  # @param
+actor_dropout_layer_params = None  # @param
+critic_observation_fc_layer_params = None  # @param
+critic_action_fc_layer_params = None  # @param
+critic_joint_fc_layer_params = (64, 64)  # @param
+critic_joint_dropout_layer_params = None  # @param
 
-target_update_tau_p = 0.1 # @param {type:"number"}
-target_update_period_p = 2 # @param {type:"integer"}
-actor_update_period_p = 2 # @param {type:"integer"}
-actor_learning_rate = 0.001 # @param{type:"number"}
-critic_learning_rate = 0.001 # @param{type:"number"}
+target_update_tau_p = 0.1  # @param {type:"number"}
+target_update_period_p = 2  # @param {type:"integer"}
+actor_update_period_p = 2  # @param {type:"integer"}
+actor_learning_rate = 0.001  # @param{type:"number"}
+critic_learning_rate = 0.001  # @param{type:"number"}
 
-target_policy_noise_p = 30. # @param {type:"number"}
-target_policy_noise_clip_p = 75. # @param {type:"number"}
+target_policy_noise_p = 30.  # @param {type:"number"}
+target_policy_noise_clip_p = 75.  # @param {type:"number"}
 
-e, learning_agent = load_env_and_agent(n_carriers=11*n_carriers_per_node, # 11 is the number of nodes
-                                       shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
-                                       init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
-                                       shipper_default_reserve_price=shipper_default_reserve_price,
-                                       node_nb_info=node_nb_info,
-                                       max_nb_infos_per_load=max_nb_infos_per_load,
-                                       info_cost_max_factor_increase=info_cost_max_factor_increase,
-                                       discount=discount,
-                                       exploration_noise=exploration_noise,
-                                       target_update_tau_p=target_update_tau_p,
-                                       target_update_period_p=target_update_period_p,
-                                       actor_update_period_p=actor_update_period_p,
-                                       reward_scale_factor_p=reward_scale_factor_p,
-                                       target_policy_noise_p=target_policy_noise_p,
-                                       target_policy_noise_clip_p=target_policy_noise_clip_p,
-                                       max_time_not_at_home=max_time_not_at_home,
-                                       action_min=action_min,
-                                       action_max=action_max,
-                                       tnah_divisor=tnah_divisor,
-                                       replay_buffer_batch_size=replay_buffer_batch_size,
-                                       buffer_max_length=buffer_max_length,
-                                       actor_learning_rate=actor_learning_rate,
-                                       critic_learning_rate=critic_learning_rate,
-                                       actor_fc_layer_params=actor_fc_layer_params,
-                                       actor_dropout_layer_params=actor_dropout_layer_params,
-                                       critic_observation_fc_layer_params=critic_observation_fc_layer_params,
-                                       critic_action_fc_layer_params=critic_action_fc_layer_params,
-                                       critic_joint_fc_layer_params=critic_joint_fc_layer_params,
-                                       critic_joint_dropout_layer_params=critic_joint_dropout_layer_params
-                                       )
+e, learning_agent = load_tfa_env_and_agent(n_carriers=11 * n_carriers_per_node,  # 11 is the number of nodes
+                                           shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
+                                           init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
+                                           shipper_default_reserve_price=shipper_default_reserve_price,
+                                           node_nb_info=node_nb_info,
+                                           max_nb_infos_per_load=max_nb_infos_per_load,
+                                           discount=discount,
+                                           exploration_noise=exploration_noise,
+                                           target_update_tau_p=target_update_tau_p,
+                                           target_update_period_p=target_update_period_p,
+                                           actor_update_period_p=actor_update_period_p,
+                                           reward_scale_factor_p=reward_scale_factor_p,
+                                           target_policy_noise_p=target_policy_noise_p,
+                                           target_policy_noise_clip_p=target_policy_noise_clip_p,
+                                           max_time_not_at_home=max_time_not_at_home,
+                                           action_min=action_min,
+                                           action_max=action_max,
+                                           tnah_divisor=tnah_divisor,
+                                           replay_buffer_batch_size=replay_buffer_batch_size,
+                                           buffer_max_length=buffer_max_length,
+                                           actor_learning_rate=actor_learning_rate,
+                                           critic_learning_rate=critic_learning_rate,
+                                           actor_fc_layer_params=actor_fc_layer_params,
+                                           actor_dropout_layer_params=actor_dropout_layer_params,
+                                           critic_observation_fc_layer_params=critic_observation_fc_layer_params,
+                                           critic_action_fc_layer_params=critic_action_fc_layer_params,
+                                           critic_joint_fc_layer_params=critic_joint_fc_layer_params,
+                                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params
+                                           )
 
 train = tfa_function(learning_agent.train)
 
@@ -130,6 +129,7 @@ all_results = {'carriers_profit': {'min': [],
                }
 
 """## Evaluation"""
+
 
 def clear_env(start: bool) -> None:
     e.clear_node_auctions()
@@ -216,6 +216,7 @@ def test(num_iter_per_test):
     clear_env(start=False)
     return results
 
+
 keys_with_stats = ['carriers_profit', 'delivery_costs', 'nb_hops', 'delivery_times']
 keys_without_stat = ['nb_loads', 'nb_arrived_loads', 'nb_discarded_loads', 'nb_in_transit_loads']
 stat_keys = ['min', 'quartile1', 'quartile2', 'quartile3', 'max', 'mean']
@@ -228,30 +229,33 @@ def add_results(results) -> None:
     for key_without_stat in keys_without_stat:
         all_results[key_without_stat].append(results[key_without_stat])
 
+
 """## Loop"""
 
-num_rounds = 25 # @param {type:"integer"}
-num_cost_pass = 10 # @param {type:"integer"}
-num_train_per_pass = 10 # @param {type:"integer"}
-num_iteration_per_test = 10 # @param{type:"integer"}
+num_rounds = 25  # @param {type:"integer"}
+num_cost_pass = 10  # @param {type:"integer"}
+num_train_per_pass = 10  # @param {type:"integer"}
+num_iteration_per_test = 10  # @param{type:"integer"}
 
 exploration_noise_update = (starting_exploration_noise - final_exploration_noise) / (num_rounds - 1)
+
 
 def change_costs():
     for carrier_p in learning_agent.carriers:
         carrier_p.random_new_cost_parameters()
 
+
 start_time = time.time()
 for i in range(num_rounds):
     now = time.time()
     if i > 0:
-        eta = int((now - start_time)*(num_rounds-i)/i)
-        eta_h = eta//3600
-        eta_m = (eta%3600)//60
-        eta_s = (eta%3600)%60
+        eta = int((now - start_time) * (num_rounds - i) / i)
+        eta_h = eta // 3600
+        eta_m = (eta % 3600) // 60
+        eta_s = (eta % 3600) % 60
         print("ETA:", "{}h{}m{}s".format(eta_h, eta_m, eta_s))
         e.default_reserve_price = False
-    print("Test", i+1, '/', num_rounds)
+    print("Test", i + 1, '/', num_rounds)
     change_costs()
     print(e.nodes[0].readable_weights())
     test_results = test(num_iteration_per_test)
@@ -278,4 +282,3 @@ print(e.nodes[0].readable_weights())
 test_results = test(num_iteration_per_test)
 print(test_results)
 add_results(test_results)
-

@@ -119,7 +119,7 @@ setup(
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     include_package_data=True,
-    package_data={"PI_RPS.Games.Learning_Game": ["data/*"]},
+    package_data={"PI_RPS.Games": ["data/*"]},
     # scripts=[os.path.join('Scripts', x) for x in os.listdir(os.path.join(here, 'Scripts'))],# we work without scripts
     license=LICENSE,
     classifiers=[
