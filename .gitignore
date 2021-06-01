@@ -75,6 +75,9 @@ docs/_build/
 # PyBuilder
 target/
 
+# Data Analysis
+/Data_analysis/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
