@@ -132,14 +132,6 @@ class Carrier(abc.ABC):
         self._total_revenues -= sum(self._episode_revenues)  # same
         self._episode_revenues.clear()
 
-    @property
-    def episode_revenues(self) -> List[float]:
-        return self._episode_revenues
-
-    @property
-    def episode_expenses(self) -> List[float]:
-        return self._episode_expenses
-
     @abc.abstractmethod
     def _transit_costs(self) -> float:
         """Calculating the transit costs depending on the states"""
@@ -151,6 +143,22 @@ class Carrier(abc.ABC):
     @abc.abstractmethod
     def _update_ffh_cost_functions(self) -> None:
         """To update your far_from_home costs"""
+
+    @property
+    def episode_revenues(self) -> List[float]:
+        return self._episode_revenues
+
+    @property
+    def episode_expenses(self) -> List[float]:
+        return self._episode_expenses
+
+    @property
+    def home(self):
+        return self._home
+
+    @property
+    def name(self):
+        return self._name
 
 
 class CarrierWithCosts(Carrier, abc.ABC):
@@ -212,3 +220,11 @@ class CarrierWithCosts(Carrier, abc.ABC):
     @classmethod
     def cost_dimension(cls) -> int:
         return cls._cost_dimension
+
+    @property
+    def t_c(self):
+        return self._t_c
+
+    @property
+    def ffh_c(self):
+        return self._ffh_c

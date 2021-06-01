@@ -29,4 +29,4 @@ AuctionReservePrice = Dict['Load', float]
 AuctionBid = Dict['Load', Dict['Carrier', Dict['Node', float]]]
 
 # for Load
-Cost = Tuple['Node', 'Node', float, float]
+Movement = Tuple['Node', 'Node', 'Carrier', float, float, bool]

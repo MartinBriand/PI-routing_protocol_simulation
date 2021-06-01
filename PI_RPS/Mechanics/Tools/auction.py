@@ -141,8 +141,13 @@ class Auction:
         winning_carrier, winning_next_node = winning_bid[0]
         winning_value = winning_bid[1]
         if winning_value <= this_auction_reserve_price:
-            carrier_cost = min(this_auction_reserve_price, final_bids[1][1]) if nb_carriers_involved > 1 else \
-                this_auction_reserve_price
+            if nb_carriers_involved == 1 or this_auction_reserve_price < final_bids[1][1]:
+                carrier_cost = this_auction_reserve_price
+                reserve_price_involved = True
+            else:
+                carrier_cost = final_bids[1][1]
+                reserve_price_involved = False
+
             carrier_cost -= this_auction_weights[winning_next_node]
             self._results['loads'][load] = \
                 {'is_attributed': True,
@@ -150,7 +155,8 @@ class Auction:
                             'previous_node': self._source,
                             'next_node': winning_next_node,
                             'carrier_cost': carrier_cost,
-                            'previous_node_cost': self._source.auction_cost()},
+                            'previous_node_cost': self._source.auction_cost(),
+                            'reserve_price_involved': reserve_price_involved},
                  'previous_node': self._source,
                  'winning_next_node': winning_next_node,
                  'winning_transformed_bid': winning_value,
