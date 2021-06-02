@@ -12,7 +12,7 @@ from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, f
 from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import CostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
-n_carriers_per_node = 15  # @param {type:"integer"}
+n_carriers_per_node = 20  # @param {type:"integer"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}

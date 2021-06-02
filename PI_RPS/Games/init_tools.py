@@ -97,7 +97,7 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     generator = np.random.default_rng()
 
     def law(load_shipper: Shipper,
-            environment: TFAEnvironment,
+            environment: Environment,
             start_node: Node,
             lamb: float,
             population: List[Node],
@@ -144,7 +144,7 @@ def _to_dicts(keys: np.ndarray,
     return new_lambdas, new_attribution, new_distances
 
 
-def _to_node_keys(e: TFAEnvironment,
+def _to_node_keys(e: Environment,
                   lambdas: Dict[str, float],
                   attribution: Dict[str, Dict[str, float]],
                   distances: Dict[str, Dict[str, int]],

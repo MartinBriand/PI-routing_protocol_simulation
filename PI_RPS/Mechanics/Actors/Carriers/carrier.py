@@ -222,6 +222,10 @@ class CarrierWithCosts(Carrier, abc.ABC):
         return cls._cost_dimension
 
     @property
+    def next_node(self):
+        return self._next_node
+
+    @property
     def t_c(self):
         return self._t_c
 
