@@ -12,7 +12,7 @@ from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, f
 from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import CostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
-n_carriers_per_node = 20  # @param {type:"integer"}
+n_carriers_per_node = 25  # @param {type:"integer"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
@@ -53,10 +53,12 @@ for k in range(n_carriers_per_node * len(e.nodes)):
     CostBiddingCarrier(name=node.name + '_' + str(counter[node]),
                        home=node,
                        in_transit=False,
+                       previous_node=node,
                        next_node=node,
                        time_to_go=0,
                        load=None,
                        environment=e,
+                       episode_types=[],
                        episode_expenses=[],
                        episode_revenues=[],
                        this_episode_expenses=[],
@@ -128,7 +130,7 @@ def test(num_iter_per_test):
     carriers_profit = []
     for carrier_p in e.carriers:
         if len(carrier_p.episode_revenues) > 1:
-            carriers_profit.append(sum(carrier_p.episode_revenues[1:]) + sum(carrier_p.episode_expenses[1:]))
+            carriers_profit.append(sum(carrier_p.episode_revenues[1:]) - sum(carrier_p.episode_expenses[1:]))
         else:
             carriers_profit.append(0.)
     carriers_profit = np.array(carriers_profit)

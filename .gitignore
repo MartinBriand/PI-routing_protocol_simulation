@@ -79,6 +79,7 @@ target/
 Notebooks/Data_analysis/
 
 # Jupyter Notebook
+*.ipynb
 .ipynb_checkpoints
 
 # IPython

@@ -7,7 +7,7 @@ import random
 
 from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts
 
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional, List, Tuple
 
 from PI_RPS.prj_typing.types import CarrierBid
 
@@ -29,10 +29,12 @@ class CostBiddingCarrier(CarrierWithCosts):
                  name: str,
                  home: 'Node',
                  in_transit: bool,
+                 previous_node: 'Node',
                  next_node: 'Node',
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'Environment',
+                 episode_types: List[Tuple[str, 'Node', 'Node']],
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
@@ -52,9 +54,11 @@ class CostBiddingCarrier(CarrierWithCosts):
                          home=home,
                          in_transit=in_transit,
                          next_node=next_node,
+                         previous_node=previous_node,
                          time_to_go=time_to_go,
                          load=load,
                          environment=environment,
+                         episode_types=episode_types,
                          episode_expenses=episode_expenses,
                          episode_revenues=episode_revenues,
                          this_episode_expenses=this_episode_expenses,
