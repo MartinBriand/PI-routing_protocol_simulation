@@ -26,6 +26,7 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                                              shippers_reserve_price_per_distance: float,
                                              shipper_default_reserve_price: float,
                                              node_auction_cost: float,
+                                             learning_nodes: bool,
                                              weights_file_name: str = None
                                              ) -> None:
     path = os.path.abspath(os.path.dirname(__file__))
@@ -68,6 +69,7 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     # create Nodes
     weight_master = DummyNodeWeightMaster(environment=e,
                                           nb_infos=node_nb_info,
+                                          is_learning=learning_nodes
                                           )
     for name in lambdas.keys():
         DummyNode(name=name,

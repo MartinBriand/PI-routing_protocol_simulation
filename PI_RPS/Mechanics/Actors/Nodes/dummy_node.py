@@ -17,7 +17,8 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                  weight_master: 'DummyNodeWeightMaster',
                  revenues: List[float],
                  environment: 'Environment',
-                 auction_cost: float):
+                 auction_cost: float,
+                 ):
         super().__init__(name, {}, revenues, environment)
 
         self._auction_cost: float = auction_cost
@@ -48,6 +49,10 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
     def weight_master(self) -> 'DummyNodeWeightMaster':
         return self._weight_master
 
+    @property
+    def is_learning(self) -> bool:
+        return self._weight_master.is_learning
+
 
 class DummyNodeWeightMaster:
     """To centralize the learning process for efficiency reasons"""
@@ -55,6 +60,7 @@ class DummyNodeWeightMaster:
     def __init__(self,
                  environment: 'Environment',
                  nb_infos: int,
+                 is_learning: bool,
                  nodes: Optional[List['DummyNode']] = None) -> None:
 
         self._environment: 'Environment' = environment
@@ -65,7 +71,10 @@ class DummyNodeWeightMaster:
 
         self._nodes: List['DummyNode'] = nodes if nodes else []
 
+        self._is_learning: bool = is_learning
+
         self._has_learned: bool = False
+
         if nodes:
             self._has_asked_to_learn: Dict['DummyNode', bool] = {node: False for node in self._nodes}
         else:
@@ -108,38 +117,39 @@ class DummyNodeWeightMaster:
         Learn only for all nodes
         Broadcast weights when learning is finished
         """
-        assert not self._has_asked_to_learn[node], "Can't ask to learn twice"
-        if not self._has_learned:
-            info_start_arrival_dict = {}  # not to reduce the other
-            for info in new_infos:
-                if info.start == info.arrival:
-                    continue  # this is to avoid useless info to be taken
-                else:
-                    if info.cost <= self._environment.get_distance(info.start, info.arrival) * \
-                            self._environment.max_node_weights_distance_scaling_factor:
-                        if info.start not in info_start_arrival_dict.keys():
-                            info_start_arrival_dict[info.start] = {}
-                        if info.arrival not in info_start_arrival_dict[info.start].keys():
-                            info_start_arrival_dict[info.start][info.arrival] = []
-                        info_start_arrival_dict[info.start][info.arrival].append(info.cost)
-            for start in info_start_arrival_dict.keys():
-                for arrival in info_start_arrival_dict[start].keys():
-                    w = self._weights[arrival][start]
-                    infos = info_start_arrival_dict[start][arrival]
-                    nb_infos = len(infos)
-                    value = sum(infos) / nb_infos
+        if self._is_learning:
+            assert not self._has_asked_to_learn[node], "Can't ask to learn twice"
+            if not self._has_learned:
+                info_start_arrival_dict = {}  # not to reduce the other
+                for info in new_infos:
+                    if info.start == info.arrival:
+                        continue  # this is to avoid useless info to be taken
+                    else:
+                        if info.cost <= self._environment.get_distance(info.start, info.arrival) * \
+                                self._environment.max_node_weights_distance_scaling_factor:
+                            if info.start not in info_start_arrival_dict.keys():
+                                info_start_arrival_dict[info.start] = {}
+                            if info.arrival not in info_start_arrival_dict[info.start].keys():
+                                info_start_arrival_dict[info.start][info.arrival] = []
+                            info_start_arrival_dict[info.start][info.arrival].append(info.cost)
+                for start in info_start_arrival_dict.keys():
+                    for arrival in info_start_arrival_dict[start].keys():
+                        w = self._weights[arrival][start]
+                        infos = info_start_arrival_dict[start][arrival]
+                        nb_infos = len(infos)
+                        value = sum(infos) / nb_infos
 
-                    w += (value - w) / (
-                            self._nb_infos ** (1 / nb_infos))  # we have an exponential smoothing of self.nb_infos
-                    self._weights[arrival][start] = w
-            self._has_learned = True
-        self._has_asked_to_learn[node] = True
+                        w += (value - w) / (
+                                self._nb_infos ** (1 / nb_infos))  # we have an exponential smoothing of self.nb_infos
+                        self._weights[arrival][start] = w
+                self._has_learned = True
+            self._has_asked_to_learn[node] = True
 
-        if all(i for i in self._has_asked_to_learn.values()):
-            self._broadcast_weights()
-            self._has_learned = False
-            for node in self._has_asked_to_learn.keys():
-                self._has_asked_to_learn[node] = False
+            if all(i for i in self._has_asked_to_learn.values()):
+                self._broadcast_weights()
+                self._has_learned = False
+                for node in self._has_asked_to_learn.keys():
+                    self._has_asked_to_learn[node] = False
 
     def _broadcast_weights(self) -> None:
         """
@@ -170,3 +180,13 @@ class DummyNodeWeightMaster:
             for key2 in self._weights[key1]:
                 result[key1.name][key2.name] = self._weights[key1][key2]
         return result
+
+    @property
+    def is_learning(self) -> bool:
+        return self._is_learning
+
+    @is_learning.setter
+    def is_learning(self, value) -> None:
+        assert type(value) == bool, 'only set booleans'
+        assert self._is_learning == (not value), 'only change to opposite'
+        self._is_learning = value

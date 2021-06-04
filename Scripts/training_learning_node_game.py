@@ -12,7 +12,7 @@ from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, f
 from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import CostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
-n_carriers_per_node = 25  # @param {type:"integer"}
+n_carriers_per_node = 30  # @param {type:"integer"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
@@ -26,6 +26,11 @@ max_nb_infos_per_load = 15  # @param{type:"integer"}
 
 max_time_not_at_home = 30  # @param {type:"integer"}
 
+learning_nodes = True  # @param{type:"boolean"}
+
+weights_file_name = None if learning_nodes else 'weights_' + str(node_auction_cost) + '_' + \
+                            str(n_carriers_per_node) + '.json'
+
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 max_nb_infos_per_load=max_nb_infos_per_load,
                 init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
@@ -36,7 +41,9 @@ load_realistic_nodes_and_shippers_to_env(e=e,
                                          shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                          shipper_default_reserve_price=shipper_default_reserve_price,
                                          node_auction_cost=node_auction_cost,
-                                         weights_file_name=None)
+                                         learning_nodes=learning_nodes,
+                                         weights_file_name=weights_file_name
+                                         )
 
 weight_master = e.nodes[0].weight_master
 
