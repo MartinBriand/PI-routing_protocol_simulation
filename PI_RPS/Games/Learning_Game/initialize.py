@@ -18,8 +18,8 @@ from tf_agents.trajectories.trajectory import Transition
 
 import tensorflow as tf
 
-from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma, \
-    nb_hours_per_time_unit
+from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env
+from PI_RPS.Games.init_tools import t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma, nb_hours_per_time_unit
 from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningCarrier, LearningAgent
 from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
 
@@ -30,8 +30,12 @@ def load_tfa_env_and_agent(n_carriers: int,
                            discount: float,
                            shippers_reserve_price_per_distance: float,
                            shipper_default_reserve_price: float,
+                           node_auction_cost: float,
                            node_nb_info: int,
+                           learning_nodes: bool,
+                           weights_file_name: str,
                            init_node_weights_distance_scaling_factor: float,
+                           max_node_weights_distance_scaling_factor: float,
                            max_nb_infos_per_load: int,
                            tnah_divisor: float,
                            exploration_noise: float,
@@ -64,12 +68,17 @@ def load_tfa_env_and_agent(n_carriers: int,
                        action_min=action_min,
                        action_max=action_max,
                        init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
-                       max_time_not_at_home=max_time_not_at_home)
+                       max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
+                       # max_time_not_at_home=max_time_not_at_home
+                       )
 
     load_realistic_nodes_and_shippers_to_env(e=e,
                                              node_nb_info=node_nb_info,
                                              shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
-                                             shipper_default_reserve_price=shipper_default_reserve_price)
+                                             shipper_default_reserve_price=shipper_default_reserve_price,
+                                             node_auction_cost=node_auction_cost,
+                                             learning_nodes=learning_nodes,
+                                             weights_file_name=weights_file_name)
 
     # create Carriers
 
@@ -94,6 +103,7 @@ def load_tfa_env_and_agent(n_carriers: int,
 
     _init_learning_carriers(data_spec=data_spec,
                             n_carriers=n_carriers,
+                            max_time_not_at_home=max_time_not_at_home,
                             environment=e,
                             learning_agent=learning_agent,
                             discount=discount,
@@ -210,6 +220,7 @@ def _init_learning_agent(e: TFAEnvironment,
 
 def _init_learning_carriers(data_spec,
                             n_carriers: int,
+                            max_time_not_at_home: int,
                             environment: TFAEnvironment,
                             learning_agent: LearningAgent,
                             discount: float,
@@ -231,11 +242,14 @@ def _init_learning_carriers(data_spec,
                                        dataset_drop_remainder=True)
         LearningCarrier(name=node.name + '_' + str(counter[node]),
                         home=node,
+                        max_time_not_at_home=max_time_not_at_home,
                         in_transit=False,
+                        previous_node=node,
                         next_node=node,
                         time_to_go=0,
                         load=None,
                         environment=environment,
+                        episode_types=[],
                         episode_expenses=[],
                         episode_revenues=[],
                         this_episode_expenses=[],

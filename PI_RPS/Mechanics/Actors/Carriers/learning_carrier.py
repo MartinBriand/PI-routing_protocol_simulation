@@ -42,7 +42,7 @@ from tf_agents.typing import types
 
 from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts
 
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional, List, Tuple
 
 from PI_RPS.prj_typing.types import CarrierBid
 
@@ -64,11 +64,14 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
     def __init__(self,
                  name: str,
                  home: 'Node',
+                 max_time_not_at_home: int,
                  in_transit: bool,
+                 previous_node: 'Node',
                  next_node: 'Node',
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'TFAEnvironment',
+                 episode_types: List[Tuple[str, 'Node', 'Node']],
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
@@ -88,10 +91,12 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         super().__init__(name=name,
                          home=home,
                          in_transit=in_transit,
+                         previous_node=previous_node,
                          next_node=next_node,
                          time_to_go=time_to_go,
                          load=load,
                          environment=environment,
+                         episode_types=episode_types,
                          episode_expenses=episode_expenses,
                          episode_revenues=episode_revenues,
                          this_episode_expenses=this_episode_expenses,
@@ -102,6 +107,8 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
 
         self._action_scale: float = self._environment.action_max - self._environment.action_min
         self._action_shift: float = self._environment.action_min
+
+        self._max_time_not_at_home = max_time_not_at_home
 
         self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
@@ -137,15 +144,13 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         self.init_first_step()
 
         self._policy_step: Optional[PolicyStep] = policy_step
-        self._max_time_not_at_home = self._environment.max_time_not_at_home
 
     def _decide_next_node(self) -> 'Node':
         """
-        Decide of a next Nodes after losing an auction (can be the same Nodes when needed)
-        Here the function is simple: go home in 10% of the cases.
+        Go home only if more than self._max_time_not_at_home since last time at home
         """
 
-        if random.random() < 0.1:
+        if self._time_not_at_home > self._max_time_not_at_home:
             return self._home
         else:
             return self._next_node
@@ -212,22 +217,13 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         This version of next step takes care of generating transitions and time steps.
         If not at home for a too long time, we go home and don't record the transition.
         """
-        super().next_step()
+        super().next_step()  # this takes care of writing the transitions to record data
         if not self._in_transit:
             next_time_step = self._generate_current_time_step()
             if self._is_learning and not self._is_first_step:
                 self._generate_transition(next_time_step)
             self._time_step = next_time_step
             self._is_first_step = False
-            if self._time_not_at_home > self._max_time_not_at_home:  # we can have ==
-                new_next_node = self._home
-                self._is_first_step = True
-                # assert new_next_node != self._next_node  # this should always be True, removing for speed
-                self._in_transit = True
-                current_node = self._next_node
-                self._next_node = new_next_node
-                self._time_to_go = self._environment.get_distance(current_node, self._next_node)
-                current_node.remove_carrier_from_waiting_list(self)
 
     def _generate_transition(self, next_time_step: TimeStep) -> None:
         if self._policy_step:

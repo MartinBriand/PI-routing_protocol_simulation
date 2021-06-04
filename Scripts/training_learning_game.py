@@ -10,19 +10,28 @@ import time
 
 """# Initialization"""
 
-n_carriers_per_node = 15  # @param {type:"integer"}
+n_carriers_per_node = 30  # @param {type:"integer"}
 action_min = 0.  # @param {type:"number"}
 action_max = 20000.  # @param {type:"number"}
 discount = 0.95  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
-init_node_weights_distance_scaling_factor = 1500.  # @param{type:"number"}
+
+init_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
+max_node_weights_distance_scaling_factor = 500. * 1.3  # @param{type:"number"}
+# should be big enough to be unrealistic.
+# They won't be used if not learning nodes
+
+node_auction_cost = 0.  # @param{type:"number"}
 node_nb_info = 100  # @param{type:"integer"}
+# not used if node is not learning
+
 max_nb_infos_per_load = 5  # @param{type:"integer"}
-info_cost_max_factor_increase = 1.3  # @param{type:"number"}
+# not used if not learning nodes
 
 max_time_not_at_home = 30  # @param {type:"integer"}
+
 tnah_divisor = 30.  # keep at 30, not a parameter
 reward_scale_factor_p = 1. / 500.  # keep at 1./500., not a parameter
 
@@ -49,11 +58,19 @@ critic_learning_rate = 0.001  # @param{type:"number"}
 target_policy_noise_p = 30.  # @param {type:"number"}
 target_policy_noise_clip_p = 75.  # @param {type:"number"}
 
+learning_nodes = False  # @param {type:"boolean"}
+weights_file_name = None if learning_nodes else 'weights_' + str(node_auction_cost) + '_' + \
+                                                str(n_carriers_per_node) + '.json'
+
 e, learning_agent = load_tfa_env_and_agent(n_carriers=11 * n_carriers_per_node,  # 11 is the number of nodes
                                            shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                            init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
+                                           max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
                                            shipper_default_reserve_price=shipper_default_reserve_price,
+                                           node_auction_cost=node_auction_cost,
                                            node_nb_info=node_nb_info,
+                                           learning_nodes=learning_nodes,
+                                           weights_file_name=weights_file_name,
                                            max_nb_infos_per_load=max_nb_infos_per_load,
                                            discount=discount,
                                            exploration_noise=exploration_noise,
@@ -143,7 +160,7 @@ def test(num_iter_per_test):
     carriers_profit = []
     for carrier_p in e.carriers:
         if len(carrier_p.episode_revenues) > 1:
-            carriers_profit.append(sum(carrier_p.episode_revenues[1:]) + sum(carrier_p.episode_expenses[1:]))
+            carriers_profit.append(sum(carrier_p.episode_revenues[1:]) - sum(carrier_p.episode_expenses[1:]))
         else:
             carriers_profit.append(0.)
     carriers_profit = np.array(carriers_profit)
@@ -222,8 +239,8 @@ def add_results(results) -> None:
 
 num_rounds = 25  # @param {type:"integer"}
 num_cost_pass = 10  # @param {type:"integer"}
-num_train_per_pass = 10  # @param {type:"integer"}
-num_iteration_per_test = 10  # @param{type:"integer"}
+num_train_per_pass = 20  # @param {type:"integer"}
+num_iteration_per_test = 50  # @param{type:"integer"}
 
 exploration_noise_update = (starting_exploration_noise - final_exploration_noise) / (num_rounds - 1)
 
@@ -245,7 +262,6 @@ for i in range(num_rounds):
         e.default_reserve_price = False
     print("Test", i + 1, '/', num_rounds)
     change_costs()
-    print(e.nodes[0].readable_weights())
     test_results = test(num_iteration_per_test)
     print(test_results)
     add_results(test_results)
@@ -266,7 +282,6 @@ for i in range(num_rounds):
 
 print("Final test")
 change_costs()
-print(e.nodes[0].readable_weights())
 test_results = test(num_iteration_per_test)
 print(test_results)
 add_results(test_results)

@@ -34,9 +34,13 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
                  action_min: float,
                  action_max: float,
                  init_node_weights_distance_scaling_factor: float,
-                 max_time_not_at_home: int
+                 max_node_weights_distance_scaling_factor: float,
+                 # max_time_not_at_home: int
                  ) -> None:
-        super().__init__(nb_hours_per_time_unit, max_nb_infos_per_load, init_node_weights_distance_scaling_factor)
+        super().__init__(nb_hours_per_time_unit=nb_hours_per_time_unit,
+                         max_nb_infos_per_load=max_nb_infos_per_load,
+                         init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
+                         max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor)
         self._t_c_mu: float = t_c_mu
         self._t_c_sigma: float = t_c_sigma
         self._ffh_c_mu: float = ffh_c_mu
@@ -44,7 +48,7 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
         self._tnah_divisor: float = tnah_divisor
         self._action_min: float = action_min
         self._action_max: float = action_max
-        self._max_time_not_at_home = max_time_not_at_home
+        # self._max_time_not_at_home = max_time_not_at_home
         self._enough_transitions_carriers: List['LearningCarrier'] = []
         self._node_states: NodeStates = {}
         self._learning_agent = None
@@ -115,10 +119,6 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
     @property
     def action_max(self) -> float:
         return self._action_max
-
-    @property
-    def max_time_not_at_home(self) -> int:
-        return self._max_time_not_at_home
 
     @property
     def enough_transitions_carriers(self) -> List['LearningCarrier']:
