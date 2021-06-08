@@ -26,6 +26,7 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                                              shippers_reserve_price_per_distance: float,
                                              shipper_default_reserve_price: float,
                                              node_auction_cost: float,
+                                             auction_type: str,
                                              learning_nodes: bool,
                                              weights_file_name: str = None
                                              ) -> None:
@@ -76,7 +77,8 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                   weight_master=weight_master,
                   revenues=[],
                   environment=e,
-                  auction_cost=node_auction_cost)
+                  auction_cost=node_auction_cost,
+                  auction_type=auction_type)
 
     if isinstance(e, TFAEnvironment):
         e.build_node_state()

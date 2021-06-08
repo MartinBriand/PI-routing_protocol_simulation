@@ -46,7 +46,8 @@ load_realistic_nodes_and_shippers_to_env(e=e,
                                          shipper_default_reserve_price=shipper_default_reserve_price,
                                          node_auction_cost=node_auction_cost,
                                          learning_nodes=learning_nodes,
-                                         weights_file_name=weights_file_name
+                                         weights_file_name=weights_file_name,
+                                         auction_type='multi_lane'
                                          )
 
 weight_master = e.nodes[0].weight_master

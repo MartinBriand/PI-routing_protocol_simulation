@@ -3,7 +3,7 @@ Node file
 """
 
 import abc
-from PI_RPS.Mechanics.Tools.auction import Auction
+from PI_RPS.Mechanics.Tools.auction import available_auction_types, Auction
 
 from typing import TYPE_CHECKING, Optional, List
 from PI_RPS.prj_typing.types import NodeWeights
@@ -35,12 +35,18 @@ class Node(abc.ABC):
                  name: str,
                  weights: NodeWeights,
                  revenues: List[float],
-                 environment: 'Environment') -> None:
+                 environment: 'Environment',
+                 auction_type: str) -> None:
 
         self._name: str = name
         self._environment: 'Environment' = environment
         self._waiting_loads: List['Load'] = []  # always initialize as an empty list (the loads signal themselves)
         self._waiting_carriers: List['Carrier'] = []  # same as waiting_loads
+
+        assert auction_type in available_auction_types.keys(),\
+            "Auction types must be in {}".format(available_auction_types.keys())
+
+        self._auction_type = available_auction_types[auction_type]
 
         self._current_auction: Optional[Auction] = None
         self._past_auctions: List[Auction] = []  # They will signal at creation
@@ -58,7 +64,7 @@ class Node(abc.ABC):
     def run_auction(self) -> None:
         """Create an Auction instance and run it, called by the environment"""
         if len(self._waiting_loads) > 0 and len(self._waiting_carriers) > 0:
-            Auction(self)  # the auction itself will signal to the node
+            self._auction_type(self)  # the auction itself will signal to the node
             self._current_auction.run()  # auto signal a current and past auction
         for carrier in self._waiting_carriers:  # If lose the auction of if no auction, they are still in this list
             carrier.dont_get_attribution()
@@ -66,7 +72,7 @@ class Node(abc.ABC):
     @abc.abstractmethod
     def update_weights_with_new_infos(self, new_infos: List['Info']) -> None:
         """
-        This is the method where the Nodes has some intelligence.
+        This is the method where the Nodes have some intelligence.
         """
         raise NotImplementedError
 
