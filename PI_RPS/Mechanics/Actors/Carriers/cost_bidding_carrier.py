@@ -3,8 +3,6 @@ This is a carrier that bids the cost for each lane except if it has to go home. 
 very high (higher than reserve price) on the other lanes and go home whatever the result
 """
 
-import random
-
 from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts
 
 from typing import TYPE_CHECKING, Optional, List, Tuple
@@ -41,10 +39,6 @@ class CostBiddingCarrier(CarrierWithCosts):
                  this_episode_revenues: float,
                  transit_cost: float,
                  far_from_home_cost: float,
-                 t_c_mu: float,
-                 t_c_sigma: float,
-                 ffh_c_mu: float,
-                 ffh_c_sigma: float,
                  too_high_bid: float,
                  time_not_at_home: int,
                  max_time_not_at_home: int
@@ -67,10 +61,6 @@ class CostBiddingCarrier(CarrierWithCosts):
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
 
-        self._t_c_mu: float = t_c_mu
-        self._t_c_sigma: float = t_c_sigma
-        self._ffh_c_mu: float = ffh_c_mu
-        self._ffh_c_sigma: float = ffh_c_sigma
         self._too_high_bid: float = too_high_bid  # should be at least bigger than the transformed reserve price
         # of the shippers
         self._max_time_not_at_home: int = max_time_not_at_home
@@ -104,16 +94,3 @@ class CostBiddingCarrier(CarrierWithCosts):
             t = self._time_not_at_home + delta_t
             result += self._transit_costs() + self._far_from_home_costs(time_not_at_home=t)
         return result
-
-    def random_new_cost_parameters(self) -> None:
-        road_costs = random.normalvariate(mu=self._t_c_mu, sigma=self._t_c_sigma)
-        drivers_costs = random.normalvariate(mu=self._ffh_c_mu, sigma=self._ffh_c_sigma)
-        self._set_new_cost_parameters(t_c=road_costs, ffh_c=drivers_costs)
-
-    def _set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
-        """
-        Setting new parameters for learners and resetting buffers
-        """
-        self._t_c = t_c
-        self._ffh_c = ffh_c
-        self.clear_profit()

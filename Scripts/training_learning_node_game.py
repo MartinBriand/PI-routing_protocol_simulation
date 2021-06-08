@@ -34,7 +34,11 @@ weights_file_name = None if learning_nodes else 'weights_' + str(node_auction_co
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 max_nb_infos_per_load=max_nb_infos_per_load,
                 init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
-                max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor)
+                max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
+                t_c_mu=t_c_mu,
+                t_c_sigma=t_c_sigma,
+                ffh_c_mu=ffh_c_mu,
+                ffh_c_sigma=ffh_c_sigma)
 
 load_realistic_nodes_and_shippers_to_env(e=e,
                                          node_nb_info=node_nb_info,
@@ -74,10 +78,6 @@ for k in range(n_carriers_per_node * len(e.nodes)):
                        far_from_home_cost=drivers_costs,
                        time_not_at_home=0,
                        max_time_not_at_home=max_time_not_at_home,
-                       t_c_mu=t_c_mu,
-                       t_c_sigma=t_c_sigma,
-                       ffh_c_mu=ffh_c_mu,
-                       ffh_c_sigma=ffh_c_sigma,
                        too_high_bid=shipper_default_reserve_price)
 
 """# Training loop

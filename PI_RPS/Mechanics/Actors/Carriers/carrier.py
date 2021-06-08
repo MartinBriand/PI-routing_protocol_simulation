@@ -4,6 +4,7 @@ Carrier file
 import abc
 from typing import TYPE_CHECKING, Optional, List, Tuple
 from math import exp
+import random
 
 from PI_RPS.prj_typing.types import CarrierBid
 
@@ -108,7 +109,6 @@ class Carrier(abc.ABC):
 
         self._this_episode_expenses.append(new_cost)
         self._total_expenses += new_cost
-        self._update_ffh_cost_functions()
 
         if not self._in_transit:  # May have been modified by the _arrive_at_next_node method
             self._episode_revenues.append(self._this_episode_revenues)
@@ -149,10 +149,6 @@ class Carrier(abc.ABC):
     @abc.abstractmethod
     def _far_from_home_costs(self) -> float:
         """Calculating the "far from home" costs depending on the states"""
-
-    @abc.abstractmethod
-    def _update_ffh_cost_functions(self) -> None:
-        """To update your far_from_home costs"""
 
     @property
     def episode_types(self) -> List[Tuple[str, 'Node', 'Node']]:
@@ -215,6 +211,11 @@ class CarrierWithCosts(Carrier, abc.ABC):
         self._ffh_c: float = far_from_home_cost
         self._time_not_at_home: int = time_not_at_home
 
+    def next_step(self) -> None:
+        """Same but updating the cost function to increment or not the time not at home"""
+        super().next_step()
+        self._update_ffh_cost_functions()
+
     def _transit_costs(self) -> float:
         """The transit costs"""
         return self._t_c
@@ -234,6 +235,20 @@ class CarrierWithCosts(Carrier, abc.ABC):
             self._time_not_at_home = 0
         else:
             self._time_not_at_home += 1
+
+    def random_new_cost_parameters(self) -> None:
+        """Selecting new cost parameters and setting them"""
+        road_costs = random.normalvariate(mu=self._environment.t_c_mu, sigma=self._environment.t_c_sigma)
+        drivers_costs = random.normalvariate(mu=self._environment.ffh_c_mu, sigma=self._environment.ffh_c_sigma)
+        self._set_new_cost_parameters(t_c=road_costs, ffh_c=drivers_costs)
+
+    def _set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
+        """
+        Setting new parameters for learners and resetting buffers
+        """
+        self._t_c = t_c
+        self._ffh_c = ffh_c
+        self.clear_profit()
 
     @classmethod
     def cost_dimension(cls) -> int:

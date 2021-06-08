@@ -40,11 +40,12 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
         super().__init__(nb_hours_per_time_unit=nb_hours_per_time_unit,
                          max_nb_infos_per_load=max_nb_infos_per_load,
                          init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
-                         max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor)
-        self._t_c_mu: float = t_c_mu
-        self._t_c_sigma: float = t_c_sigma
-        self._ffh_c_mu: float = ffh_c_mu
-        self._ffh_c_sigma: float = ffh_c_sigma
+                         max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
+                         t_c_mu=t_c_mu,
+                         t_c_sigma=t_c_sigma,
+                         ffh_c_mu=ffh_c_mu,
+                         ffh_c_sigma=ffh_c_sigma)
+
         self._tnah_divisor: float = tnah_divisor
         self._action_min: float = action_min
         self._action_max: float = action_max
@@ -87,22 +88,6 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
     def check_carriers_first_steps(self) -> None:
         for carrier in self._carriers:
             carrier.init_first_step()
-
-    @property
-    def t_c_mu(self) -> float:
-        return self._t_c_mu
-
-    @property
-    def t_c_sigma(self) -> float:
-        return self._t_c_sigma
-
-    @property
-    def ffh_c_mu(self) -> float:
-        return self._ffh_c_mu
-
-    @property
-    def ffh_c_sigma(self) -> float:
-        return self._ffh_c_sigma
 
     @property
     def tnah_divisor(self) -> float:

@@ -23,7 +23,11 @@ class Environment:
                  nb_hours_per_time_unit: float,
                  max_nb_infos_per_load: int,
                  init_node_weights_distance_scaling_factor: float,
-                 max_node_weights_distance_scaling_factor: float):
+                 max_node_weights_distance_scaling_factor: float,
+                 t_c_mu: float,
+                 t_c_sigma: float,
+                 ffh_c_mu: float,
+                 ffh_c_sigma: float,):
 
         self._nb_hours_per_time_unit: float = nb_hours_per_time_unit
         self._max_nb_infos_per_load: int = max_nb_infos_per_load
@@ -41,6 +45,13 @@ class Environment:
         self._distances: Distance = {}  # should be a dictionary of dictionaries with Nodes as keys
 
         self._default_reserve_price: bool = True
+
+        # for the cost function (Ideally we should have a subclass in which that is defined, because this is only for
+        # CarriersWithCosts but we only play with these carriers in the simulation
+        self._t_c_mu: float = t_c_mu
+        self._t_c_sigma: float = t_c_sigma
+        self._ffh_c_mu: float = ffh_c_mu
+        self._ffh_c_sigma: float = ffh_c_sigma
 
     def iteration(self) -> None:
         """This is the main function of the Environment class. It represents the operation of the game for one unit of
@@ -149,6 +160,22 @@ class Environment:
         return self._nb_hours_per_time_unit
 
     @property
+    def t_c_mu(self) -> float:
+        return self._t_c_mu
+
+    @property
+    def t_c_sigma(self) -> float:
+        return self._t_c_sigma
+
+    @property
+    def ffh_c_mu(self) -> float:
+        return self._ffh_c_mu
+
+    @property
+    def ffh_c_sigma(self) -> float:
+        return self._ffh_c_sigma
+
+    @property
     def max_nb_infos_per_load(self) -> int:
         return self._max_nb_infos_per_load
 
@@ -169,4 +196,3 @@ class Environment:
         assert type(value) == bool
         assert value == (not self._default_reserve_price)
         self._default_reserve_price = value
-

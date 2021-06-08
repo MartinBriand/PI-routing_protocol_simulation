@@ -23,7 +23,6 @@ During exploitation
     * The Carriers won't generate episodes or these episodes won't be added to a replay buffer
 """
 
-import random
 from tensorflow import constant as tf_constant, concat as tf_concat, Variable, expand_dims as tf_expand_dims
 from tensorflow.python.data import Dataset
 from tensorflow.python.framework.ops import EagerTensor
@@ -179,23 +178,15 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
                 bid[next_node] = action[0, k]  # 0 because of the first dimension
         return bid
 
-    def random_new_cost_parameters(self) -> None:
-        road_costs = random.normalvariate(mu=self._environment.t_c_mu, sigma=self._environment.t_c_sigma)
-        drivers_costs = random.normalvariate(mu=self._environment.ffh_c_mu, sigma=self._environment.ffh_c_sigma)
-        self._set_new_cost_parameters(t_c=road_costs, ffh_c=drivers_costs)
-
     def _set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
         """
         Setting new parameters for learners and resetting buffers
         """
-        self._t_c = t_c
-        self._ffh_c = ffh_c
+        super()._set_new_cost_parameters(t_c, ffh_c)
         self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
         self._replay_buffer.clear()
         self._discount_power = 1
-        self._is_first_step = True  # the time_step will not be written if in transit
-        self.clear_profit()
         self.init_first_step()
 
     def update_collect_policy(self):
