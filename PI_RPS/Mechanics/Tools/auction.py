@@ -158,18 +158,17 @@ class MultiLaneAuction(Auction):
             final_bids[(carrier, node_arg_min)] = new_bids[carrier][node_arg_min]
 
         final_bids = sorted(final_bids.items(), key=lambda item: item[1])
-        winning_bid = final_bids[0]  # No out of bound error because
+        winning_bid = final_bids[0]  # No out of bound error because at least one carrier
         winning_carrier, winning_next_node = winning_bid[0]
         winning_value = winning_bid[1]
         if winning_value <= this_auction_reserve_price:
             if nb_carriers_involved == 1 or this_auction_reserve_price < final_bids[1][1]:
-                carrier_cost = this_auction_reserve_price
+                carrier_cost = this_auction_reserve_price - this_auction_weights[winning_next_node]
                 reserve_price_involved = True
             else:
-                carrier_cost = final_bids[1][1]
+                carrier_cost = final_bids[1][1] - this_auction_weights[winning_next_node]
                 reserve_price_involved = False
 
-            carrier_cost -= this_auction_weights[winning_next_node]
             self._results['loads'][load] = \
                 {'is_attributed': True,
                  'kwargs': {'carrier': winning_carrier,
@@ -237,8 +236,52 @@ class SingleLaneAuction(Auction):
             self._bids[load][carrier] = carrier.bid(next_node=load.arrival)
 
     def _make_attributions_and_payments(self, load: 'Load',
-                                        nb_carriers_involved: int) -> Tuple[bool, Optional['Carrier']]:  # TODO
-        pass
+                                        nb_carriers_involved: int) -> Tuple[bool, Optional['Carrier']]:
+
+        this_auction_reserve_price = self._reserve_prices[load]
+        this_auction_bids = self._bids[load]
+        final_bids = sorted(this_auction_bids.items(), key=lambda item: item[1])
+
+        winning_bid = final_bids[0]  # No out of bound error because at least one carrier
+        winning_carrier = winning_bid[0]
+        winning_value = winning_bid[1]
+
+        if winning_value <= this_auction_reserve_price:
+            if nb_carriers_involved == 1 or this_auction_reserve_price < final_bids[1][1]:
+                carrier_cost = this_auction_reserve_price
+                reserve_price_involved = True
+            else:
+                carrier_cost = final_bids[1][1]
+                reserve_price_involved = False
+
+            self._results['loads'][load] = \
+                {'is_attributed': True,
+                 'kwargs': {'carrier': winning_carrier,
+                            'previous_node': self._source,
+                            'next_node': load.arrival,
+                            'carrier_cost': carrier_cost,
+                            'previous_node_cost': self._source.auction_cost(),
+                            'reserve_price_involved': reserve_price_involved},
+                 'previous_node': self._source,
+                 'winning_next_node': load.arrival,
+                 'winning_transformed_bid': winning_value,
+                 'weight': 0.,
+                 'reserve_price': this_auction_reserve_price
+                 }
+            self._results['Carriers'][winning_carrier] = \
+                {'is_attributed': True,
+                 'kwargs': {'load': load, 'next_node': load.arrival}}
+            return True, winning_carrier
+        else:
+            self._results['loads'][load] = {'is_attributed': False,
+                                            'kwargs': {},
+                                            'previous_node': self._source,
+                                            'winning_next_node': load.arrival,
+                                            'winning_transformed_bid': winning_value,
+                                            'weight': 0.,
+                                            'reserve_price': this_auction_reserve_price
+                                            }
+            return False, None
 
 
-available_auction_types: Dict[str, Type[Auction]] = {'multi_lane': MultiLaneAuction, 'single_lane': SingleLaneAuction}
+available_auction_types: Dict[str, Type[Auction]] = {'MultiLanes': MultiLaneAuction, 'SingleLane': SingleLaneAuction}
