@@ -69,7 +69,6 @@ class CostBiddingCarrier(CarrierWithCosts, MultiBidCarrier):
         """
         Go home only if more than self._max_time_not_at_home since last time at home
         """
-
         if self._time_not_at_home > self._max_time_not_at_home:
             return self._home
         else:
@@ -77,15 +76,9 @@ class CostBiddingCarrier(CarrierWithCosts, MultiBidCarrier):
 
     def bid(self) -> 'CarrierMultiBid':
         bid = {}
-        if self._time_not_at_home > self._max_time_not_at_home:
-            for next_node in self._environment.nodes:
-                if next_node != self._next_node:
-                    bid[next_node] = 0 if next_node == self._home else self._too_high_bid
-        else:
-            for next_node in self._environment.nodes:
-                if next_node != self._next_node:
-                    bid[next_node] = self._calculate_costs(self._next_node, next_node)
-
+        for next_node in self._environment.nodes:
+            if next_node != self._next_node:
+                bid[next_node] = self._calculate_costs(self._next_node, next_node)
         return bid
 
     def _calculate_costs(self, from_node: 'Node', to_node: 'Node') -> float:

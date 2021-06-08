@@ -80,7 +80,7 @@ class Auction(abc.ABC):
         return self._results
 
 
-class MultiLaneAuction(Auction):
+class MultiLanesAuction(Auction):
     """
     Auction for multi lane bidding carriers
     """
@@ -284,4 +284,4 @@ class SingleLaneAuction(Auction):
             return False, None
 
 
-available_auction_types: Dict[str, Type[Auction]] = {'MultiLanes': MultiLaneAuction, 'SingleLane': SingleLaneAuction}
+available_auction_types: Dict[str, Type[Auction]] = {'MultiLanes': MultiLanesAuction, 'SingleLane': SingleLaneAuction}

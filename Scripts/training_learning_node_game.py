@@ -26,7 +26,7 @@ max_nb_infos_per_load = 15  # @param{type:"integer"}
 
 max_time_not_at_home = 30  # @param {type:"integer"}
 
-learning_nodes = False  # @param{type:"boolean"}
+learning_nodes = True  # @param{type:"boolean"}
 
 weights_file_name = None if learning_nodes else 'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
                             str(n_carriers_per_node) + '.json'
