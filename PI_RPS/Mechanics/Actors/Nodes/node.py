@@ -68,6 +68,7 @@ class Node(abc.ABC):
         """
         This is the method where the Nodes has some intelligence.
         """
+        raise NotImplementedError
 
     def remove_carrier_from_waiting_list(self, carrier: 'Carrier') -> None:
         """To be called by Carriers to be removed from auction waiting list"""
@@ -93,6 +94,7 @@ class Node(abc.ABC):
     @abc.abstractmethod
     def auction_cost(self) -> float:
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
+        raise NotImplementedError
 
     def signal_as_current_auction(self, auction: Auction) -> None:
         """Called by the auction at creation"""

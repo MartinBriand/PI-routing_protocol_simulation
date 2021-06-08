@@ -79,7 +79,7 @@ class Auction:
         """
         self._bids[load] = {}
         for carrier in self._carriers[:nb_carriers_involved]:
-            self._bids[load][carrier] = carrier.bid(self._source)
+            self._bids[load][carrier] = carrier.bid()
 
     def _notify_load(self, load: 'Load') -> None:
         """Notify the loads after making the attributions"""

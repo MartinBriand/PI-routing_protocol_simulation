@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional, List, Tuple
 from math import exp
 import random
 
-from PI_RPS.prj_typing.types import CarrierBid
+from PI_RPS.prj_typing.types import CarrierBid, CarrierMultiBid, CarrierSingleBid
 
 if TYPE_CHECKING:
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
@@ -65,12 +65,14 @@ class Carrier(abc.ABC):
             self._next_node.add_carrier_to_waiting_list(self)
 
     @abc.abstractmethod
-    def bid(self, node: 'Node') -> CarrierBid:
+    def bid(self, *args, **kwargs) -> CarrierBid:
         """To be called by the Nodes before an auction"""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def _decide_next_node(self) -> 'Node':
         """Decide of a next Nodes after losing an auction (can be the same Nodes when needed)"""
+        raise NotImplementedError
 
     def get_attribution(self, load: 'Load', next_node: 'Node') -> None:
         """To be called by the Nodes after an auction if a load was attributed to the Carriers"""
@@ -145,10 +147,12 @@ class Carrier(abc.ABC):
     @abc.abstractmethod
     def _transit_costs(self) -> float:
         """Calculating the transit costs depending on the states"""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def _far_from_home_costs(self) -> float:
         """Calculating the "far from home" costs depending on the states"""
+        raise NotImplementedError
 
     @property
     def episode_types(self) -> List[Tuple[str, 'Node', 'Node']]:
@@ -171,8 +175,29 @@ class Carrier(abc.ABC):
         return self._name
 
 
+# Bidding abstract classes
+
+class MultiBidCarrier(Carrier, abc.ABC):
+
+    @abc.abstractmethod
+    def bid(self) -> CarrierMultiBid:
+        """To be called by the Nodes before an auction"""
+        raise NotImplementedError
+
+
+class SingleBidCarrier(Carrier, abc.ABC):
+
+    @abc.abstractmethod
+    def bid(self, next_node: 'Node') -> CarrierSingleBid:
+        """To be called by the nodes before an auction"""
+        raise NotImplementedError
+
+
+# Cost abstract classes
+
 class CarrierWithCosts(Carrier, abc.ABC):
-    """The idea is to modify the Carrier class to have a single cost structure"""
+    """The idea is to modify the Carrier class to have a single cost structure,
+    Always pu first in inheritance to call the init method"""
 
     _cost_dimension: int = 3
 

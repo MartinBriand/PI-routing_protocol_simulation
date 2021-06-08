@@ -49,6 +49,7 @@ class Shipper(abc.ABC):
         """
         To be called by the Nodes before an auction
         """
+        raise NotImplementedError
 
     def proceed_to_payment(self,
                            node: 'Node',
