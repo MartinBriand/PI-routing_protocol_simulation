@@ -58,8 +58,11 @@ critic_learning_rate = 0.001  # @param{type:"number"}
 target_policy_noise_p = 30.  # @param {type:"number"}
 target_policy_noise_clip_p = 75.  # @param {type:"number"}
 
-learning_nodes = True  # @param {type:"boolean"}
-weights_file_name = None if learning_nodes else 'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
+learning_nodes = False  # @param {type:"boolean"}
+
+auction_type = ['MultiLanes', 'SingleLane'][1]
+
+weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '.json'
 
 e, learning_agent = load_tfa_env_and_agent(n_carriers=11 * n_carriers_per_node,  # 11 is the number of nodes
@@ -68,6 +71,7 @@ e, learning_agent = load_tfa_env_and_agent(n_carriers=11 * n_carriers_per_node, 
                                            max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
                                            shipper_default_reserve_price=shipper_default_reserve_price,
                                            node_auction_cost=node_auction_cost,
+                                           auction_type=auction_type,
                                            node_nb_info=node_nb_info,
                                            learning_nodes=learning_nodes,
                                            weights_file_name=weights_file_name,

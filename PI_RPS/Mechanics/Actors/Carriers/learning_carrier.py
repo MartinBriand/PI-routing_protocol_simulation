@@ -22,6 +22,7 @@ During exploitation
     * The driver won't change the parameters of the Carriers on the way
     * The Carriers won't generate episodes or these episodes won't be added to a replay buffer
 """
+import abc
 
 from tensorflow import constant as tf_constant, concat as tf_concat, Variable, expand_dims as tf_expand_dims
 from tensorflow.python.data import Dataset
@@ -39,20 +40,20 @@ from tf_agents.policies import actor_policy, gaussian_policy
 import tf_agents.typing.types as tfa_types
 from tf_agents.typing import types
 
-from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts, MultiBidCarrier
+from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts, MultiBidCarrier, SingleBidCarrier
 
 from typing import TYPE_CHECKING, Optional, List, Tuple
-
-from PI_RPS.prj_typing.types import CarrierMultiBid
 
 if TYPE_CHECKING:
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
     from PI_RPS.Mechanics.Tools.load import Load
     from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
+    from PI_RPS.prj_typing.types import CarrierMultiBid, CarrierSingleBid
 
 
-class LearningCarrier(CarrierWithCosts, MultiBidCarrier):  # , TFEnvironment):
+class LearningCarrier(CarrierWithCosts, abc.ABC):
     """
+    Base abstract class for learning carrier
     It is a carrier but:
         * getting normalized action info from agents and then bidding according to that
         * set the discount power and generate time_steps and transitions
@@ -125,8 +126,7 @@ class LearningCarrier(CarrierWithCosts, MultiBidCarrier):  # , TFEnvironment):
         )
         self._training_data_set_iter = iter(self._training_data_set)
 
-        if discount > 1 or discount < 0:
-            raise ValueError('Discount between 0 and 1')
+        assert 0 <= discount <= 1, 'Discount between 0 and 1'
 
         self._discount: EagerTensor = tf_constant([discount])
         self._discount_power: int = discount_power if discount_power else 1
@@ -164,44 +164,6 @@ class LearningCarrier(CarrierWithCosts, MultiBidCarrier):  # , TFEnvironment):
             self._discount_power = self._time_to_go
         else:
             self._discount_power = 1
-
-    def bid(self) -> 'CarrierMultiBid':
-        self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
-        action = self._policy_step.action.numpy()
-        action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
-        # actions in the env without interfering with TFA
-        node_list = self._environment.nodes
-        bid = {}
-        for k in range(action.shape[-1]):
-            next_node = node_list[k]
-            if next_node != self._next_node:
-                bid[next_node] = action[0, k]  # 0 because of the first dimension
-        return bid
-
-    def _set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
-        """
-        Setting new parameters for learners and resetting buffers
-        """
-        super()._set_new_cost_parameters(t_c, ffh_c)
-        self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
-        self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
-        self._replay_buffer.clear()
-        self._discount_power = 1
-        self.init_first_step()
-
-    def update_collect_policy(self):
-        assert self._is_learning, "update_collect_policy only if learning"
-        self._policy = self._learning_agent.collect_policy
-
-    def set_not_learning(self):
-        assert self._is_learning, "Set only learning agents to non-learning"
-        self._is_learning = False
-        self._policy = self._learning_agent.policy
-
-    def set_learning(self):
-        assert not self._is_learning, "Set only non-learning agent to learning"
-        self._is_learning = True
-        self._policy = self._learning_agent.collect_policy
 
     def next_step(self) -> None:
         """
@@ -261,6 +223,31 @@ class LearningCarrier(CarrierWithCosts, MultiBidCarrier):  # , TFEnvironment):
         else:
             self._is_first_step = True
 
+    def _set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
+        """
+        Setting new parameters for learners and resetting buffers
+        """
+        super()._set_new_cost_parameters(t_c, ffh_c)
+        self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
+        self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
+        self._replay_buffer.clear()
+        self._discount_power = 1
+        self.init_first_step()
+
+    def update_collect_policy(self):
+        assert self._is_learning, "update_collect_policy only if learning"
+        self._policy = self._learning_agent.collect_policy
+
+    def set_not_learning(self):
+        assert self._is_learning, "Set only learning agents to non-learning"
+        self._is_learning = False
+        self._policy = self._learning_agent.policy
+
+    def set_learning(self):
+        assert not self._is_learning, "Set only non-learning agent to learning"
+        self._is_learning = True
+        self._policy = self._learning_agent.collect_policy
+
     @property
     def is_learning(self) -> bool:
         return self._is_learning
@@ -268,6 +255,42 @@ class LearningCarrier(CarrierWithCosts, MultiBidCarrier):  # , TFEnvironment):
     @property
     def training_data_set_iter(self):
         return self._training_data_set_iter
+
+
+class MultiLanesLearningCarrier(LearningCarrier, MultiBidCarrier):  # , TFEnvironment):
+    """
+    The carrier is able to bid on all lanes
+    """
+
+    def bid(self) -> 'CarrierMultiBid':
+        self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
+        action = self._policy_step.action.numpy()
+        action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
+        # actions in the env without interfering with TFA
+        node_list = self._environment.nodes
+        bid = {}
+        for k in range(action.shape[-1]):
+            next_node = node_list[k]
+            if next_node != self._next_node:
+                bid[next_node] = action[0, k]  # 0 because of the first dimension
+        return bid
+
+
+class SingleLaneLearningCarrier(LearningCarrier, SingleBidCarrier):
+    """
+    The carrier can only bid on destination lane
+    """
+
+    def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
+        self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
+        action = self._policy_step.action.numpy()
+        action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
+        # actions in the env without interfering with TFA
+        node_list = self._environment.nodes
+        for k in range(action.shape[-1]):
+            bid_next_node = node_list[k]
+            if bid_next_node == next_node:
+                return action[0, k]  # 0 because of the first dimension
 
 
 class LearningAgent(Td3Agent):
