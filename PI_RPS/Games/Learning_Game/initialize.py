@@ -20,8 +20,11 @@ import tensorflow as tf
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env
 from PI_RPS.Games.init_tools import t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma, nb_hours_per_time_unit
-from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningCarrier, LearningAgent
+from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningCarrier
+from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import MultiLanesLearningCarrier, SingleLaneLearningCarrier
+from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningAgent
 from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
+from PI_RPS.Mechanics.Tools.auction import available_auction_types
 
 
 def load_tfa_env_and_agent(n_carriers: int,
@@ -31,6 +34,7 @@ def load_tfa_env_and_agent(n_carriers: int,
                            shippers_reserve_price_per_distance: float,
                            shipper_default_reserve_price: float,
                            node_auction_cost: float,
+                           auction_type: str,
                            node_nb_info: int,
                            learning_nodes: bool,
                            weights_file_name: str,
@@ -79,7 +83,7 @@ def load_tfa_env_and_agent(n_carriers: int,
                                              node_auction_cost=node_auction_cost,
                                              learning_nodes=learning_nodes,
                                              weights_file_name=weights_file_name,
-                                             auction_type='MultiLanes')
+                                             auction_type=auction_type)
 
     # create Carriers
 
@@ -109,7 +113,8 @@ def load_tfa_env_and_agent(n_carriers: int,
                             learning_agent=learning_agent,
                             discount=discount,
                             buffer_max_length=buffer_max_length,
-                            replay_buffer_batch_size=replay_buffer_batch_size)
+                            replay_buffer_batch_size=replay_buffer_batch_size,
+                            auction_type=auction_type)
 
     return e, learning_agent
 
@@ -226,7 +231,8 @@ def _init_learning_carriers(data_spec,
                             learning_agent: LearningAgent,
                             discount: float,
                             buffer_max_length: int,
-                            replay_buffer_batch_size: int
+                            replay_buffer_batch_size: int,
+                            auction_type: str,
                             ) -> None:
     counter = {}
     for k in range(n_carriers):
@@ -241,29 +247,62 @@ def _init_learning_carriers(data_spec,
                                        batch_size=1,  # the sample batch size is then different, but we add 1 by 1
                                        max_length=buffer_max_length,
                                        dataset_drop_remainder=True)
-        LearningCarrier(name=node.name + '_' + str(counter[node]),
-                        home=node,
-                        max_time_not_at_home=max_time_not_at_home,
-                        in_transit=False,
-                        previous_node=node,
-                        next_node=node,
-                        time_to_go=0,
-                        load=None,
-                        environment=environment,
-                        episode_types=[],
-                        episode_expenses=[],
-                        episode_revenues=[],
-                        this_episode_expenses=[],
-                        this_episode_revenues=0,
-                        transit_cost=road_costs,
-                        far_from_home_cost=drivers_costs,
-                        time_not_at_home=0,
-                        learning_agent=learning_agent,
-                        replay_buffer=buffer,
-                        replay_buffer_batch_size=replay_buffer_batch_size,
-                        is_learning=True,
-                        discount=discount,
-                        discount_power=1,
-                        time_step=None,
-                        policy_step=None)
+
+        assert auction_type in available_auction_types.keys(),\
+            'Select an available auction type in {}'.format(available_auction_types.keys())
+
+        if auction_type == 'MultiLanes':
+            MultiLanesLearningCarrier(name=node.name + '_' + str(counter[node]),
+                                      home=node,
+                                      max_time_not_at_home=max_time_not_at_home,
+                                      in_transit=False,
+                                      previous_node=node,
+                                      next_node=node,
+                                      time_to_go=0,
+                                      load=None,
+                                      environment=environment,
+                                      episode_types=[],
+                                      episode_expenses=[],
+                                      episode_revenues=[],
+                                      this_episode_expenses=[],
+                                      this_episode_revenues=0,
+                                      transit_cost=road_costs,
+                                      far_from_home_cost=drivers_costs,
+                                      time_not_at_home=0,
+                                      learning_agent=learning_agent,
+                                      replay_buffer=buffer,
+                                      replay_buffer_batch_size=replay_buffer_batch_size,
+                                      is_learning=True,
+                                      discount=discount,
+                                      discount_power=1,
+                                      time_step=None,
+                                      policy_step=None)
+        elif auction_type == 'SingleLane':
+            SingleLaneLearningCarrier(name=node.name + '_' + str(counter[node]),
+                                      home=node,
+                                      max_time_not_at_home=max_time_not_at_home,
+                                      in_transit=False,
+                                      previous_node=node,
+                                      next_node=node,
+                                      time_to_go=0,
+                                      load=None,
+                                      environment=environment,
+                                      episode_types=[],
+                                      episode_expenses=[],
+                                      episode_revenues=[],
+                                      this_episode_expenses=[],
+                                      this_episode_revenues=0,
+                                      transit_cost=road_costs,
+                                      far_from_home_cost=drivers_costs,
+                                      time_not_at_home=0,
+                                      learning_agent=learning_agent,
+                                      replay_buffer=buffer,
+                                      replay_buffer_batch_size=replay_buffer_batch_size,
+                                      is_learning=True,
+                                      discount=discount,
+                                      discount_power=1,
+                                      time_step=None,
+                                      policy_step=None)
+        else:
+            raise NotImplementedError
         # note: admin_costs are defined in the CarrierWithCosts class
