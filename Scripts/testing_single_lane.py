@@ -8,7 +8,7 @@ import time
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
-from PI_RPS.Mechanics.Actors.Carriers.single_lane_cost_bidding_carrier import SingleLaneCostBiddingCarrier
+from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import SingleLaneCostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
 n_carriers_per_node = 30  # @param {type:"integer"}

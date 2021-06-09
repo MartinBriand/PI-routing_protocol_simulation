@@ -3,14 +3,14 @@ The prj_typing package
 """
 
 from tensorflow.python.framework.ops import EagerTensor
-from typing import TYPE_CHECKING, Dict, Callable, Tuple, Union, Type
+from typing import TYPE_CHECKING, Dict, Callable, Tuple, Union
 
 if TYPE_CHECKING:
     pass
 
 
 # for Carrier
-CarrierSingleBid = Type[float]
+CarrierSingleBid = float
 CarrierMultiBid = Dict['Node', float]
 CarrierBid = Union[CarrierMultiBid, CarrierSingleBid]
 CarrierState = EagerTensor

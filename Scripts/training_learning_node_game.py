@@ -9,7 +9,7 @@ import time
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
-from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import CostBiddingCarrier
+from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
 n_carriers_per_node = 30  # @param {type:"integer"}
@@ -62,24 +62,24 @@ for k in range(n_carriers_per_node * len(e.nodes)):
     road_costs = random.normalvariate(mu=t_c_mu, sigma=t_c_sigma)
     drivers_costs = random.normalvariate(mu=ffh_c_mu, sigma=ffh_c_sigma)
 
-    CostBiddingCarrier(name=node.name + '_' + str(counter[node]),
-                       home=node,
-                       in_transit=False,
-                       previous_node=node,
-                       next_node=node,
-                       time_to_go=0,
-                       load=None,
-                       environment=e,
-                       episode_types=[],
-                       episode_expenses=[],
-                       episode_revenues=[],
-                       this_episode_expenses=[],
-                       this_episode_revenues=0,
-                       transit_cost=road_costs,
-                       far_from_home_cost=drivers_costs,
-                       time_not_at_home=0,
-                       max_time_not_at_home=max_time_not_at_home,
-                       too_high_bid=shipper_default_reserve_price)
+    MultiLanesCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
+                                 home=node,
+                                 in_transit=False,
+                                 previous_node=node,
+                                 next_node=node,
+                                 time_to_go=0,
+                                 load=None,
+                                 environment=e,
+                                 episode_types=[],
+                                 episode_expenses=[],
+                                 episode_revenues=[],
+                                 this_episode_expenses=[],
+                                 this_episode_revenues=0,
+                                 transit_cost=road_costs,
+                                 far_from_home_cost=drivers_costs,
+                                 time_not_at_home=0,
+                                 max_time_not_at_home=max_time_not_at_home,
+                                 too_high_bid=shipper_default_reserve_price)
 
 """# Training loop
 ## Results structure
