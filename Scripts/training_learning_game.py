@@ -58,8 +58,8 @@ critic_learning_rate = 0.001  # @param{type:"number"}
 target_policy_noise_p = 30.  # @param {type:"number"}
 target_policy_noise_clip_p = 75.  # @param {type:"number"}
 
-learning_nodes = False  # @param {type:"boolean"}
-weights_file_name = None if learning_nodes else 'weights_' + str(node_auction_cost) + '_' + \
+learning_nodes = True  # @param {type:"boolean"}
+weights_file_name = None if learning_nodes else 'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '.json'
 
 e, learning_agent = load_tfa_env_and_agent(n_carriers=11 * n_carriers_per_node,  # 11 is the number of nodes

@@ -2,14 +2,13 @@
 This is a learning script to learn the weights of the game with non learning carriers
 """
 
-
 import numpy as np
 import random
 import time
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
-from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCostBiddingCarrier
+from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import SingleLaneCostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
 n_carriers_per_node = 30  # @param {type:"integer"}
@@ -23,13 +22,14 @@ max_node_weights_distance_scaling_factor = 500. * 1.3  # @param{type:"number"}
 node_auction_cost = 0.  # @param{type:"number"}
 node_nb_info = 100  # @param{type:"integer"}
 max_nb_infos_per_load = 15  # @param{type:"integer"}
+# useless cause will be always 1
 
 max_time_not_at_home = 30  # @param {type:"integer"}
 
 learning_nodes = True  # @param{type:"boolean"}
 
-weights_file_name = None if learning_nodes else 'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
-                            str(n_carriers_per_node) + '.json'
+weights_file_name = None if learning_nodes else 'weights_SingleLane_' + str(node_auction_cost) + '_' + \
+                                                str(n_carriers_per_node) + '.json'
 
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 max_nb_infos_per_load=max_nb_infos_per_load,
@@ -47,7 +47,7 @@ load_realistic_nodes_and_shippers_to_env(e=e,
                                          node_auction_cost=node_auction_cost,
                                          learning_nodes=learning_nodes,
                                          weights_file_name=weights_file_name,
-                                         auction_type='MultiLanes'
+                                         auction_type='SingleLane'
                                          )
 
 weight_master = e.nodes[0].weight_master
@@ -62,7 +62,7 @@ for k in range(n_carriers_per_node * len(e.nodes)):
     road_costs = random.normalvariate(mu=t_c_mu, sigma=t_c_sigma)
     drivers_costs = random.normalvariate(mu=ffh_c_mu, sigma=ffh_c_sigma)
 
-    MultiLanesCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
+    SingleLaneCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
                                  home=node,
                                  in_transit=False,
                                  previous_node=node,
@@ -78,8 +78,7 @@ for k in range(n_carriers_per_node * len(e.nodes)):
                                  transit_cost=road_costs,
                                  far_from_home_cost=drivers_costs,
                                  time_not_at_home=0,
-                                 max_time_not_at_home=max_time_not_at_home,
-                                 too_high_bid=shipper_default_reserve_price)
+                                 max_time_not_at_home=max_time_not_at_home)
 
 """# Training loop
 ## Results structure
@@ -242,7 +241,7 @@ def add_weights_to_lists():
     for arrival in readable_weights.keys():
         for departure in readable_weights[arrival].keys():
             previous_weights[arrival][departure].append(readable_weights[arrival][departure])
-    
+
     has_converged = {}
     for arrival in not_converged.keys():
         has_converged[arrival] = []
@@ -255,7 +254,7 @@ def add_weights_to_lists():
             not_converged[arrival].remove(departure)
         if len(not_converged[arrival]) == 0:
             del not_converged[arrival]
-            
+
 
 start_time = time.time()
 loop_counter = 0
@@ -291,6 +290,6 @@ delta_h = delta // 3600
 delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
 final_readable_weights = weight_master.readable_weights()
-write_readable_weights_json(final_readable_weights, 'weights_MultiLanes_' + str(node_auction_cost) + '_' +
+write_readable_weights_json(final_readable_weights, 'weights_SingleLane_' + str(node_auction_cost) + '_' +
                             str(n_carriers_per_node) + '.json')
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))

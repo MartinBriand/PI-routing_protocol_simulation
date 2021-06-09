@@ -78,7 +78,8 @@ def load_tfa_env_and_agent(n_carriers: int,
                                              shipper_default_reserve_price=shipper_default_reserve_price,
                                              node_auction_cost=node_auction_cost,
                                              learning_nodes=learning_nodes,
-                                             weights_file_name=weights_file_name)
+                                             weights_file_name=weights_file_name,
+                                             auction_type='MultiLanes')
 
     # create Carriers
 

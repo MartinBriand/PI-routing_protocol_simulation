@@ -39,11 +39,11 @@ from tf_agents.policies import actor_policy, gaussian_policy
 import tf_agents.typing.types as tfa_types
 from tf_agents.typing import types
 
-from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts
+from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts, MultiBidCarrier
 
 from typing import TYPE_CHECKING, Optional, List, Tuple
 
-from PI_RPS.prj_typing.types import CarrierBid
+from PI_RPS.prj_typing.types import CarrierMultiBid
 
 if TYPE_CHECKING:
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
 
 
-class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
+class LearningCarrier(CarrierWithCosts, MultiBidCarrier):  # , TFEnvironment):
     """
     It is a carrier but:
         * getting normalized action info from agents and then bidding according to that
@@ -165,7 +165,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         else:
             self._discount_power = 1
 
-    def bid(self, node: 'Node') -> 'CarrierBid':
+    def bid(self) -> 'CarrierMultiBid':
         self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
         action = self._policy_step.action.numpy()
         action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
@@ -174,7 +174,7 @@ class LearningCarrier(CarrierWithCosts):  # , TFEnvironment):
         bid = {}
         for k in range(action.shape[-1]):
             next_node = node_list[k]
-            if next_node != node:
+            if next_node != self._next_node:
                 bid[next_node] = action[0, k]  # 0 because of the first dimension
         return bid
 

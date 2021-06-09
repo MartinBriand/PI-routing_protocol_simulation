@@ -18,8 +18,9 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
                  revenues: List[float],
                  environment: 'Environment',
                  auction_cost: float,
+                 auction_type: str,
                  ):
-        super().__init__(name, {}, revenues, environment)
+        super().__init__(name, {}, revenues, environment, auction_type)
 
         self._auction_cost: float = auction_cost
         self._weight_master: 'DummyNodeWeightMaster' = weight_master
