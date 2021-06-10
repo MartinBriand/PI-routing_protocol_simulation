@@ -5,8 +5,6 @@ from setuptools import setup
 # Note: To use the 'upload' functionality of this file, you must:
 #   $ pipenv install twine --dev
 
-# adding line to test git
-
 import io
 import os
 import sys
