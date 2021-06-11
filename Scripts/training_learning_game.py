@@ -97,7 +97,7 @@ e, learning_agent = load_tfa_env_and_agent(n_carriers=11 * n_carriers_per_node, 
                                            critic_observation_fc_layer_params=critic_observation_fc_layer_params,
                                            critic_action_fc_layer_params=critic_action_fc_layer_params,
                                            critic_joint_fc_layer_params=critic_joint_fc_layer_params,
-                                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params
+                                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
                                            )
 
 train = tfa_function(learning_agent.train)
@@ -276,7 +276,7 @@ for i in range(num_rounds):
             e.iteration()
             e.shuffle_enough_transitions_carriers()
             n = len(e.enough_transitions_carriers)
-            for _ in range(n):
+            for _ in range(n):  # do not parallelize
                 carrier = e.pop_enough_transitions_carriers()
                 experience, _ = next(carrier.training_data_set_iter)
                 train(experience=experience, weights=None)

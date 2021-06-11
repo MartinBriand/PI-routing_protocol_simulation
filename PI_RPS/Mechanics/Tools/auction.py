@@ -125,7 +125,7 @@ class MultiLanesAuction(Auction):
         node. The value is the bid
         """
         self._bids[load] = {}
-        for carrier in self._carriers[:nb_carriers_involved]:
+        for carrier in self._carriers[:nb_carriers_involved]:  # could be parallelized
             self._bids[load][carrier] = carrier.bid()
 
     def _make_attributions_and_payments(self, load: 'Load',
@@ -235,7 +235,7 @@ class SingleLaneAuction(Auction):
         node. The value is the bid
         """
         self._bids[load] = {}
-        for carrier in self._carriers[:nb_carriers_involved]:
+        for carrier in self._carriers[:nb_carriers_involved]:  # could be parallelized
             self._bids[load][carrier] = carrier.bid(next_node=load.arrival)
 
     def _make_attributions_and_payments(self, load: 'Load',

@@ -59,7 +59,7 @@ def load_tfa_env_and_agent(n_carriers: int,
                            actor_learning_rate: float,
                            critic_learning_rate: float,
                            buffer_max_length: int,
-                           replay_buffer_batch_size: int
+                           replay_buffer_batch_size: int,
                            ) -> Tuple[TFAEnvironment, LearningAgent]:
     # create env
     e = TFAEnvironment(nb_hours_per_time_unit=nb_hours_per_time_unit,  # 390 km at an average speed of 39.42 km/h)
