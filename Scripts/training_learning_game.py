@@ -290,7 +290,7 @@ print(test_results)
 add_results(test_results)
 
 end = time.time()
-total_time = int((now - start_time)*(num_rounds-i)/i)
+total_time = int(end - start_time)
 total_time_h = total_time//3600
 total_time_m = (total_time%3600)//60
 total_time_s = (total_time%3600)%60
