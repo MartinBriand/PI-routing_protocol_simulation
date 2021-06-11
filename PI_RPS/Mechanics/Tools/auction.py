@@ -185,7 +185,10 @@ class MultiLanesAuction(Auction):
                  }
             self._results['Carriers'][winning_carrier] = \
                 {'is_attributed': True,
-                 'kwargs': {'load': load, 'next_node': winning_next_node}}
+                 'kwargs': {'load': load,
+                            'next_node': winning_next_node,
+                            'reserve_price_involved': reserve_price_involved}
+                 }
             return True, winning_carrier
         else:
             self._results['loads'][load] = {'is_attributed': False,
@@ -270,7 +273,11 @@ class SingleLaneAuction(Auction):
                  }
             self._results['Carriers'][winning_carrier] = \
                 {'is_attributed': True,
-                 'kwargs': {'load': load, 'next_node': load.arrival}}
+                 'kwargs': {'load': load,
+                            'next_node': load.arrival,
+                            'reserve_price_involved': reserve_price_involved
+                            }
+                 }
             return True, winning_carrier
         else:
             self._results['loads'][load] = {'is_attributed': False,

@@ -131,6 +131,9 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
         self._discount: EagerTensor = tf_constant([discount])
         self._discount_power: int = discount_power if discount_power else 1
 
+        self._register_real_cost: bool = True  # when reserve price is involved in winning we do not want to register
+        # the real cost in the transition but 0 instead
+
         self._is_learning: bool = is_learning
         if self._is_learning:
             self._policy: TFPolicy = self._learning_agent.collect_policy
@@ -154,9 +157,10 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
         else:
             return self._next_node
 
-    def get_attribution(self, load: 'Load', next_node: 'Node') -> None:
-        super().get_attribution(load, next_node)
+    def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
+        super().get_attribution(load, next_node, reserve_price_involved)
         self._discount_power = self._time_to_go
+        self._register_real_cost = not reserve_price_involved
 
     def dont_get_attribution(self) -> None:
         super().dont_get_attribution()
@@ -164,6 +168,8 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
             self._discount_power = self._time_to_go
         else:
             self._discount_power = 1
+
+        self._register_real_cost = True
 
     def next_step(self) -> None:
         """
@@ -200,7 +206,10 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
         observation = tf_expand_dims(tf_concat([node_state, home_state, cost_state], 0), axis=0)
         discount = self._discount ** self._discount_power
         if self._is_first_step:
-            step_type = tf_constant([StepType.FIRST])
+            step_type = tf_constant([StepType.FIRST])  # step type is just for consistency but useless in our algo
+            reward = tf_constant([0], dtype='float32')
+        elif not self._register_real_cost:
+            step_type = tf_constant([StepType.MID])
             reward = tf_constant([0], dtype='float32')
         else:
             step_type = tf_constant([StepType.MID])

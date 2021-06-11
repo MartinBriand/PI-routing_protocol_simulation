@@ -60,7 +60,7 @@ target_policy_noise_clip_p = 75.  # @param {type:"number"}
 
 learning_nodes = False  # @param {type:"boolean"}
 
-auction_type = ['MultiLanes', 'SingleLane'][1]
+auction_type = ['MultiLanes', 'SingleLane'][0]
 
 weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '.json'

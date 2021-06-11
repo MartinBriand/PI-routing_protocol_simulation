@@ -74,7 +74,7 @@ class Carrier(abc.ABC):
         """Decide of a next Nodes after losing an auction (can be the same Nodes when needed)"""
         raise NotImplementedError
 
-    def get_attribution(self, load: 'Load', next_node: 'Node') -> None:
+    def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         """To be called by the Nodes after an auction if a load was attributed to the Carriers"""
         self._in_transit = True
         self._previous_node = self._next_node
