@@ -30,7 +30,7 @@ max_time_not_at_home = 30  # @param {type:"integer"}
 learning_nodes = True  # @param{type:"boolean"}
 
 weights_file_name = None if learning_nodes else 'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
-                            str(n_carriers_per_node) + '.json'
+                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 max_nb_infos_per_load=max_nb_infos_per_load,
@@ -80,7 +80,6 @@ for k in range(n_carriers_per_node * len(e.nodes)):
                                  far_from_home_cost=drivers_costs,
                                  time_not_at_home=0,
                                  max_time_not_at_home=max_time_not_at_home,
-                                 too_high_bid=shipper_default_reserve_price,
                                  cost_majoration=cost_majoration)
 
 """# Training loop

@@ -8,10 +8,11 @@ import time
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
-from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import SingleLaneCostBiddingCarrier
+from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
 n_carriers_per_node = 30  # @param {type:"integer"}
+cost_majoration = 1.  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
@@ -29,7 +30,7 @@ max_time_not_at_home = 30  # @param {type:"integer"}
 learning_nodes = True  # @param{type:"boolean"}
 
 weights_file_name = None if learning_nodes else 'weights_SingleLane_' + str(node_auction_cost) + '_' + \
-                                                str(n_carriers_per_node) + '.json'
+                                                str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 max_nb_infos_per_load=max_nb_infos_per_load,
@@ -62,7 +63,8 @@ for k in range(n_carriers_per_node * len(e.nodes)):
     road_costs = random.normalvariate(mu=t_c_mu, sigma=t_c_sigma)
     drivers_costs = random.normalvariate(mu=ffh_c_mu, sigma=ffh_c_sigma)
 
-    SingleLaneCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
+    # yes we use a multi_lane bidder
+    MultiLanesCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
                                  home=node,
                                  in_transit=False,
                                  previous_node=node,
@@ -78,7 +80,8 @@ for k in range(n_carriers_per_node * len(e.nodes)):
                                  transit_cost=road_costs,
                                  far_from_home_cost=drivers_costs,
                                  time_not_at_home=0,
-                                 max_time_not_at_home=max_time_not_at_home)
+                                 max_time_not_at_home=max_time_not_at_home,
+                                 cost_majoration=cost_majoration)
 
 """# Training loop
 ## Results structure
@@ -291,5 +294,5 @@ delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
 final_readable_weights = weight_master.readable_weights()
 write_readable_weights_json(final_readable_weights, 'weights_SingleLane_' + str(node_auction_cost) + '_' +
-                            str(n_carriers_per_node) + '.json')
+                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json')
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))

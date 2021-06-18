@@ -285,21 +285,21 @@ class MultiLanesLearningCarrier(LearningCarrier, MultiBidCarrier):  # , TFEnviro
         return bid
 
 
-class SingleLaneLearningCarrier(LearningCarrier, SingleBidCarrier):
-    """
-    The carrier can only bid on destination lane
-    """
-
-    def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
-        self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
-        action = self._policy_step.action.numpy()
-        action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
-        # actions in the env without interfering with TFA
-        node_list = self._environment.nodes
-        for k in range(action.shape[-1]):
-            bid_next_node = node_list[k]
-            if bid_next_node == next_node:
-                return action[0, k]  # 0 because of the first dimension
+# class SingleLaneLearningCarrier(LearningCarrier, SingleBidCarrier):
+#     """
+#     The carrier can only bid on destination lane
+#     """
+#
+#     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
+#         self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
+#         action = self._policy_step.action.numpy()
+#         action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
+#         # actions in the env without interfering with TFA
+#         node_list = self._environment.nodes
+#         for k in range(action.shape[-1]):
+#             bid_next_node = node_list[k]
+#             if bid_next_node == next_node:
+#                 return action[0, k]  # 0 because of the first dimension
 
 
 class LearningAgent(Td3Agent):

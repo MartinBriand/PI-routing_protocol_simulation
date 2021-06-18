@@ -11,6 +11,7 @@ import time
 """# Initialization"""
 
 n_carriers_per_node = 30  # @param {type:"integer"}
+cost_majoration = 1.  # to select the correct ways  @param {type:"integer"}
 action_min = 0.  # @param {type:"number"}
 action_max = 10000.  # @param {type:"number"}
 discount = 0.95  # @param {type:"number"}
@@ -63,7 +64,7 @@ learning_nodes = False  # @param {type:"boolean"}
 auction_type = ['MultiLanes', 'SingleLane'][1]
 
 weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' + str(node_auction_cost) + '_' + \
-                                                str(n_carriers_per_node) + '.json'
+                                                str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
 e, learning_agent = load_tfa_env_and_agent(n_carriers=11 * n_carriers_per_node,  # 11 is the number of nodes
                                            shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,

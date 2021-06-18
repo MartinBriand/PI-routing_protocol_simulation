@@ -21,7 +21,7 @@ import tensorflow as tf
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env
 from PI_RPS.Games.init_tools import t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma, nb_hours_per_time_unit
 from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningCarrier
-from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import MultiLanesLearningCarrier, SingleLaneLearningCarrier
+from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import MultiLanesLearningCarrier
 from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningAgent
 from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
 from PI_RPS.Mechanics.Tools.auction import available_auction_types
@@ -278,7 +278,8 @@ def _init_learning_carriers(data_spec,
                                       time_step=None,
                                       policy_step=None)
         elif auction_type == 'SingleLane':
-            SingleLaneLearningCarrier(name=node.name + '_' + str(counter[node]),
+            # yes on purpose it is a MultiLanes Learning agent
+            MultiLanesLearningCarrier(name=node.name + '_' + str(counter[node]),
                                       home=node,
                                       max_time_not_at_home=max_time_not_at_home,
                                       in_transit=False,

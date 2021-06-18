@@ -175,7 +175,7 @@ def _to_node_keys(e: Environment,
 def _read_weights_json(file_name) -> Dict:
     """Read from a json"""
     path = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(path, 'data/experimental/' + file_name)
+    path = os.path.join(path, 'data\\experimental\\' + file_name)
     with open(path, 'r') as f:
         return json.load(f)
 
