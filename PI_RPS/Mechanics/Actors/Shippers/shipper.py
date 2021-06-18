@@ -42,7 +42,7 @@ class Shipper(abc.ABC):
         """
 
         for law in self._laws:
-            law.call()
+            law.call()  # could be parallelized
 
     @abc.abstractmethod
     def generate_reserve_price(self, load: Load, node: 'Node') -> float:

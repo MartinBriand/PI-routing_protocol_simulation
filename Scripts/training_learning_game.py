@@ -38,7 +38,11 @@ reward_scale_factor_p = 1. / 500.  # keep at 1./500., not a parameter
 replay_buffer_batch_size = 15  # @param {type:"integer"}
 buffer_max_length = 50  # @param{type:"integer"}
 
+<<<<<<< HEAD
 starting_exploration_noise = 50.  # @param {type:"number"}
+=======
+starting_exploration_noise = 30.  # @param {type:"number"}
+>>>>>>> dubug.getting_convergence
 final_exploration_noise = 20.  # @param {type:"number"}
 exploration_noise = starting_exploration_noise  # not a param
 
@@ -60,7 +64,7 @@ target_policy_noise_clip_p = target_policy_noise_p * 75. * 30.  # not a paramete
 
 learning_nodes = False  # @param {type:"boolean"}
 
-auction_type = ['MultiLanes', 'SingleLane'][0]
+auction_type = ['MultiLanes', 'SingleLane'][1]
 
 weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '.json'
@@ -97,7 +101,7 @@ e, learning_agent = load_tfa_env_and_agent(n_carriers=11 * n_carriers_per_node, 
                                            critic_observation_fc_layer_params=critic_observation_fc_layer_params,
                                            critic_action_fc_layer_params=critic_action_fc_layer_params,
                                            critic_joint_fc_layer_params=critic_joint_fc_layer_params,
-                                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params
+                                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
                                            )
 
 train = tfa_function(learning_agent.train)
@@ -276,7 +280,7 @@ for i in range(num_rounds):
             e.iteration()
             e.shuffle_enough_transitions_carriers()
             n = len(e.enough_transitions_carriers)
-            for _ in range(n):
+            for _ in range(n):  # do not parallelize
                 carrier = e.pop_enough_transitions_carriers()
                 experience, _ = next(carrier.training_data_set_iter)
                 train(experience=experience, weights=None)

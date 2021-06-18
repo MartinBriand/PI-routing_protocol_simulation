@@ -76,7 +76,7 @@ docs/_build/
 target/
 
 # Data Analysis
-Notebooks/Data_analysis/
+Notebooks/data/
 
 # Jupyter Notebook
 *.ipynb

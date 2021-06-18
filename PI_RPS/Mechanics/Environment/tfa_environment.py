@@ -44,7 +44,7 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
                          t_c_mu=t_c_mu,
                          t_c_sigma=t_c_sigma,
                          ffh_c_mu=ffh_c_mu,
-                         ffh_c_sigma=ffh_c_sigma)
+                         ffh_c_sigma=ffh_c_sigma,)
 
         self._tnah_divisor: float = tnah_divisor
         self._action_min: float = action_min

@@ -125,7 +125,7 @@ class MultiLanesAuction(Auction):
         node. The value is the bid
         """
         self._bids[load] = {}
-        for carrier in self._carriers[:nb_carriers_involved]:
+        for carrier in self._carriers[:nb_carriers_involved]:  # could be parallelized
             self._bids[load][carrier] = carrier.bid()
 
     def _make_attributions_and_payments(self, load: 'Load',
@@ -218,7 +218,7 @@ class SingleLaneAuction(Auction):
             nb_carriers_involved = max(1, len(self._carriers) - len(
                 self._loads) + 1)  # to keep some Carriers for later
             self._get_reserve_price(load)
-            self._get_bids(load, nb_carriers_involved)
+            self._get_bids(load, nb_carriers_involved)  # TODO ask one time only
             load_attributed, winning_carrier = self._make_attributions_and_payments(load, nb_carriers_involved)
             self._notify_load(load)
             if load_attributed:  # This step is important to make sure they do not participate in the next auction
@@ -235,7 +235,7 @@ class SingleLaneAuction(Auction):
         node. The value is the bid
         """
         self._bids[load] = {}
-        for carrier in self._carriers[:nb_carriers_involved]:
+        for carrier in self._carriers[:nb_carriers_involved]:  # could be parallelized
             self._bids[load][carrier] = carrier.bid(next_node=load.arrival)
 
     def _make_attributions_and_payments(self, load: 'Load',

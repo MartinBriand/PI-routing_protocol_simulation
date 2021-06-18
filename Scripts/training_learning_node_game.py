@@ -39,7 +39,7 @@ e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 t_c_mu=t_c_mu,
                 t_c_sigma=t_c_sigma,
                 ffh_c_mu=ffh_c_mu,
-                ffh_c_sigma=ffh_c_sigma)
+                ffh_c_sigma=ffh_c_sigma,)
 
 load_realistic_nodes_and_shippers_to_env(e=e,
                                          node_nb_info=node_nb_info,
