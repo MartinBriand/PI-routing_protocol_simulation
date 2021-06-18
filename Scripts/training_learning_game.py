@@ -11,7 +11,7 @@ import time
 """# Initialization"""
 
 n_carriers_per_node = 30  # @param {type:"integer"}
-cost_majoration = 1.  # to select the correct ways  @param {type:"integer"}
+cost_majoration = 1.5  # to select the correct ways  @param {type:"integer"}
 action_min = 0.  # @param {type:"number"}
 action_max = 10000.  # @param {type:"number"}
 discount = 0.95  # @param {type:"number"}

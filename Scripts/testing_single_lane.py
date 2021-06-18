@@ -12,7 +12,7 @@ from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCost
 from PI_RPS.Mechanics.Environment.environment import Environment
 
 n_carriers_per_node = 30  # @param {type:"integer"}
-cost_majoration = 1.  # @param {type:"number"}
+cost_majoration = 1.9  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
