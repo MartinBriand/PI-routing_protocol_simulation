@@ -38,11 +38,7 @@ reward_scale_factor_p = 1. / 500.  # keep at 1./500., not a parameter
 replay_buffer_batch_size = 15  # @param {type:"integer"}
 buffer_max_length = 50  # @param{type:"integer"}
 
-<<<<<<< HEAD
 starting_exploration_noise = 50.  # @param {type:"number"}
-=======
-starting_exploration_noise = 30.  # @param {type:"number"}
->>>>>>> dubug.getting_convergence
 final_exploration_noise = 20.  # @param {type:"number"}
 exploration_noise = starting_exploration_noise  # not a param
 
