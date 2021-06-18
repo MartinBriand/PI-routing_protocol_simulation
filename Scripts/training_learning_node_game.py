@@ -13,6 +13,7 @@ from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCost
 from PI_RPS.Mechanics.Environment.environment import Environment
 
 n_carriers_per_node = 30  # @param {type:"integer"}
+cost_majoration = 1.9  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
@@ -79,7 +80,8 @@ for k in range(n_carriers_per_node * len(e.nodes)):
                                  far_from_home_cost=drivers_costs,
                                  time_not_at_home=0,
                                  max_time_not_at_home=max_time_not_at_home,
-                                 too_high_bid=shipper_default_reserve_price)
+                                 too_high_bid=shipper_default_reserve_price,
+                                 cost_majoration=cost_majoration)
 
 """# Training loop
 ## Results structure
@@ -280,8 +282,8 @@ while len(not_converged.keys()) > 0:
     loop_fn(loop_counter)
     loop_counter += 1
 print("Converged !!")
-print("15 more for better convergence")
-for _ in range(15):
+print("25 more for better convergence")
+for _ in range(25):
     loop_fn(loop_counter)
     loop_counter += 1
 
@@ -292,5 +294,5 @@ delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
 final_readable_weights = weight_master.readable_weights()
 write_readable_weights_json(final_readable_weights, 'weights_MultiLanes_' + str(node_auction_cost) + '_' +
-                            str(n_carriers_per_node) + '.json')
+                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json')
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))

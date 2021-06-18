@@ -38,7 +38,8 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int,
-                 max_time_not_at_home: int
+                 max_time_not_at_home: int,
+                 cost_majoration: float
                  ) -> None:
 
         super().__init__(name=name,
@@ -59,6 +60,7 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
                          time_not_at_home=time_not_at_home)
 
         self._max_time_not_at_home = max_time_not_at_home
+        self._cost_majoration = cost_majoration
 
     def _decide_next_node(self) -> 'Node':
         """
@@ -69,13 +71,13 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
         else:
             return self._next_node
 
-    def _calculate_costs(self, from_node: 'Node', to_node: 'Node') -> float:
+    def _calculate_majored_costs(self, from_node: 'Node', to_node: 'Node') -> float:
         """Will be called by bid"""
         result = 0.
         for delta_t in range(self._environment.get_distance(from_node, to_node)):
             t = self._time_not_at_home + delta_t
             result += self._transit_costs() + self._far_from_home_costs(time_not_at_home=t)
-        return result
+        return result * self._cost_majoration
 
 
 class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
@@ -104,7 +106,8 @@ class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
                  far_from_home_cost: float,
                  too_high_bid: float,
                  time_not_at_home: int,
-                 max_time_not_at_home: int
+                 max_time_not_at_home: int,
+                 cost_majoration: float
                  ) -> None:
 
         super().__init__(name=name,
@@ -123,7 +126,8 @@ class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
                          transit_cost=transit_cost,
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home,
-                         max_time_not_at_home=max_time_not_at_home)
+                         max_time_not_at_home=max_time_not_at_home,
+                         cost_majoration=cost_majoration)
 
         self._too_high_bid: float = too_high_bid  # should be at least bigger than the transformed reserve price
         # of the shippers
@@ -132,7 +136,7 @@ class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
         bid = {}
         for next_node in self._environment.nodes:
             if next_node != self._next_node:
-                bid[next_node] = self._calculate_costs(self._next_node, next_node)
+                bid[next_node] = self._calculate_majored_costs(self._next_node, next_node)
         return bid
 
 
@@ -162,7 +166,8 @@ class SingleLaneCostBiddingCarrier(CostBiddingCarrier, SingleBidCarrier):
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int,
-                 max_time_not_at_home: int
+                 max_time_not_at_home: int,
+                 cost_majoration: float
                  ) -> None:
 
         super().__init__(name=name,
@@ -181,8 +186,9 @@ class SingleLaneCostBiddingCarrier(CostBiddingCarrier, SingleBidCarrier):
                          transit_cost=transit_cost,
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home,
-                         max_time_not_at_home=max_time_not_at_home)
+                         max_time_not_at_home=max_time_not_at_home,
+                         cost_majoration=cost_majoration)
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
         """The bid function"""
-        return self._calculate_costs(self._next_node, next_node)
+        return self._calculate_majored_costs(self._next_node, next_node)
