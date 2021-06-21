@@ -285,21 +285,45 @@ class MultiLanesLearningCarrier(LearningCarrier, MultiBidCarrier):  # , TFEnviro
         return bid
 
 
-# class SingleLaneLearningCarrier(LearningCarrier, SingleBidCarrier):
-#     """
-#     The carrier can only bid on destination lane
-#     """
-#
-#     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
-#         self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
-#         action = self._policy_step.action.numpy()
-#         action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
-#         # actions in the env without interfering with TFA
-#         node_list = self._environment.nodes
-#         for k in range(action.shape[-1]):
-#             bid_next_node = node_list[k]
-#             if bid_next_node == next_node:
-#                 return action[0, k]  # 0 because of the first dimension
+class MultiLanesLearningCarrier2(LearningCarrier, MultiBidCarrier):
+    """
+    This carrier will bid around its price
+    """
+
+    def bid(self) -> 'CarrierMultiBid':
+        self._policy_step = self._policy.action(self._time_step)
+        action = self._policy_step.action.numpy()
+        action = action * self._action_scale + self._action_shift
+        bid = {}
+        for next_node in self._environment.nodes:
+            if next_node != self._next_node:
+                bid[next_node] = self._calculate_costs(self._next_node, next_node) * action[0, 0]
+        return bid
+
+    def _calculate_costs(self, from_node: 'Node', to_node: 'Node') -> float:
+        """Will be called by bid"""
+        result = 0.
+        for delta_t in range(self._environment.get_distance(from_node, to_node)):
+            t = self._time_not_at_home + delta_t
+            result += self._transit_costs() + self._far_from_home_costs(time_not_at_home=t)
+        return result
+
+
+class SingleLaneLearningCarrier(LearningCarrier, SingleBidCarrier):
+    """
+    The carrier can only bid on destination lane
+    """
+
+    def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
+        self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
+        action = self._policy_step.action.numpy()
+        action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
+        # actions in the env without interfering with TFA
+        node_list = self._environment.nodes
+        for k in range(action.shape[-1]):
+            bid_next_node = node_list[k]
+            if bid_next_node == next_node:
+                return action[0, k]  # 0 because of the first dimension
 
 
 class LearningAgent(Td3Agent):

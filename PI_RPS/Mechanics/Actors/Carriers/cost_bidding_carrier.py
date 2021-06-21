@@ -136,55 +136,55 @@ class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
         return bid
 
 
-# class SingleLaneCostBiddingCarrier(CostBiddingCarrier, SingleBidCarrier):
-#     """
-#     It is a carrier but:
-#         * bidding their anticipated costs
-#         * is able to change its parameters
-#         * go back home when not seeing your boss (or mother) for a too long time
-#         * bid on the destination lane only
-#     """
-#
-#     def __init__(self,
-#                  name: str,
-#                  home: 'Node',
-#                  in_transit: bool,
-#                  previous_node: 'Node',
-#                  next_node: 'Node',
-#                  time_to_go: int,
-#                  load: Optional['Load'],
-#                  environment: 'Environment',
-#                  episode_types: List[Tuple[str, 'Node', 'Node']],
-#                  episode_expenses: List[float],
-#                  episode_revenues: List[float],
-#                  this_episode_expenses: List[float],
-#                  this_episode_revenues: float,
-#                  transit_cost: float,
-#                  far_from_home_cost: float,
-#                  time_not_at_home: int,
-#                  max_time_not_at_home: int,
-#                  cost_majoration: float
-#                  ) -> None:
-#
-#         super().__init__(name=name,
-#                          home=home,
-#                          in_transit=in_transit,
-#                          next_node=next_node,
-#                          previous_node=previous_node,
-#                          time_to_go=time_to_go,
-#                          load=load,
-#                          environment=environment,
-#                          episode_types=episode_types,
-#                          episode_expenses=episode_expenses,
-#                          episode_revenues=episode_revenues,
-#                          this_episode_expenses=this_episode_expenses,
-#                          this_episode_revenues=this_episode_revenues,
-#                          transit_cost=transit_cost,
-#                          far_from_home_cost=far_from_home_cost,
-#                          time_not_at_home=time_not_at_home,
-#                          max_time_not_at_home=max_time_not_at_home,
-#                          cost_majoration=cost_majoration)
-#
-#     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
-#         """The bid function"""
-#         return self._calculate_majored_costs(self._next_node, next_node)
+class SingleLaneCostBiddingCarrier(CostBiddingCarrier, SingleBidCarrier):
+    """
+    It is a carrier but:
+        * bidding their anticipated costs
+        * is able to change its parameters
+        * go back home when not seeing your boss (or mother) for a too long time
+        * bid on the destination lane only
+    """
+
+    def __init__(self,
+                 name: str,
+                 home: 'Node',
+                 in_transit: bool,
+                 previous_node: 'Node',
+                 next_node: 'Node',
+                 time_to_go: int,
+                 load: Optional['Load'],
+                 environment: 'Environment',
+                 episode_types: List[Tuple[str, 'Node', 'Node']],
+                 episode_expenses: List[float],
+                 episode_revenues: List[float],
+                 this_episode_expenses: List[float],
+                 this_episode_revenues: float,
+                 transit_cost: float,
+                 far_from_home_cost: float,
+                 time_not_at_home: int,
+                 max_time_not_at_home: int,
+                 cost_majoration: float
+                 ) -> None:
+
+        super().__init__(name=name,
+                         home=home,
+                         in_transit=in_transit,
+                         next_node=next_node,
+                         previous_node=previous_node,
+                         time_to_go=time_to_go,
+                         load=load,
+                         environment=environment,
+                         episode_types=episode_types,
+                         episode_expenses=episode_expenses,
+                         episode_revenues=episode_revenues,
+                         this_episode_expenses=this_episode_expenses,
+                         this_episode_revenues=this_episode_revenues,
+                         transit_cost=transit_cost,
+                         far_from_home_cost=far_from_home_cost,
+                         time_not_at_home=time_not_at_home,
+                         max_time_not_at_home=max_time_not_at_home,
+                         cost_majoration=cost_majoration)
+
+    def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
+        """The bid function"""
+        return self._calculate_majored_costs(self._next_node, next_node)

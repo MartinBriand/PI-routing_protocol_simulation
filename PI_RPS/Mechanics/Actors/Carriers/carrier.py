@@ -115,7 +115,7 @@ class Carrier(abc.ABC):
         if not self._in_transit:  # May have been modified by the _arrive_at_next_node method
             self._episode_revenues.append(self._this_episode_revenues)
             self._episode_expenses.append(sum(self._this_episode_expenses))
-            self._this_episode_revenues = 0
+            self._this_episode_revenues = 0.
             self._this_episode_expenses.clear()
             # And generate episode if needed in the LearningCarrier Method
 
