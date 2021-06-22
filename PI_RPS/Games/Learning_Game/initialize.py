@@ -3,7 +3,7 @@ This files defines a few functions to initialize the variables in notebooks.
 """
 
 
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 
 import random
 
@@ -34,6 +34,7 @@ def load_tfa_env_and_agent(carrier_type: int,
                            discount: float,
                            shippers_reserve_price_per_distance: float,
                            shipper_default_reserve_price: float,
+                           node_filter: List[str],
                            node_auction_cost: float,
                            auction_type: str,
                            node_nb_info: int,
@@ -81,6 +82,7 @@ def load_tfa_env_and_agent(carrier_type: int,
                                              node_nb_info=node_nb_info,
                                              shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                              shipper_default_reserve_price=shipper_default_reserve_price,
+                                             node_filter=node_filter,
                                              node_auction_cost=node_auction_cost,
                                              learning_nodes=learning_nodes,
                                              weights_file_name=weights_file_name,

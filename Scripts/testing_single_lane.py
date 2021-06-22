@@ -11,6 +11,10 @@ from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, f
 from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
+
+node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
+               'Salzburg']#, 'Warsaw']
+
 n_carriers_per_node = 30  # @param {type:"integer"}
 cost_majoration = 1.9  # @param {type:"number"}
 
@@ -42,6 +46,7 @@ e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 ffh_c_sigma=ffh_c_sigma)
 
 load_realistic_nodes_and_shippers_to_env(e=e,
+                                         node_filter=node_filter,
                                          node_nb_info=node_nb_info,
                                          shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                          shipper_default_reserve_price=shipper_default_reserve_price,

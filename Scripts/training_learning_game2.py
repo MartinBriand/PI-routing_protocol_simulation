@@ -9,6 +9,8 @@ import numpy as np
 import time
 
 """# Initialization"""
+node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
+               'Salzburg']#, 'Warsaw']
 
 n_carriers_per_node = 30  # @param {type:"integer"}
 cost_majoration = 1.5  # to select the correct weights  @param {type:"integer"}
@@ -67,11 +69,12 @@ weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' 
                                                 str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
 e, learning_agent = load_tfa_env_and_agent(carrier_type=2,
-                                           n_carriers=11 * n_carriers_per_node,  # 11 is the number of nodes
+                                           n_carriers=len(node_filter) * n_carriers_per_node,  # 11 is the number of nodes
                                            shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                            init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
                                            max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
                                            shipper_default_reserve_price=shipper_default_reserve_price,
+                                           node_filter=node_filter,
                                            node_auction_cost=node_auction_cost,
                                            auction_type=auction_type,
                                            node_nb_info=node_nb_info,

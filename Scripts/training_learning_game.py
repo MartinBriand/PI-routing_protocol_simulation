@@ -9,9 +9,11 @@ import numpy as np
 import time
 
 """# Initialization"""
+node_filter = ['Bremen', 'Dresden']#, 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
+               #'Salzburg']#, 'Warsaw']
 
-n_carriers_per_node = 30  # @param {type:"integer"}
-cost_majoration = 1.5  # to select the correct weights  @param {type:"integer"}
+n_carriers_per_node = 8  # @param {type:"integer"}
+cost_majoration = 1.  # to select the correct weights  @param {type:"integer"}
 action_min = 0.  # @param {type:"number"}
 action_max = 10000.  # @param {type:"number"}
 discount = 0.95  # @param {type:"number"}
@@ -66,12 +68,16 @@ auction_type = ['MultiLanes', 'SingleLane'][0]
 weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
+weights_file_name = None if learning_nodes else 'B-D_' + auction_type + '_' + str(node_auction_cost) + '_' + \
+                                                str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
+
 e, learning_agent = load_tfa_env_and_agent(carrier_type=1,
-                                           n_carriers=11 * n_carriers_per_node,  # 11 is the number of nodes
+                                           n_carriers=len(node_filter) * n_carriers_per_node,
                                            shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                            init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
                                            max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
                                            shipper_default_reserve_price=shipper_default_reserve_price,
+                                           node_filter=node_filter,
                                            node_auction_cost=node_auction_cost,
                                            auction_type=auction_type,
                                            node_nb_info=node_nb_info,
@@ -294,6 +300,6 @@ add_results(test_results)
 end = time.time()
 total_time = int(end - start_time)
 total_time_h = total_time//3600
-total_time_m = (total_time%3600)//60
-total_time_s = (total_time%3600)%60
+total_time_m = (total_time % 3600) // 60
+total_time_s = (total_time % 3600) % 60
 print("Total time:", "{}h{}m{}s".format(total_time_h, total_time_m, total_time_s))

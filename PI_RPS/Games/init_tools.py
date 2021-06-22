@@ -25,6 +25,7 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                                              node_nb_info: int,
                                              shippers_reserve_price_per_distance: float,
                                              shipper_default_reserve_price: float,
+                                             node_filter: List[str],
                                              node_auction_cost: float,
                                              auction_type: str,
                                              learning_nodes: bool,
@@ -36,10 +37,16 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     distances: np.ndarray = _read_csv(os.path.join(path, 'data/city_distance_matrix_time_step.csv'))
     weights = _read_weights_json(weights_file_name) if weights_file_name else None
 
+    # here we filter everything except weights, which should be already filtered (or None)
+    if node_filter is not None:
+        lambdas, attribution, distances = _filter(node_filter, lambdas, attribution, distances)
+
     # check size
     lts = lambdas.shape
     ats = attribution.shape
     dts = distances.shape
+    fs = len(node_filter)
+    assert fs == lts[0], "Some of the names in the filter are wrong..."
     assert lts[0] == ats[0] - 1 == ats[1] - 1 == dts[0] - 1 == dts[1] - 1, \
         "lambdas shape: {}\nattribution shape: {}\ndistance shape: {}".format(lts, ats, dts)
 
@@ -129,6 +136,25 @@ def _read_csv(file_path: str) -> np.ndarray:
         for line in reader:
             final.append(line)
     return np.array(final)
+
+
+def _filter(node_filter, lambdas, attribution, distances):
+    new_lambdas = np.array([item for item in lambdas if item[0] in node_filter])
+
+    def att_or_dist_filter(table_p):
+        res = []
+        for i in range(len(table_p)):
+            row = []
+            if i == 0 or table_p[i, 0] in node_filter:
+                for j in range(len(table_p[i])):
+                    if i == 0 and j == 0:
+                        row.append(table_p[i, j])
+                    elif j == 0 or table_p[0, j] in node_filter:
+                        row.append(table_p[i, j])
+                res.append(row)
+        return np.array(res)
+
+    return new_lambdas, att_or_dist_filter(attribution), att_or_dist_filter(distances)
 
 
 def _to_dicts(keys: np.ndarray,

@@ -12,8 +12,12 @@ from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, f
 from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
-n_carriers_per_node = 30  # @param {type:"integer"}
-cost_majoration = 1.9  # @param {type:"number"}
+node_filter = ['Bremen', 'Dresden']
+# node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
+#                'Salzburg', 'Warsaw']
+
+n_carriers_per_node = 8  # @param {type:"integer"}
+cost_majoration = 1.  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
@@ -32,6 +36,11 @@ learning_nodes = True  # @param{type:"boolean"}
 weights_file_name = None if learning_nodes else 'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
                             str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
+future_weight_file_name = 'B-D_MultiLanes' + str(node_auction_cost) + '_' +\
+                           str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
+# future_weight_file_name = 'weights_MultiLanes_' + str(node_auction_cost) + '_' +\
+#                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
+
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 max_nb_infos_per_load=max_nb_infos_per_load,
                 init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
@@ -42,6 +51,7 @@ e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 ffh_c_sigma=ffh_c_sigma,)
 
 load_realistic_nodes_and_shippers_to_env(e=e,
+                                         node_filter=node_filter,
                                          node_nb_info=node_nb_info,
                                          shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                          shipper_default_reserve_price=shipper_default_reserve_price,
@@ -292,6 +302,5 @@ delta_h = delta // 3600
 delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
 final_readable_weights = weight_master.readable_weights()
-write_readable_weights_json(final_readable_weights, 'weights_MultiLanes_' + str(node_auction_cost) + '_' +
-                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json')
+write_readable_weights_json(final_readable_weights, future_weight_file_name)
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))
