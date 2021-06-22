@@ -16,7 +16,7 @@ node_filter = ['Bremen', 'Dresden']
 # node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
 #                'Salzburg', 'Warsaw']
 
-n_carriers_per_node = 8  # @param {type:"integer"}
+n_carriers_per_node = 15  # @param {type:"integer"}
 cost_majoration = 1.  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
@@ -29,14 +29,14 @@ node_auction_cost = 0.  # @param{type:"number"}
 node_nb_info = 100  # @param{type:"integer"}
 max_nb_infos_per_load = 15  # @param{type:"integer"}
 
-max_time_not_at_home = 30  # @param {type:"integer"}
+max_time_not_at_home = 5  # @param {type:"integer"}
 
 learning_nodes = True  # @param{type:"boolean"}
 
 weights_file_name = None if learning_nodes else 'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
                             str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
-future_weight_file_name = 'B-D_MultiLanes' + str(node_auction_cost) + '_' +\
+future_weight_file_name = 'B-D_MultiLanes_' + str(node_auction_cost) + '_' +\
                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 # future_weight_file_name = 'weights_MultiLanes_' + str(node_auction_cost) + '_' +\
 #                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
