@@ -24,25 +24,20 @@ During exploitation
 """
 import abc
 
-from tensorflow import constant as tf_constant, concat as tf_concat, Variable, expand_dims as tf_expand_dims
+from tensorflow import constant as tf_constant, concat as tf_concat, expand_dims as tf_expand_dims
 from tensorflow.python.data import Dataset
 from tensorflow.python.framework.ops import EagerTensor
-from tf_agents.agents.td3.td3_agent import Td3Agent
-from tf_agents.agents.tf_agent import LossInfo
-from tf_agents.networks import Network
 from tf_agents.policies.tf_policy import TFPolicy
 from tf_agents.replay_buffers.replay_buffer import ReplayBuffer
 from tf_agents.trajectories.policy_step import PolicyStep
 from tf_agents.trajectories.time_step import TimeStep, StepType
 from tf_agents.trajectories.trajectory import Transition
-from tf_agents.policies import actor_policy, gaussian_policy
-
-import tf_agents.typing.types as tfa_types
-from tf_agents.typing import types
 
 from PI_RPS.Mechanics.Actors.Carriers.carrier import CarrierWithCosts, MultiBidCarrier, SingleBidCarrier
 
 from typing import TYPE_CHECKING, Optional, List, Tuple
+
+from PI_RPS.Mechanics.Actors.Carriers.learning_agent import LearningAgent
 
 if TYPE_CHECKING:
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
@@ -142,7 +137,7 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
 
         self._is_first_step: bool = (time_step is None)
         if not self._is_first_step:
-            self._time_step: Optional[TimeStep] = time_step
+            self._time_step: TimeStep = time_step
         self.init_first_step()
 
         self._policy_step: Optional[PolicyStep] = policy_step
@@ -185,17 +180,16 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
             self._is_first_step = False
 
     def _generate_transition(self, next_time_step: TimeStep) -> None:
-        if self._policy_step:
-            transition = Transition(time_step=self._time_step,
-                                    action_step=self._policy_step,
-                                    next_time_step=next_time_step)
+        transition = Transition(time_step=self._time_step,
+                                action_step=self._policy_step,
+                                next_time_step=next_time_step)
 
-            # note that reward is update in next_step()
-            # communicate trajectory
-            self._replay_buffer.add_batch(transition)
-            if self._replay_buffer.num_frames().numpy() >= self._replay_buffer_batch_size:
-                # to avoid training on repeated transitions
-                self._environment.add_carrier_to_enough_transitions(self)
+        # note that reward is update in next_step()
+        # communicate trajectory
+        self._replay_buffer.add_batch(transition)
+        if self._replay_buffer.num_frames().numpy() >= self._replay_buffer_batch_size:
+            # to avoid training on repeated transitions
+            self._environment.add_carrier_to_enough_transitions(self)
 
     def _generate_current_time_step(self) -> TimeStep:
         node_state = self._environment.this_node_state(self._next_node)
@@ -207,10 +201,10 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
         discount = self._discount ** self._discount_power
         if self._is_first_step:
             step_type = tf_constant([StepType.FIRST])  # step type is just for consistency but useless in our algo
-            reward = tf_constant([0], dtype='float32')
+            reward = tf_constant([0.], dtype='float32')
         elif not self._register_real_cost:
             step_type = tf_constant([StepType.MID])
-            reward = tf_constant([0], dtype='float32')
+            reward = tf_constant([0.], dtype='float32')
         else:
             step_type = tf_constant([StepType.MID])
             reward = tf_constant([self._episode_revenues[-1] - self._episode_expenses[-1]], dtype='float32')
@@ -309,123 +303,19 @@ class MultiLanesLearningCarrier2(LearningCarrier, MultiBidCarrier):
         return result
 
 
-class SingleLaneLearningCarrier(LearningCarrier, SingleBidCarrier):
+class SingleLaneLearningCarrier(SingleBidCarrier, MultiLanesLearningCarrier):
     """
     The carrier can only bid on destination lane
     """
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
-        self._policy_step = self._policy.action(self._time_step)  # the time step is generated in next_step
-        action = self._policy_step.action.numpy()
-        action = action * self._action_scale + self._action_shift  # This way we can get back to normalized
-        # actions in the env without interfering with TFA
-        node_list = self._environment.nodes
-        for k in range(action.shape[-1]):
-            bid_next_node = node_list[k]
-            if bid_next_node == next_node:
-                return action[0, k]  # 0 because of the first dimension
+        multi_lanes_bid = super().bid()
+        return multi_lanes_bid[next_node]
 
 
-class LearningAgent(Td3Agent):
-    """
-    This is an extension of the TD3Agent with
-        * the ability to change its exploration noise over time
-    """
+class SingleLaneLearningCarrier2(SingleBidCarrier, MultiLanesLearningCarrier2):
+    """Same"""
 
-    def _loss(self, experience: types.NestedTensor, weights: types.Tensor) -> Optional[LossInfo]:
-        raise NotImplementedError
-
-    def __init__(self,
-                 environment: 'TFAEnvironment',
-                 time_step_spec: TimeStep,
-                 action_spec: tfa_types.NestedTensor,
-                 actor_network: Network,
-                 critic_network: Network,
-                 actor_optimizer: tfa_types.Optimizer,
-                 critic_optimizer: tfa_types.Optimizer,
-                 exploration_noise_std: tfa_types.Float = 0.1,
-                 critic_network_2: Optional[Network] = None,
-                 target_actor_network: Optional[Network] = None,
-                 target_critic_network: Optional[Network] = None,
-                 target_critic_network_2: Optional[Network] = None,
-                 target_update_tau: tfa_types.Float = 1.0,
-                 target_update_period: tfa_types.Int = 1,
-                 actor_update_period: tfa_types.Int = 1,
-                 td_errors_loss_fn: Optional[tfa_types.LossFn] = None,
-                 gamma: tfa_types.Float = 1.0,
-                 reward_scale_factor: tfa_types.Float = 1.0,
-                 target_policy_noise: tfa_types.Float = 0.2,
-                 target_policy_noise_clip: tfa_types.Float = 0.5,
-                 gradient_clipping: Optional[tfa_types.Float] = None,
-                 debug_summaries: bool = False,
-                 summarize_grads_and_vars: bool = False,
-                 train_step_counter: Optional[Variable] = None,
-                 name: tfa_types.Text = None) -> None:
-        super().__init__(time_step_spec=time_step_spec,
-                         action_spec=action_spec,
-                         actor_network=actor_network,
-                         critic_network=critic_network,
-                         actor_optimizer=actor_optimizer,
-                         critic_optimizer=critic_optimizer,
-                         exploration_noise_std=exploration_noise_std,
-                         critic_network_2=critic_network_2,
-                         target_actor_network=target_actor_network,
-                         target_critic_network=target_critic_network,
-                         target_critic_network_2=target_critic_network_2,
-                         target_update_tau=target_update_tau,
-                         target_update_period=target_update_period,
-                         actor_update_period=actor_update_period,
-                         td_errors_loss_fn=td_errors_loss_fn,
-                         gamma=gamma,
-                         reward_scale_factor=reward_scale_factor,
-                         target_policy_noise=target_policy_noise,
-                         target_policy_noise_clip=target_policy_noise_clip,
-                         gradient_clipping=gradient_clipping,
-                         debug_summaries=debug_summaries,
-                         summarize_grads_and_vars=summarize_grads_and_vars,
-                         train_step_counter=train_step_counter,
-                         name=name)
-
-        self._environment = environment
-
-        self._base_policy = actor_policy.ActorPolicy(
-            time_step_spec=time_step_spec, action_spec=action_spec,
-            actor_network=self._actor_network, clip=False)
-
-        self._environment.register_learning_agent(self)
-        self._carriers: List['LearningCarrier'] = []
-        # This list is going to be a copy of the carriers of the tfaenvironment, but i keep this for two reasons:
-        #   * we may want in future version to make them different (learning from different structures)
-        #   * It is better to make a reference to the learning agent when changing properties linked to the learning
-        #       process (costs, is_learning) but it makes more sense to access them via environment
-        #       when environment related (home...)
-
-    def add_carrier(self, carrier: 'LearningCarrier'):
-        """To be called by the learning agent at creation to signal its presence"""
-        self._carriers.append(carrier)
-
-    def change_exploration_noise_std(self, value: float) -> None:
-        """
-        This is to change the collect policy for all learning agents
-        """
-        # change collect policy of the learner
-        self._exploration_noise_std = value / (self._environment.action_max - self._environment.action_min)
-        self._collect_policy = gaussian_policy.GaussianPolicy(self._base_policy,
-                                                              scale=self._exploration_noise_std,
-                                                              clip=True)
-
-        for carrier in self._carriers:
-            if carrier.is_learning:
-                carrier.update_collect_policy()
-
-    def set_carriers_to_learning(self):
-        for carrier in self._carriers:
-            carrier.set_learning()
-
-    def set_carriers_to_not_learning(self):
-        for carrier in self._carriers:
-            carrier.set_not_learning()
-
-    @property
-    def carriers(self) -> List['LearningCarrier']:
-        return self._carriers
+    def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
+        multi_lanes_bid = super().bid()
+        return multi_lanes_bid[next_node]

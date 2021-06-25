@@ -262,7 +262,7 @@ class SingleLaneAuction(Auction):
         """
         self._bids[load] = {}
         for carrier in self._carriers[:nb_carriers_involved]:  # could be parallelized
-            self._bids[load][carrier] = self._all_bids[carrier][load.arrival]
+            self._bids[load][carrier] = self._all_bids[carrier]
 
     def _make_attributions_and_payments(self, load: 'Load',
                                         nb_carriers_involved: int) -> Tuple[bool, Optional['Carrier']]:

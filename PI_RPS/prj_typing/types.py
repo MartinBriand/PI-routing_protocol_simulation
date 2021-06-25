@@ -5,6 +5,9 @@ The prj_typing package
 from tensorflow.python.framework.ops import EagerTensor
 from typing import TYPE_CHECKING, Dict, Callable, Tuple, Union
 
+from PI_RPS.Mechanics.Actors.Carriers.episode_learning_carrier import EpisodeLearningCarrier
+from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningCarrier
+
 if TYPE_CHECKING:
     pass
 
@@ -35,3 +38,6 @@ SingleLaneAuctionBid = Dict['Load', Dict['Carrier', float]]
 
 # for Load
 Movement = Tuple['Node', 'Node', 'Carrier', float, float, bool]
+
+# class
+AllLearningCarrier = Union[LearningCarrier, EpisodeLearningCarrier]

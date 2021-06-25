@@ -2,7 +2,9 @@
 Environment file
 """
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
+
+from PI_RPS.Mechanics.Actors.Carriers.learning_agent import LearningAgent
 from PI_RPS.prj_typing.types import Distance
 
 if TYPE_CHECKING:
@@ -27,7 +29,9 @@ class Environment:
                  t_c_mu: float,
                  t_c_sigma: float,
                  ffh_c_mu: float,
-                 ffh_c_sigma: float,):
+                 ffh_c_sigma: float,
+                 action_min: Optional[float] = None,
+                 action_max: Optional[float] = None):
 
         self._nb_hours_per_time_unit: float = nb_hours_per_time_unit
         self._max_nb_infos_per_load: int = max_nb_infos_per_load
@@ -48,10 +52,16 @@ class Environment:
 
         # for the cost function (Ideally we should have a subclass in which that is defined, because this is only for
         # CarriersWithCosts but we only play with these carriers in the simulation
+
+        self._action_min: Optional[float] = action_min
+        self._action_max: Optional[float] = action_max
+
         self._t_c_mu: float = t_c_mu
         self._t_c_sigma: float = t_c_sigma
         self._ffh_c_mu: float = ffh_c_mu
         self._ffh_c_sigma: float = ffh_c_sigma
+
+        self._learning_agent: Optional['LearningAgent'] = None
 
     def iteration(self) -> None:
         """This is the main function of the Environment class. It represents the operation of the game for one unit of
@@ -140,6 +150,12 @@ class Environment:
         for shipper in self._shippers:
             shipper.clear_expenses()
 
+    def register_learning_agent(self, learning_agent: 'LearningAgent') -> None:
+        """
+        Called by the learning agent to signal its presence to the environment
+        """
+        self._learning_agent = learning_agent
+
     def check_carriers_first_steps(self) -> None:
         raise NotImplementedError
 
@@ -158,6 +174,16 @@ class Environment:
     @property
     def nb_hours_per_time_unit(self):
         return self._nb_hours_per_time_unit
+
+    @property
+    def action_min(self) -> float:
+        assert self._action_min is not None, "can't call this property if None"
+        return self._action_min
+
+    @property
+    def action_max(self) -> float:
+        assert self._action_max is not None, "can't call this property if None"
+        return self._action_max
 
     @property
     def t_c_mu(self) -> float:
@@ -186,6 +212,11 @@ class Environment:
     @property
     def max_node_weights_distance_scaling_factor(self):
         return self._max_node_weights_distance_scaling_factor
+
+    @property
+    def learning_agent(self) -> 'LearningAgent':
+        assert self._learning_agent is not None, "Can't call this property if None"
+        return self._learning_agent
 
     @property
     def default_reserve_price(self) -> bool:

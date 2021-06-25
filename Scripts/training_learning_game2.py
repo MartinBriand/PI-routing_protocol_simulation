@@ -9,8 +9,8 @@ import numpy as np
 import time
 
 """# Initialization"""
-node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
-               'Salzburg']#, 'Warsaw']
+node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
+               # 'Salzburg']  #, 'Warsaw']
 
 n_carriers_per_node = 30  # @param {type:"integer"}
 cost_majoration = 1.5  # to select the correct weights  @param {type:"integer"}
@@ -297,6 +297,6 @@ add_results(test_results)
 end = time.time()
 total_time = int(end - start_time)
 total_time_h = total_time//3600
-total_time_m = (total_time%3600)//60
-total_time_s = (total_time%3600)%60
+total_time_m = (total_time % 3600) // 60
+total_time_s = (total_time % 3600) % 60
 print("Total time:", "{}h{}m{}s".format(total_time_h, total_time_m, total_time_s))

@@ -215,9 +215,9 @@ class CarrierWithCosts(Carrier, abc.ABC):
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
                  this_episode_revenues: float,
-                 transit_cost: float,
-                 far_from_home_cost: float,
-                 time_not_at_home: int) -> None:
+                 transit_cost: Optional[float] = None,
+                 far_from_home_cost: Optional[float] = None,
+                 time_not_at_home: int = 0) -> None:
         super().__init__(name=name,
                          home=home,
                          in_transit=in_transit,
@@ -232,8 +232,14 @@ class CarrierWithCosts(Carrier, abc.ABC):
                          this_episode_expenses=this_episode_expenses,
                          this_episode_revenues=this_episode_revenues)
 
-        self._t_c: float = transit_cost
-        self._ffh_c: float = far_from_home_cost
+        if transit_cost is None and far_from_home_cost is None:
+            self.random_new_cost_parameters()
+        elif transit_cost is not None and far_from_home_cost is not None:
+            self._t_c: float = transit_cost
+            self._ffh_c: float = far_from_home_cost
+        else:
+            raise ValueError("transit_cost and far_from_home_costs should either both be None or both have value")
+
         self._time_not_at_home: int = time_not_at_home
 
     def next_step(self) -> None:

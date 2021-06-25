@@ -272,7 +272,7 @@ start_time = time.time()
 loop_counter = 0
 
 
-def loop_fn(loop_counter):
+def loop_fn():
     print("Test", loop_counter + 1)
     change_costs()
     print(weight_master.readable_weights())
@@ -288,12 +288,12 @@ def loop_fn(loop_counter):
 
 
 while len(not_converged.keys()) > 0:
-    loop_fn(loop_counter)
+    loop_fn()
     loop_counter += 1
 print("Converged !!")
 print("25 more for better convergence")
 for _ in range(25):
-    loop_fn(loop_counter)
+    loop_fn()
     loop_counter += 1
 
 end_time = time.time()

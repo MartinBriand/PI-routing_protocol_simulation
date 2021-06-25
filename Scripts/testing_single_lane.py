@@ -8,12 +8,11 @@ import time
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
-from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCostBiddingCarrier
+from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import SingleLaneCostBiddingCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
-
-node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
-               'Salzburg']#, 'Warsaw']
+node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
+               # 'Salzburg']  # , 'Warsaw']
 
 n_carriers_per_node = 30  # @param {type:"integer"}
 cost_majoration = 1.9  # @param {type:"number"}
@@ -69,7 +68,7 @@ for k in range(n_carriers_per_node * len(e.nodes)):
     drivers_costs = random.normalvariate(mu=ffh_c_mu, sigma=ffh_c_sigma)
 
     # yes we use a multi_lane bidder
-    MultiLanesCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
+    SingleLaneCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
                                  home=node,
                                  in_transit=False,
                                  previous_node=node,
@@ -268,7 +267,7 @@ start_time = time.time()
 loop_counter = 0
 
 
-def loop_fn(loop_counter):
+def loop_fn():
     print("Test", loop_counter + 1)
     change_costs()
     print(weight_master.readable_weights())
@@ -284,12 +283,12 @@ def loop_fn(loop_counter):
 
 
 while len(not_converged.keys()) > 0:
-    loop_fn(loop_counter)
+    loop_fn()
     loop_counter += 1
 print("Converged !!")
-print("15 more for better convergence")
-for _ in range(15):
-    loop_fn(loop_counter)
+print("25 more for better convergence")
+for _ in range(25):
+    loop_fn()
     loop_counter += 1
 
 end_time = time.time()

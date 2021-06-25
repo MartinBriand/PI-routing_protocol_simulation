@@ -1,9 +1,12 @@
 """Loaders common to all games"""
 
-import os, csv, json
+import csv
+import json
+import os
+import random
+
 import numpy as np
 from typing import List, Dict, Optional
-import random
 
 from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode, DummyNodeWeightMaster
 from PI_RPS.Mechanics.Actors.Nodes.node import Node

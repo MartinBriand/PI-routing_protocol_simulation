@@ -9,8 +9,8 @@ import numpy as np
 import time
 
 """# Initialization"""
-node_filter = ['Bremen', 'Dresden']#, 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
-               #'Salzburg']#, 'Warsaw']
+node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
+              # 'Salzburg'] # , 'Warsaw']
 
 n_carriers_per_node = 8  # @param {type:"integer"}
 cost_majoration = 1.  # to select the correct weights  @param {type:"integer"}
@@ -266,12 +266,12 @@ start_time = time.time()
 for i in range(num_rounds):
     now = time.time()
     if i > 0:
-        eta = int((now - start_time)*(num_rounds-i)/i)
+        eta = int((now - start_time) * (num_rounds - i) / i)
         eta_h = eta // 3600
         eta_m = (eta % 3600) // 60
         eta_s = (eta % 3600) % 60
         print("ETA:", "{}h{}m{}s".format(eta_h, eta_m, eta_s))
-    print("Test", i+1, '/', num_rounds)
+    print("Test", i + 1, '/', num_rounds)
     change_costs()
     test_results = test(num_iteration_per_test)
     print(test_results)
@@ -299,7 +299,7 @@ add_results(test_results)
 
 end = time.time()
 total_time = int(end - start_time)
-total_time_h = total_time//3600
+total_time_h = total_time // 3600
 total_time_m = (total_time % 3600) // 60
 total_time_s = (total_time % 3600) % 60
 print("Total time:", "{}h{}m{}s".format(total_time_h, total_time_m, total_time_s))

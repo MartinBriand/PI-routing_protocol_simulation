@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, List
 if TYPE_CHECKING:
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
     from PI_RPS.Mechanics.Tools.load import Load
+    from PI_RPS.Mechanics.Actors.Shippers.shipper import NodeLaw
+    from PI_RPS.Mechanics.Environment.environment import Environment
 
 
 class DummyShipper(Shipper):
