@@ -4,7 +4,7 @@ Training script for the learning carriers (still with bugs for the moment)
 """
 
 from tf_agents.utils.common import function as tfa_function
-from PI_RPS.Games.Learning_Game.initialize import load_tfa_env_and_agent
+from PI_RPS.Games.Learning_Game.initialize_normal import load_tfa_env_and_agent
 import numpy as np
 import time
 
@@ -12,8 +12,8 @@ import time
 node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
                # 'Salzburg']  #, 'Warsaw']
 
-n_carriers_per_node = 30  # @param {type:"integer"}
-cost_majoration = 1.5  # to select the correct weights  @param {type:"integer"}
+n_carriers_per_node = 8  # @param {type:"integer"}
+cost_majoration = 1.  # to select the correct weights  @param {type:"integer"}
 action_min = 0.  # @param {type:"number"}
 action_max = 3.  # @param {type:"number"}
 discount = 0.95  # @param {type:"number"}
@@ -33,7 +33,7 @@ node_nb_info = 100  # @param{type:"integer"}
 max_nb_infos_per_load = 5  # @param{type:"integer"}
 # not used if not learning nodes
 
-max_time_not_at_home = 30  # @param {type:"integer"}
+max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 
 tnah_divisor = 30.  # keep at 30, not a parameter
 reward_scale_factor_p = 1. / 400.  # keep at 1./30., not a parameter
@@ -68,6 +68,9 @@ auction_type = ['MultiLanes', 'SingleLane'][1]
 weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
+weights_file_name = None if learning_nodes else 'B-D_' + 'MultiLanes' + '_' + str(node_auction_cost) + '_' + \
+                                                str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
+
 e, learning_agent = load_tfa_env_and_agent(carrier_type=2,
                                            n_carriers=len(node_filter) * n_carriers_per_node,  # 11 is the number of nodes
                                            shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
@@ -89,7 +92,7 @@ e, learning_agent = load_tfa_env_and_agent(carrier_type=2,
                                            reward_scale_factor_p=reward_scale_factor_p,
                                            target_policy_noise_p=target_policy_noise_p,
                                            target_policy_noise_clip_p=target_policy_noise_clip_p,
-                                           max_time_not_at_home=max_time_not_at_home,
+                                           max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                            action_min=action_min,
                                            action_max=action_max,
                                            tnah_divisor=tnah_divisor,

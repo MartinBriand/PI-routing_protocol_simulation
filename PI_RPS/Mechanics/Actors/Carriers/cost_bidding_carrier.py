@@ -38,7 +38,8 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int,
-                 max_time_not_at_home: int,
+                 nb_lost_auctions_in_a_row: int,
+                 max_lost_auctions_in_a_row: int,
                  cost_majoration: float
                  ) -> None:
 
@@ -59,17 +60,26 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
 
-        self._max_time_not_at_home = max_time_not_at_home
+        self._nb_lost_auctions_in_a_row = nb_lost_auctions_in_a_row
+        self._max_lost_auctions_in_a_row = max_lost_auctions_in_a_row
         self._cost_majoration = cost_majoration
 
     def _decide_next_node(self) -> 'Node':
         """
         Go home only if more than self._max_time_not_at_home since last time at home
         """
-        if self._time_not_at_home > self._max_time_not_at_home:
+        if self._nb_lost_auctions_in_a_row > self._max_lost_auctions_in_a_row:
             return self._home
         else:
             return self._next_node
+
+    def dont_get_attribution(self) -> None:
+        super().dont_get_attribution()
+        self._nb_lost_auctions_in_a_row += 1
+
+    def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
+        super().get_attribution(load, next_node, reserve_price_involved)
+        self._nb_lost_auctions_in_a_row = 0
 
     def _calculate_majored_costs(self, from_node: 'Node', to_node: 'Node') -> float:
         """Will be called by bid"""
@@ -105,7 +115,8 @@ class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int,
-                 max_time_not_at_home: int,
+                 nb_lost_auctions_in_a_row: int,
+                 max_lost_auctions_in_a_row: int,
                  cost_majoration: float
                  ) -> None:
 
@@ -125,7 +136,8 @@ class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
                          transit_cost=transit_cost,
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home,
-                         max_time_not_at_home=max_time_not_at_home,
+                         nb_lost_auctions_in_a_row=nb_lost_auctions_in_a_row,
+                         max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                          cost_majoration=cost_majoration)
 
     def bid(self) -> 'CarrierMultiBid':
@@ -162,7 +174,8 @@ class SingleLaneCostBiddingCarrier(CostBiddingCarrier, SingleBidCarrier):
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int,
-                 max_time_not_at_home: int,
+                 nb_lost_auctions_in_a_row: int,
+                 max_lost_auctions_in_a_row: int,
                  cost_majoration: float
                  ) -> None:
 
@@ -182,7 +195,8 @@ class SingleLaneCostBiddingCarrier(CostBiddingCarrier, SingleBidCarrier):
                          transit_cost=transit_cost,
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home,
-                         max_time_not_at_home=max_time_not_at_home,
+                         nb_lost_auctions_in_a_row=nb_lost_auctions_in_a_row,
+                         max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                          cost_majoration=cost_majoration)
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':

@@ -59,7 +59,8 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
     def __init__(self,
                  name: str,
                  home: 'Node',
-                 max_time_not_at_home: int,
+                 nb_lost_auctions_in_a_row: int,
+                 max_lost_auctions_in_a_row: int,
                  in_transit: bool,
                  previous_node: 'Node',
                  next_node: 'Node',
@@ -103,7 +104,8 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
         self._action_scale: float = self._environment.action_max - self._environment.action_min
         self._action_shift: float = self._environment.action_min
 
-        self._max_time_not_at_home = max_time_not_at_home
+        self._nb_lost_auctions_in_a_row = nb_lost_auctions_in_a_row
+        self._max_lost_auctions_in_a_row = max_lost_auctions_in_a_row
 
         self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
@@ -146,19 +148,20 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
         """
         Go home only if more than self._max_time_not_at_home since last time at home
         """
-
-        if self._time_not_at_home > self._max_time_not_at_home:
+        if self._nb_lost_auctions_in_a_row > self._max_lost_auctions_in_a_row:
             return self._home
         else:
             return self._next_node
 
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         super().get_attribution(load, next_node, reserve_price_involved)
+        self._nb_lost_auctions_in_a_row = 0
         self._discount_power = self._time_to_go
         self._register_real_cost = not reserve_price_involved
 
     def dont_get_attribution(self) -> None:
         super().dont_get_attribution()
+        self._nb_lost_auctions_in_a_row += 1
         if self._in_transit:
             self._discount_power = self._time_to_go
         else:
@@ -303,19 +306,21 @@ class MultiLanesLearningCarrier2(LearningCarrier, MultiBidCarrier):
         return result
 
 
-class SingleLaneLearningCarrier(SingleBidCarrier, MultiLanesLearningCarrier):
+class SingleLaneLearningCarrier(MultiLanesLearningCarrier, SingleBidCarrier):
     """
     The carrier can only bid on destination lane
     """
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
+        # I know that the format of the super call doesn't wait for next_node
         multi_lanes_bid = super().bid()
         return multi_lanes_bid[next_node]
 
 
-class SingleLaneLearningCarrier2(SingleBidCarrier, MultiLanesLearningCarrier2):
+class SingleLaneLearningCarrier2(MultiLanesLearningCarrier2, SingleBidCarrier):
     """Same"""
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
+        # I know that the format of the super call doesn't wait for next_node
         multi_lanes_bid = super().bid()
         return multi_lanes_bid[next_node]

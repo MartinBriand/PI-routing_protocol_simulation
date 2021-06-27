@@ -2,7 +2,6 @@
 This is a learning script to learn the weights of the game with non learning carriers
 """
 
-
 import numpy as np
 import random
 import time
@@ -29,7 +28,7 @@ node_auction_cost = 0.  # @param{type:"number"}
 node_nb_info = 100  # @param{type:"integer"}
 max_nb_infos_per_load = 15  # @param{type:"integer"}
 
-max_time_not_at_home = 5  # @param {type:"integer"}
+max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 
 learning_nodes = True  # @param{type:"boolean"}
 
@@ -89,7 +88,8 @@ for k in range(n_carriers_per_node * len(e.nodes)):
                                  transit_cost=road_costs,
                                  far_from_home_cost=drivers_costs,
                                  time_not_at_home=0,
-                                 max_time_not_at_home=max_time_not_at_home,
+                                 nb_lost_auctions_in_a_row=0,
+                                 max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                  cost_majoration=cost_majoration)
 
 """# Training loop

@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
 """
 Training script for the learning carriers (still with bugs for the moment)
+Now we learn from whole episode
 """
 
+
 from tf_agents.utils.common import function as tfa_function
-from PI_RPS.Games.Learning_Game.initialize_normal import load_tfa_env_and_agent
+from PI_RPS.Games.Learning_Game.initialize_episode import load_tfa_env_and_agent
 import numpy as np
 import time
 
 """# Initialization"""
-node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
-              # 'Salzburg'] # , 'Warsaw']
+node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
+              # 'Salzburg', 'Warsaw']
 
-n_carriers_per_node = 8  # @param {type:"integer"}
-cost_majoration = 1.  # to select the correct weights  @param {type:"integer"}
+n_carriers_per_node = 15  # @param {type:"integer"}
+cost_majoration_file = 1.  # to select the correct weights  @param {type:"integer"}
 action_min = 0.  # @param {type:"number"}
-action_max = 10000.  # @param {type:"number"}
-discount = 0.95  # @param {type:"number"}
+action_max = 3.  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 10000.  # @param{type:"number"}
 
-init_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
-max_node_weights_distance_scaling_factor = 500. * 1.3  # @param{type:"number"}
+init_node_weights_distance_scaling_factor = None  # 500.  # @param{type:"number"}
+max_node_weights_distance_scaling_factor = None  # 500. * 1.3  # @param{type:"number"}
 # should be big enough to be unrealistic.
 # They won't be used if not learning nodes
 
@@ -35,28 +36,27 @@ max_nb_infos_per_load = 5  # @param{type:"integer"}
 
 max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 
-tnah_divisor = 30.  # keep at 30, not a parameter
-reward_scale_factor_p = 1. / 500.  # keep at 1./500., not a parameter
+reward_scale_factor_p = 1. / 20000.  # keep at 1./500., not a parameter
 
-replay_buffer_batch_size = 15  # @param {type:"integer"}
-buffer_max_length = 40  # @param{type:"integer"}
+replay_buffer_batch_size = 8  # @param {type:"integer"}
+buffer_max_length = 10  # @param{type:"integer"}
 
-starting_exploration_noise = 50.  # @param {type:"number"}
-final_exploration_noise = 20.  # @param {type:"number"}
+starting_exploration_noise = 0.2  # @param {type:"number"}
+final_exploration_noise = 0.02  # @param {type:"number"}
 exploration_noise = starting_exploration_noise  # not a param
 
-actor_fc_layer_params = (64, 64)  # @param
+actor_fc_layer_params = (32, 32)  # @param
 actor_dropout_layer_params = None  # @param
 critic_observation_fc_layer_params = None  # @param
 critic_action_fc_layer_params = None  # @param
-critic_joint_fc_layer_params = (64, 64)  # @param
+critic_joint_fc_layer_params = (32, 32)  # @param
 critic_joint_dropout_layer_params = None  # @param
 
 target_update_tau_p = 0.1  # @param {type:"number"}
 target_update_period_p = 2  # @param {type:"integer"}
 actor_update_period_p = 2  # @param {type:"integer"}
-actor_learning_rate = 0.001  # @param{type:"number"}
-critic_learning_rate = 0.001  # @param{type:"number"}
+actor_learning_rate = 0.005  # @param{type:"number"}
+critic_learning_rate = 0.005  # @param{type:"number"}
 
 target_policy_noise_p = final_exploration_noise  # @param {type:"number"}
 target_policy_noise_clip_p = target_policy_noise_p * 75. * 30.  # not a parameter
@@ -65,14 +65,13 @@ learning_nodes = False  # @param {type:"boolean"}
 
 auction_type = ['MultiLanes', 'SingleLane'][0]
 
-weights_file_name = None if learning_nodes else 'weights_' + 'MultiLanes' + '_' + str(node_auction_cost) + '_' + \
-                                                str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
+weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' + str(node_auction_cost) + '_' + \
+                                                str(n_carriers_per_node) + '_' + str(cost_majoration_file) + '.json'
 
-weights_file_name = None if learning_nodes else 'B-D_' + 'MultiLanes' + '_' + str(node_auction_cost) + '_' + \
-                                                str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
+weights_file_name = None if learning_nodes else 'B-D_' + auction_type + '_' + str(node_auction_cost) + '_' + \
+                                                str(n_carriers_per_node) + '_' + str(cost_majoration_file) + '.json'
 
-e, learning_agent = load_tfa_env_and_agent(carrier_type=1,
-                                           n_carriers=len(node_filter) * n_carriers_per_node,
+e, learning_agent = load_tfa_env_and_agent(n_carriers=len(node_filter) * n_carriers_per_node,
                                            shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                                            init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
                                            max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
@@ -84,7 +83,6 @@ e, learning_agent = load_tfa_env_and_agent(carrier_type=1,
                                            learning_nodes=learning_nodes,
                                            weights_file_name=weights_file_name,
                                            max_nb_infos_per_load=max_nb_infos_per_load,
-                                           discount=discount,
                                            exploration_noise=exploration_noise,
                                            target_update_tau_p=target_update_tau_p,
                                            target_update_period_p=target_update_period_p,
@@ -95,7 +93,6 @@ e, learning_agent = load_tfa_env_and_agent(carrier_type=1,
                                            max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                            action_min=action_min,
                                            action_max=action_max,
-                                           tnah_divisor=tnah_divisor,
                                            replay_buffer_batch_size=replay_buffer_batch_size,
                                            buffer_max_length=buffer_max_length,
                                            actor_learning_rate=actor_learning_rate,
@@ -157,7 +154,6 @@ def clear_env(start: bool) -> None:
         learning_agent.set_carriers_to_not_learning()
     else:
         learning_agent.set_carriers_to_learning()
-    e.check_carriers_first_steps()
 
 
 def test(num_iter_per_test):
@@ -249,10 +245,11 @@ def add_results(results) -> None:
 
 """## Loop"""
 
-num_rounds = 25  # @param {type:"integer"}
-num_cost_pass = 2  # @param {type:"integer"}
-num_train_per_pass = 200  # @param {type:"integer"}
-num_iteration_per_test = 30  # @param{type:"integer"}
+num_rounds = 100  # @param {type:"integer"}
+num_cost_pass = 10  # @param {type:"integer"}
+num_train_per_pass = 3  # @param {type:"integer"}
+num_iteration_per_test = 50  # @param{type:"integer"}
+num_iteration_per_episode = num_iteration_per_test
 
 exploration_noise_update = (starting_exploration_noise - final_exploration_noise) / (num_rounds - 1)
 
@@ -262,15 +259,19 @@ def change_costs():
         carrier_p.random_new_cost_parameters()
 
 
+def print_nice_time(t, prefix):
+    t_h = t // 3600
+    t_m = (t % 3600) // 60
+    t_s = (t % 3600) % 60
+    print("{}: {}h{}m{}s".format(prefix, t_h, t_m, t_s))
+
+
 start_time = time.time()
 for i in range(num_rounds):
     now = time.time()
     if i > 0:
         eta = int((now - start_time) * (num_rounds - i) / i)
-        eta_h = eta // 3600
-        eta_m = (eta % 3600) // 60
-        eta_s = (eta % 3600) % 60
-        print("ETA:", "{}h{}m{}s".format(eta_h, eta_m, eta_s))
+        print_nice_time(eta, 'ETA')
     print("Test", i + 1, '/', num_rounds)
     change_costs()
     test_results = test(num_iteration_per_test)
@@ -279,13 +280,15 @@ for i in range(num_rounds):
     for j in range(num_cost_pass):
         # print("Pass", j+1, "/", num_cost_pass)
         change_costs()
-        for k in range(num_train_per_pass):
+        while not all([carrier.replay_buffer_is_full for carrier in learning_agent.carriers]):
+            for _ in range(num_iteration_per_episode):
+                e.iteration()
+            for carrier in learning_agent.carriers:
+                carrier.finish_this_step_and_prepare_next_step()
+
+        for _ in range(num_train_per_pass):
             # print("Training", k+1, "/", num_train_per_pass)
-            e.iteration()
-            e.shuffle_enough_transitions_carriers()
-            n = len(e.enough_transitions_carriers)
-            for _ in range(n):  # do not parallelize
-                carrier = e.pop_enough_transitions_carriers()
+            for carrier in learning_agent.carriers:
                 experience, _ = next(carrier.training_data_set_iter)
                 train(experience=experience, weights=None)
     exploration_noise -= exploration_noise_update
@@ -299,7 +302,4 @@ add_results(test_results)
 
 end = time.time()
 total_time = int(end - start_time)
-total_time_h = total_time // 3600
-total_time_m = (total_time % 3600) // 60
-total_time_s = (total_time % 3600) % 60
-print("Total time:", "{}h{}m{}s".format(total_time_h, total_time_m, total_time_s))
+print_nice_time(total_time, "Total time")

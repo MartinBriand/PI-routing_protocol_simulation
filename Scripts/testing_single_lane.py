@@ -15,7 +15,7 @@ node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples
                # 'Salzburg']  # , 'Warsaw']
 
 n_carriers_per_node = 30  # @param {type:"integer"}
-cost_majoration = 1.9  # @param {type:"number"}
+cost_majoration = 1.5  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 20000.  # @param{type:"number"}
@@ -28,7 +28,7 @@ node_nb_info = 100  # @param{type:"integer"}
 max_nb_infos_per_load = 15  # @param{type:"integer"}
 # useless cause will be always 1
 
-max_time_not_at_home = 30  # @param {type:"integer"}
+max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 
 learning_nodes = True  # @param{type:"boolean"}
 
@@ -84,7 +84,8 @@ for k in range(n_carriers_per_node * len(e.nodes)):
                                  transit_cost=road_costs,
                                  far_from_home_cost=drivers_costs,
                                  time_not_at_home=0,
-                                 max_time_not_at_home=max_time_not_at_home,
+                                 nb_lost_auctions_in_a_row=0,
+                                 max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                  cost_majoration=cost_majoration)
 
 """# Training loop

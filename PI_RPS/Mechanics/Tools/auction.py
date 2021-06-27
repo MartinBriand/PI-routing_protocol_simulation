@@ -222,13 +222,10 @@ class SingleLaneAuction(Auction):
         # The following dictionaries are going to be changed in the call of run
         # The data structure is described in each of the corresponding function
         self._bids: 'SingleLaneAuctionBid' = {}
-        self._all_bids: Dict['Carrier', Dict['Node', float]] = {}
 
     def run(self) -> None:
         random.shuffle(self._carriers)  # No waiting list since they can decide to leave when they want
         # Don't randomize load waiting list so that we have a queue
-        if len(self._loads) > 0 and len(self._carriers) > 0:
-            self._get_all_bids()
         while len(self._loads) > 0 and len(self._carriers) > 0:
             load = self._loads[0]
             nb_carriers_involved = max(1, len(self._carriers) - len(
@@ -250,11 +247,6 @@ class SingleLaneAuction(Auction):
         del self._bids
         # but we keep self._all_bids
 
-    def _get_all_bids(self):
-        """Get all the bids from which _get_bids will create the correct bids"""
-        for carrier in self._carriers:
-            self._all_bids[carrier] = carrier.bid()
-
     def _get_bids(self, load: 'Load', nb_carriers_involved: int) -> None:
         """
         Build the dictionary of the bid dictionary. The first key is the load, key2 the carrier, and key3 the next
@@ -262,7 +254,7 @@ class SingleLaneAuction(Auction):
         """
         self._bids[load] = {}
         for carrier in self._carriers[:nb_carriers_involved]:  # could be parallelized
-            self._bids[load][carrier] = self._all_bids[carrier]
+            self._bids[load][carrier] = carrier.bid(next_node=load.arrival)
 
     def _make_attributions_and_payments(self, load: 'Load',
                                         nb_carriers_involved: int) -> Tuple[bool, Optional['Carrier']]:

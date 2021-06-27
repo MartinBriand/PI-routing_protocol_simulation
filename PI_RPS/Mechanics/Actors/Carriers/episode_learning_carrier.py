@@ -11,7 +11,7 @@ from tf_agents.trajectories.policy_step import PolicyStep
 from tf_agents.trajectories.time_step import TimeStep, StepType
 from tf_agents.trajectories.trajectory import Transition
 
-from tensorflow import constant as tf_constant
+from tensorflow import constant as tf_constant, expand_dims as tf_expand_dims
 from tensorflow.python.data import Dataset
 
 from typing import Optional, List, Tuple, TYPE_CHECKING
@@ -26,7 +26,6 @@ if TYPE_CHECKING:
     from PI_RPS.Mechanics.Environment.environment import Environment
 
 
-# TODO do not forget to normalize the profit
 class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
     """
     This is a carrier learning from whole episodes. The idea is that they bid their costs, they have a parameter about
@@ -55,6 +54,7 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
                  max_lost_auctions_in_a_row: int,
                  is_learning: bool,
                  time_step: Optional[TimeStep],
+                 policy_step: Optional[PolicyStep],
                  replay_buffer: ReplayBuffer,
                  replay_buffer_batch_size: int,
                  episode_learning_agent: 'LearningAgent') -> None:
@@ -75,6 +75,9 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
                          transit_cost,
                          far_from_home_cost,
                          time_not_at_home)
+
+        self._action_scale: float = self._environment.action_max - self._environment.action_min
+        self._action_shift: float = self._environment.action_min
 
         self._nb_lost_auctions_in_a_row: int = nb_lost_auctions_in_a_row
         self._max_lost_auctions_in_a_row: int = max_lost_auctions_in_a_row
@@ -106,25 +109,31 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
         self._is_first_step = (time_step is None)
         if not self._is_first_step:
             self._initial_time_step: TimeStep = time_step
-        self._init_first_step()
+        else:
+            assert policy_step is None, "policy_step and time_step should both be none"
+            self._init_first_step()
 
-        self._policy_step: PolicyStep = self._policy.action(self._initial_time_step)
+        self._policy_step: PolicyStep = self._policy.action(self._initial_time_step) if policy_step is None \
+            else policy_step
 
-        self._cost_majoration: float = self._policy_step.action.numpy()[0, 0]
+        self._cost_majoration: float = self._policy_step.action.numpy()[0, 0] * self._action_scale + self._action_shift
 
     def _decide_next_node(self) -> 'Node':
         """
-        Go home only if lost too many auctions in a row
+        Go home only if more than self._max_time_not_at_home since last time at home
         """
-        self._nb_lost_auctions_in_a_row += 1
         if self._nb_lost_auctions_in_a_row > self._max_lost_auctions_in_a_row:
-            self._nb_lost_auctions_in_a_row = 0
             return self._home
         else:
             return self._next_node
 
+    def dont_get_attribution(self) -> None:
+        super().dont_get_attribution()
+        self._nb_lost_auctions_in_a_row += 1
+
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         super().get_attribution(load, next_node, reserve_price_involved)
+        self._nb_lost_auctions_in_a_row = 0
         self._reserve_price_involved = self._reserve_price_involved or reserve_price_involved
 
     def _calculate_costs(self, from_node: 'Node', to_node: 'Node') -> float:
@@ -147,10 +156,12 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
         assert self._is_first_step, "only call if we have a first step"
         if not self._in_transit:
             self._set_initial_time_step()
+            self._reserve_price_involved = False
 
     def _set_initial_time_step(self):
-        observation = tf_constant([self._t_c_obs,
-                                   self._ffh_c_obs], dtype='float32')
+        observation = tf_expand_dims(tf_constant([self._t_c_obs,
+                                                  self._ffh_c_obs], dtype='float32'),
+                                     axis=0)
         discount = tf_constant([1.], dtype='float32')
         step_type = tf_constant([StepType.FIRST])  # step type is just for consistency but useless in our algo
         reward = tf_constant([0.], dtype='float32')
@@ -161,6 +172,8 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
 
         self._is_first_step = False
         self._initial_time_step = time_step
+        self._policy_step = self._policy.action(self._initial_time_step)
+        self._cost_majoration: float = self._policy_step.action.numpy()[0, 0] * self._action_scale + self._action_shift
 
     def finish_this_step_and_prepare_next_step(self) -> None:
         """
@@ -170,8 +183,9 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
         The learning occurs only if all buffers are full.
         """
         # generate new time step
-        observation = tf_constant([self._t_c_obs,
-                                   self._ffh_c_obs], dtype='float32')
+        observation = tf_expand_dims(tf_constant([self._t_c_obs,
+                                                  self._ffh_c_obs], dtype='float32'),
+                                     axis=0)
         discount = tf_constant([1.], dtype='float32')
         step_type = tf_constant([StepType.LAST])  # step type is just for consistency but useless in our algo
         reward = tf_constant([sum(self._episode_revenues) - sum(self._episode_expenses)], dtype='float32')
