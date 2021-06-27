@@ -242,6 +242,10 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
         return self._training_data_set_iter
 
     @property
+    def cost_majoration(self):
+        return self._cost_majoration
+
+    @property
     def replay_buffer_is_full(self) -> bool:
         return self._replay_buffer.num_frames().numpy() >= self._replay_buffer.capacity
 

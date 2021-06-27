@@ -17,7 +17,7 @@ node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples
 n_carriers_per_node = 15  # @param {type:"integer"}
 cost_majoration_file = 1.  # to select the correct weights  @param {type:"integer"}
 action_min = 0.  # @param {type:"number"}
-action_max = 3.  # @param {type:"number"}
+action_max = 10.  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 10000.  # @param{type:"number"}
@@ -121,6 +121,12 @@ all_results = {'carriers_profit': {'min': [],
                'nb_arrived_loads': [],
                'nb_discarded_loads': [],
                'nb_in_transit_loads': [],
+               'values': {'min': [],
+                          'quartile1': [],
+                          'quartile2': [],
+                          'quartile3': [],
+                          'max': [],
+                          'mean': []},
                'delivery_costs': {'min': [],
                                   'quartile1': [],
                                   'quartile2': [],
@@ -166,12 +172,15 @@ def test(num_iter_per_test):
 
     # Getting data
     carriers_profit = []
+    carriers_value = []
     for carrier_p in e.carriers:
         if len(carrier_p.episode_revenues) > 1:
             carriers_profit.append(sum(carrier_p.episode_revenues[1:]) - sum(carrier_p.episode_expenses[1:]))
+            carriers_value.append(carrier_p.cost_majoration)
         else:
             carriers_profit.append(0.)
     carriers_profit = np.array(carriers_profit)
+    carriers_value = np.array(carriers_value)
 
     nb_loads = len(e.loads)
     nb_arrived_loads = 0
@@ -204,6 +213,12 @@ def test(num_iter_per_test):
                'nb_arrived_loads': nb_arrived_loads,
                'nb_discarded_loads': nb_discarded_loads,
                'nb_in_transit_loads': nb_in_transit_loads,
+               'values': {'min': np.min(carriers_value),
+                          'quartile1': np.quantile(carriers_value, 0.25),
+                          'quartile2': np.quantile(carriers_value, 0.5),
+                          'quartile3': np.quantile(carriers_value, 0.75),
+                          'max': np.max(carriers_value),
+                          'mean': np.mean(carriers_value)},
                'delivery_costs': {'min': np.min(total_delivery_costs),
                                   'quartile1': np.quantile(total_delivery_costs, 0.25),
                                   'quartile2': np.quantile(total_delivery_costs, 0.5),
@@ -230,7 +245,7 @@ def test(num_iter_per_test):
     return results
 
 
-keys_with_stats = ['carriers_profit', 'delivery_costs', 'nb_hops', 'delivery_times']
+keys_with_stats = ['carriers_profit', 'values', 'delivery_costs', 'nb_hops', 'delivery_times']
 keys_without_stat = ['nb_loads', 'nb_arrived_loads', 'nb_discarded_loads', 'nb_in_transit_loads']
 stat_keys = ['min', 'quartile1', 'quartile2', 'quartile3', 'max', 'mean']
 
