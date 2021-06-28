@@ -15,7 +15,7 @@ node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples
 
 n_carriers_per_node = 15  # @param {type:"integer"}
 cost_majoration_file = 1.  # to select the correct weights  @param {type:"integer"}
-cost_majoration = 1.5  # for the other carriers
+cost_majoration = 6.  # for the other carriers
 action_min = 0.  # @param {type:"number"}
 action_max = 10.  # @param {type:"number"}
 
@@ -41,8 +41,8 @@ reward_scale_factor_p = 1. / 20000.  # keep at 1./500., not a parameter
 replay_buffer_batch_size = 8  # @param {type:"integer"}
 buffer_max_length = 10  # @param{type:"integer"}
 
-starting_exploration_noise = 0.2  # @param {type:"number"}
-final_exploration_noise = 0.02  # @param {type:"number"}
+starting_exploration_noise = 8  # @param {type:"number"}
+final_exploration_noise = 0.2  # @param {type:"number"}
 exploration_noise = starting_exploration_noise  # not a param
 
 actor_fc_layer_params = (32, 32)  # @param
@@ -52,11 +52,11 @@ critic_action_fc_layer_params = None  # @param
 critic_joint_fc_layer_params = (32, 32)  # @param
 critic_joint_dropout_layer_params = None  # @param
 
-target_update_tau_p = 0.1  # @param {type:"number"}
-target_update_period_p = 2  # @param {type:"integer"}
-actor_update_period_p = 2  # @param {type:"integer"}
-actor_learning_rate = 0.005  # @param{type:"number"}
-critic_learning_rate = 0.005  # @param{type:"number"}
+target_update_tau_p = 1  # @param {type:"number"}
+target_update_period_p = 1  # @param {type:"integer"}
+actor_update_period_p = 1  # @param {type:"integer"}
+actor_learning_rate = 0.0005  # @param{type:"number"}
+critic_learning_rate = 0.0005  # @param{type:"number"}
 
 target_policy_noise_p = final_exploration_noise  # @param {type:"number"}
 target_policy_noise_clip_p = target_policy_noise_p * 75. * 30.  # not a parameter
