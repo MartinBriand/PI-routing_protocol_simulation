@@ -12,7 +12,7 @@ from tf_agents.typing import types
 
 from tensorflow import Variable
 
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING, Any
 
 from PI_RPS.prj_typing.types import AllLearningCarrier
 
@@ -54,7 +54,8 @@ class LearningAgent(Td3Agent):
                  debug_summaries: bool = False,
                  summarize_grads_and_vars: bool = False,
                  train_step_counter: Optional[Variable] = None,
-                 name: str = None) -> None:
+                 name: str = None,
+                 key: Any = None) -> None:
         super().__init__(time_step_spec=time_step_spec,
                          action_spec=action_spec,
                          actor_network=actor_network,
@@ -82,11 +83,13 @@ class LearningAgent(Td3Agent):
 
         self._environment = environment
 
+        self._key = key
+
         self._base_policy = actor_policy.ActorPolicy(
             time_step_spec=time_step_spec, action_spec=action_spec,
             actor_network=self._actor_network, clip=False)
 
-        self._environment.register_learning_agent(self)
+        self._environment.register_learning_agent(self, self._key)
         self._carriers: List['AllLearningCarrier'] = []
         # This list is going to be a copy of the carriers of the tfaenvironment, but i keep this for two reasons:
         #   * we may want in future version to make them different (learning from different structures)
@@ -123,3 +126,7 @@ class LearningAgent(Td3Agent):
     @property
     def carriers(self) -> List['AllLearningCarrier']:
         return self._carriers
+
+    @property
+    def key(self):
+        return self._key

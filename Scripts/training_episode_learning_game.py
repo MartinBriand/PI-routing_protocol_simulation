@@ -4,7 +4,6 @@ Training script for the learning carriers (still with bugs for the moment)
 Now we learn from whole episode
 """
 
-
 from tf_agents.utils.common import function as tfa_function
 from PI_RPS.Games.Learning_Game.initialize_episode import load_tfa_env_and_agent
 import numpy as np
@@ -12,7 +11,7 @@ import time
 
 """# Initialization"""
 node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
-              # 'Salzburg', 'Warsaw']
+# 'Salzburg', 'Warsaw']
 
 n_carriers_per_node = 15  # @param {type:"integer"}
 cost_majoration_file = 1.  # to select the correct weights  @param {type:"integer"}
@@ -71,41 +70,43 @@ weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' 
 weights_file_name = None if learning_nodes else 'B-D_' + auction_type + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '_' + str(cost_majoration_file) + '.json'
 
-e, learning_agent = load_tfa_env_and_agent(n_carriers=len(node_filter) * n_carriers_per_node,
-                                           shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
-                                           init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
-                                           max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
-                                           shipper_default_reserve_price=shipper_default_reserve_price,
-                                           node_filter=node_filter,
-                                           node_auction_cost=node_auction_cost,
-                                           auction_type=auction_type,
-                                           node_nb_info=node_nb_info,
-                                           learning_nodes=learning_nodes,
-                                           weights_file_name=weights_file_name,
-                                           max_nb_infos_per_load=max_nb_infos_per_load,
-                                           exploration_noise=exploration_noise,
-                                           target_update_tau_p=target_update_tau_p,
-                                           target_update_period_p=target_update_period_p,
-                                           actor_update_period_p=actor_update_period_p,
-                                           reward_scale_factor_p=reward_scale_factor_p,
-                                           target_policy_noise_p=target_policy_noise_p,
-                                           target_policy_noise_clip_p=target_policy_noise_clip_p,
-                                           max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
-                                           action_min=action_min,
-                                           action_max=action_max,
-                                           replay_buffer_batch_size=replay_buffer_batch_size,
-                                           buffer_max_length=buffer_max_length,
-                                           actor_learning_rate=actor_learning_rate,
-                                           critic_learning_rate=critic_learning_rate,
-                                           actor_fc_layer_params=actor_fc_layer_params,
-                                           actor_dropout_layer_params=actor_dropout_layer_params,
-                                           critic_observation_fc_layer_params=critic_observation_fc_layer_params,
-                                           critic_action_fc_layer_params=critic_action_fc_layer_params,
-                                           critic_joint_fc_layer_params=critic_joint_fc_layer_params,
-                                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
-                                           )
+e = load_tfa_env_and_agent(n_carriers=len(node_filter) * n_carriers_per_node,
+                           shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
+                           init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
+                           max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
+                           shipper_default_reserve_price=shipper_default_reserve_price,
+                           node_filter=node_filter,
+                           node_auction_cost=node_auction_cost,
+                           auction_type=auction_type,
+                           node_nb_info=node_nb_info,
+                           learning_nodes=learning_nodes,
+                           weights_file_name=weights_file_name,
+                           max_nb_infos_per_load=max_nb_infos_per_load,
+                           exploration_noise=exploration_noise,
+                           target_update_tau_p=target_update_tau_p,
+                           target_update_period_p=target_update_period_p,
+                           actor_update_period_p=actor_update_period_p,
+                           reward_scale_factor_p=reward_scale_factor_p,
+                           target_policy_noise_p=target_policy_noise_p,
+                           target_policy_noise_clip_p=target_policy_noise_clip_p,
+                           max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                           action_min=action_min,
+                           action_max=action_max,
+                           replay_buffer_batch_size=replay_buffer_batch_size,
+                           buffer_max_length=buffer_max_length,
+                           actor_learning_rate=actor_learning_rate,
+                           critic_learning_rate=critic_learning_rate,
+                           actor_fc_layer_params=actor_fc_layer_params,
+                           actor_dropout_layer_params=actor_dropout_layer_params,
+                           critic_observation_fc_layer_params=critic_observation_fc_layer_params,
+                           critic_action_fc_layer_params=critic_action_fc_layer_params,
+                           critic_joint_fc_layer_params=critic_joint_fc_layer_params,
+                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
+                           )
 
-train = tfa_function(learning_agent.train)
+learning_agents = e.learning_agents
+
+trains = {key: tfa_function(learning_agents[key].train) for key in learning_agents.keys()}
 
 """# Training loop
 ## Results structure
@@ -157,9 +158,11 @@ def clear_env(start: bool) -> None:
     e.clear_carrier_profits()
     e.clear_shipper_expenses()
     if start:
-        learning_agent.set_carriers_to_not_learning()
+        for learning_agent in learning_agents.values():
+            learning_agent.set_carriers_to_not_learning()
     else:
-        learning_agent.set_carriers_to_learning()
+        for learning_agent in learning_agents.values():
+            learning_agent.set_carriers_to_learning()
 
 
 def test(num_iter_per_test):
@@ -270,8 +273,9 @@ exploration_noise_update = (starting_exploration_noise - final_exploration_noise
 
 
 def change_costs():
-    for carrier_p in learning_agent.carriers:
-        carrier_p.random_new_cost_parameters()
+    for learning_agent in learning_agents.values():
+        for carrier_p in learning_agent.carriers:
+            carrier_p.random_new_cost_parameters()
 
 
 def print_nice_time(t, prefix):
@@ -295,17 +299,21 @@ for i in range(num_rounds):
     for j in range(num_cost_pass):
         # print("Pass", j+1, "/", num_cost_pass)
         change_costs()
-        while not all([carrier.replay_buffer_is_full for carrier in learning_agent.carriers]):
+        while not all([carrier.replay_buffer_is_full
+                       for learning_agent in learning_agents.values()
+                       for carrier in learning_agent.carriers]):
             for _ in range(num_iteration_per_episode):
                 e.iteration()
-            for carrier in learning_agent.carriers:
-                carrier.finish_this_step_and_prepare_next_step()
+            for learning_agent in learning_agents.values():
+                for carrier in learning_agent.carriers:
+                    carrier.finish_this_step_and_prepare_next_step()
 
         for _ in range(num_train_per_pass):
             # print("Training", k+1, "/", num_train_per_pass)
-            for carrier in learning_agent.carriers:
-                experience, _ = next(carrier.training_data_set_iter)
-                train(experience=experience, weights=None)
+            for learning_agent in learning_agents.values():
+                for carrier in learning_agent.carriers:
+                    experience, _ = next(carrier.training_data_set_iter)
+                    trains[learning_agent.key](experience=experience, weights=None)
     exploration_noise -= exploration_noise_update
     learning_agent.change_exploration_noise_std(exploration_noise)
 

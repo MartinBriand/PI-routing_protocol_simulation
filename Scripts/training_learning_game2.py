@@ -10,7 +10,7 @@ import time
 
 """# Initialization"""
 node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
-               # 'Salzburg']  #, 'Warsaw']
+# 'Salzburg']  #, 'Warsaw']
 
 n_carriers_per_node = 8  # @param {type:"integer"}
 cost_majoration = 1.  # to select the correct weights  @param {type:"integer"}
@@ -58,6 +58,8 @@ actor_update_period_p = 2  # @param {type:"integer"}
 actor_learning_rate = 0.001  # @param{type:"number"}
 critic_learning_rate = 0.001  # @param{type:"number"}
 
+la_key = 'main'
+
 target_policy_noise_p = final_exploration_noise  # @param {type:"number"}
 target_policy_noise_clip_p = target_policy_noise_p * 75. * 30.  # not a parameter
 
@@ -71,42 +73,45 @@ weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' 
 weights_file_name = None if learning_nodes else 'B-D_' + 'MultiLanes' + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
-e, learning_agent = load_tfa_env_and_agent(carrier_type=2,
-                                           n_carriers=len(node_filter) * n_carriers_per_node,  # 11 is the number of nodes
-                                           shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
-                                           init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
-                                           max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
-                                           shipper_default_reserve_price=shipper_default_reserve_price,
-                                           node_filter=node_filter,
-                                           node_auction_cost=node_auction_cost,
-                                           auction_type=auction_type,
-                                           node_nb_info=node_nb_info,
-                                           learning_nodes=learning_nodes,
-                                           weights_file_name=weights_file_name,
-                                           max_nb_infos_per_load=max_nb_infos_per_load,
-                                           discount=discount,
-                                           exploration_noise=exploration_noise,
-                                           target_update_tau_p=target_update_tau_p,
-                                           target_update_period_p=target_update_period_p,
-                                           actor_update_period_p=actor_update_period_p,
-                                           reward_scale_factor_p=reward_scale_factor_p,
-                                           target_policy_noise_p=target_policy_noise_p,
-                                           target_policy_noise_clip_p=target_policy_noise_clip_p,
-                                           max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
-                                           action_min=action_min,
-                                           action_max=action_max,
-                                           tnah_divisor=tnah_divisor,
-                                           replay_buffer_batch_size=replay_buffer_batch_size,
-                                           buffer_max_length=buffer_max_length,
-                                           actor_learning_rate=actor_learning_rate,
-                                           critic_learning_rate=critic_learning_rate,
-                                           actor_fc_layer_params=actor_fc_layer_params,
-                                           actor_dropout_layer_params=actor_dropout_layer_params,
-                                           critic_observation_fc_layer_params=critic_observation_fc_layer_params,
-                                           critic_action_fc_layer_params=critic_action_fc_layer_params,
-                                           critic_joint_fc_layer_params=critic_joint_fc_layer_params,
-                                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
-                                           )
+e = load_tfa_env_and_agent(carrier_type=2,
+                           n_carriers=len(node_filter) * n_carriers_per_node,  # 11 is the number of nodes
+                           shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
+                           init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
+                           max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
+                           shipper_default_reserve_price=shipper_default_reserve_price,
+                           node_filter=node_filter,
+                           node_auction_cost=node_auction_cost,
+                           auction_type=auction_type,
+                           node_nb_info=node_nb_info,
+                           learning_nodes=learning_nodes,
+                           weights_file_name=weights_file_name,
+                           max_nb_infos_per_load=max_nb_infos_per_load,
+                           discount=discount,
+                           exploration_noise=exploration_noise,
+                           target_update_tau_p=target_update_tau_p,
+                           target_update_period_p=target_update_period_p,
+                           actor_update_period_p=actor_update_period_p,
+                           reward_scale_factor_p=reward_scale_factor_p,
+                           target_policy_noise_p=target_policy_noise_p,
+                           target_policy_noise_clip_p=target_policy_noise_clip_p,
+                           max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                           action_min=action_min,
+                           action_max=action_max,
+                           tnah_divisor=tnah_divisor,
+                           replay_buffer_batch_size=replay_buffer_batch_size,
+                           buffer_max_length=buffer_max_length,
+                           actor_learning_rate=actor_learning_rate,
+                           critic_learning_rate=critic_learning_rate,
+                           actor_fc_layer_params=actor_fc_layer_params,
+                           actor_dropout_layer_params=actor_dropout_layer_params,
+                           critic_observation_fc_layer_params=critic_observation_fc_layer_params,
+                           critic_action_fc_layer_params=critic_action_fc_layer_params,
+                           critic_joint_fc_layer_params=critic_joint_fc_layer_params,
+                           critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
+                           key = la_key
+                           )
+
+learning_agent = e.learning_agents[la_key]
 
 train = tfa_function(learning_agent.train)
 
@@ -266,12 +271,12 @@ start_time = time.time()
 for i in range(num_rounds):
     now = time.time()
     if i > 0:
-        eta = int((now - start_time)*(num_rounds-i)/i)
+        eta = int((now - start_time) * (num_rounds - i) / i)
         eta_h = eta // 3600
         eta_m = (eta % 3600) // 60
         eta_s = (eta % 3600) % 60
         print("ETA:", "{}h{}m{}s".format(eta_h, eta_m, eta_s))
-    print("Test", i+1, '/', num_rounds)
+    print("Test", i + 1, '/', num_rounds)
     change_costs()
     test_results = test(num_iteration_per_test)
     print(test_results)
@@ -299,7 +304,7 @@ add_results(test_results)
 
 end = time.time()
 total_time = int(end - start_time)
-total_time_h = total_time//3600
+total_time_h = total_time // 3600
 total_time_m = (total_time % 3600) // 60
 total_time_s = (total_time % 3600) % 60
 print("Total time:", "{}h{}m{}s".format(total_time_h, total_time_m, total_time_s))

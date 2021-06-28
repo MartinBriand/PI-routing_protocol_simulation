@@ -2,7 +2,7 @@
 This files defines a few functions to initialize the variables in notebooks.
 """
 
-from typing import Tuple, Union, List, Optional
+from typing import Tuple, Union, List, Optional, Dict, Any
 
 import random
 
@@ -59,7 +59,7 @@ def load_tfa_env_and_agent(n_carriers: int,
                            critic_learning_rate: float,
                            buffer_max_length: int,
                            replay_buffer_batch_size: int,
-                           ) -> Tuple[Environment, LearningAgent]:
+                           ) -> Environment:
     # create env
     e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,  # 390 km at an average speed of 39.42 km/h)
                     t_c_mu=t_c_mu,
@@ -84,138 +84,139 @@ def load_tfa_env_and_agent(n_carriers: int,
 
     # create Carriers
 
-    data_spec = _init_learning_agent(e=e,
-                                     exploration_noise=exploration_noise,
-                                     target_update_tau_p=target_update_tau_p,
-                                     target_update_period_p=target_update_period_p,
-                                     actor_update_period_p=actor_update_period_p,
-                                     reward_scale_factor_p=reward_scale_factor_p,
-                                     target_policy_noise_p=target_policy_noise_p,
-                                     target_policy_noise_clip_p=target_policy_noise_clip_p,
-                                     actor_fc_layer_params=actor_fc_layer_params,
-                                     actor_dropout_layer_params=actor_dropout_layer_params,
-                                     critic_observation_fc_layer_params=critic_observation_fc_layer_params,
-                                     critic_action_fc_layer_params=critic_action_fc_layer_params,
-                                     critic_joint_fc_layer_params=critic_joint_fc_layer_params,
-                                     critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
-                                     actor_learning_rate=actor_learning_rate,
-                                     critic_learning_rate=critic_learning_rate)
-
-    learning_agent = e.learning_agent
+    data_spec = _init_learning_agents(e=e,
+                                      exploration_noise=exploration_noise,
+                                      target_update_tau_p=target_update_tau_p,
+                                      target_update_period_p=target_update_period_p,
+                                      actor_update_period_p=actor_update_period_p,
+                                      reward_scale_factor_p=reward_scale_factor_p,
+                                      target_policy_noise_p=target_policy_noise_p,
+                                      target_policy_noise_clip_p=target_policy_noise_clip_p,
+                                      actor_fc_layer_params=actor_fc_layer_params,
+                                      actor_dropout_layer_params=actor_dropout_layer_params,
+                                      critic_observation_fc_layer_params=critic_observation_fc_layer_params,
+                                      critic_action_fc_layer_params=critic_action_fc_layer_params,
+                                      critic_joint_fc_layer_params=critic_joint_fc_layer_params,
+                                      critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
+                                      actor_learning_rate=actor_learning_rate,
+                                      critic_learning_rate=critic_learning_rate)
 
     _init_learning_carriers(data_spec=data_spec,
                             n_carriers=n_carriers,
                             max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                             environment=e,
-                            learning_agent=learning_agent,
+                            learning_agents=e.learning_agents,
                             buffer_max_length=buffer_max_length,
                             replay_buffer_batch_size=replay_buffer_batch_size,
                             auction_type=auction_type)
 
-    return e, learning_agent
+    return e
 
 
-def _init_learning_agent(e: Environment,
-                         exploration_noise: float,
-                         target_update_tau_p: float,
-                         target_update_period_p: int,
-                         actor_update_period_p: int,
-                         reward_scale_factor_p: float,
-                         target_policy_noise_p: float,
-                         target_policy_noise_clip_p: float,
-                         actor_fc_layer_params: Tuple,
-                         actor_dropout_layer_params: Union[float, None],  # not sure for the float
-                         critic_observation_fc_layer_params: Union[Tuple, None],
-                         critic_action_fc_layer_params: Union[Tuple, None],
-                         critic_joint_fc_layer_params: Tuple,
-                         critic_joint_dropout_layer_params: Union[float, None],
-                         actor_learning_rate: float,
-                         critic_learning_rate: float
-                         ):
+def _init_learning_agents(e: Environment,
+                          exploration_noise: float,
+                          target_update_tau_p: float,
+                          target_update_period_p: int,
+                          actor_update_period_p: int,
+                          reward_scale_factor_p: float,
+                          target_policy_noise_p: float,
+                          target_policy_noise_clip_p: float,
+                          actor_fc_layer_params: Tuple,
+                          actor_dropout_layer_params: Union[float, None],  # not sure for the float
+                          critic_observation_fc_layer_params: Union[Tuple, None],
+                          critic_action_fc_layer_params: Union[Tuple, None],
+                          critic_joint_fc_layer_params: Tuple,
+                          critic_joint_dropout_layer_params: Union[float, None],
+                          actor_learning_rate: float,
+                          critic_learning_rate: float
+                          ):
     # Initializing the agents
-    time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
-                              reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
-                              discount=BoundedTensorSpec(shape=(), dtype=dtype('float32'), name='discount',
-                                                         minimum=0.0, maximum=1.0),
-                              observation=TensorSpec(shape=(EpisodeLearningCarrier.cost_dimension() - 1,),
-                                                     dtype=dtype('float32'), name='observation'))
+    for node in e.nodes:
+        time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
+                                  reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
+                                  discount=BoundedTensorSpec(shape=(), dtype=dtype('float32'), name='discount',
+                                                             minimum=0.0, maximum=1.0),
+                                  observation=TensorSpec(shape=(EpisodeLearningCarrier.cost_dimension() - 1,),
+                                                         dtype=dtype('float32'), name='observation'))
 
-    action_spec = BoundedTensorSpec(shape=(1,), dtype=dtype('float32'), name='action',
-                                    minimum=[0],
-                                    maximum=[1])
+        action_spec = BoundedTensorSpec(shape=(1,), dtype=dtype('float32'), name='action',
+                                        minimum=[0],
+                                        maximum=[1])
 
-    policy_spec = PolicyStep(action=action_spec, state=(), info=())
-    data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
+        policy_spec = PolicyStep(action=action_spec, state=(), info=())
+        data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
 
-    actor_network = ActorNetwork(input_tensor_spec=time_step_spec.observation,
-                                 output_tensor_spec=action_spec,
-                                 fc_layer_params=actor_fc_layer_params,
-                                 dropout_layer_params=actor_dropout_layer_params,
-                                 activation_fn=tf.keras.activations.relu,
-                                 kernel_initializer='glorot_uniform',
-                                 last_kernel_initializer='glorot_uniform'
-                                 )
+        actor_network = ActorNetwork(input_tensor_spec=time_step_spec.observation,
+                                     output_tensor_spec=action_spec,
+                                     fc_layer_params=actor_fc_layer_params,
+                                     dropout_layer_params=actor_dropout_layer_params,
+                                     activation_fn=tf.keras.activations.relu,
+                                     kernel_initializer='glorot_uniform',
+                                     last_kernel_initializer='glorot_uniform'
+                                     )
 
-    critic_network = CriticNetwork(input_tensor_spec=(time_step_spec.observation, action_spec),
-                                   observation_fc_layer_params=critic_observation_fc_layer_params,
-                                   action_fc_layer_params=critic_action_fc_layer_params,
-                                   joint_fc_layer_params=critic_joint_fc_layer_params,
-                                   joint_dropout_layer_params=critic_joint_dropout_layer_params,
-                                   activation_fn=tf.nn.relu,
-                                   kernel_initializer='glorot_uniform',
-                                   last_kernel_initializer='glorot_uniform',
-                                   name='Critic_network')
+        critic_network = CriticNetwork(input_tensor_spec=(time_step_spec.observation, action_spec),
+                                       observation_fc_layer_params=critic_observation_fc_layer_params,
+                                       action_fc_layer_params=critic_action_fc_layer_params,
+                                       joint_fc_layer_params=critic_joint_fc_layer_params,
+                                       joint_dropout_layer_params=critic_joint_dropout_layer_params,
+                                       activation_fn=tf.nn.relu,
+                                       kernel_initializer='glorot_uniform',
+                                       last_kernel_initializer='glorot_uniform',
+                                       name='Critic_network')
 
-    actor_optimizer = tf.keras.optimizers.Adam(learning_rate=actor_learning_rate)
-    critic_optimizer = tf.keras.optimizers.Adam(learning_rate=critic_learning_rate)
-    exploration_noise_std = exploration_noise / (e.action_max - e.action_min)  # big enough for exploration
-    # it may even be reduced over time
-    critic_network_2 = None
-    target_actor_network = None
-    target_critic_network = None
-    target_critic_network_2 = None
-    target_update_tau = target_update_tau_p  # default is 1 but books say better if small
-    target_update_period = target_update_period_p  # 1 (default) might also be a good option
-    actor_update_period = actor_update_period_p  # 1 (default) might also be a good option
-    td_errors_loss_fn = None  # we  don't need any since already given by the algo (elementwise huber_loss)
-    gamma = 0  # because we do not care of the next step as it is always a last step
-    reward_scale_factor = reward_scale_factor_p
-    target_policy_noise = target_policy_noise_p / (e.action_max - e.action_min)  # noise of the actions
-    target_policy_noise_clip = target_policy_noise_clip_p / (
-            e.action_max - e.action_min)  # will default to 0.5: this is the min max of the noise
-    gradient_clipping = None  # we don't want to clip the gradients (min max values)
-    debug_summaries = False
-    summarize_grads_and_vars = False
-    train_step_counter = None  # should be automatically initialized
-    name = "TD3_Multi_Agents_Learner"
+        actor_optimizer = tf.keras.optimizers.Adam(learning_rate=actor_learning_rate)
+        critic_optimizer = tf.keras.optimizers.Adam(learning_rate=critic_learning_rate)
+        exploration_noise_std = exploration_noise / (e.action_max - e.action_min)  # big enough for exploration
+        # it may even be reduced over time
+        critic_network_2 = None
+        target_actor_network = None
+        target_critic_network = None
+        target_critic_network_2 = None
+        target_update_tau = target_update_tau_p  # default is 1 but books say better if small
+        target_update_period = target_update_period_p  # 1 (default) might also be a good option
+        actor_update_period = actor_update_period_p  # 1 (default) might also be a good option
+        td_errors_loss_fn = None  # we  don't need any since already given by the algo (elementwise huber_loss)
+        gamma = 0  # because we do not care of the next step as it is always a last step
+        reward_scale_factor = reward_scale_factor_p
+        target_policy_noise = target_policy_noise_p / (e.action_max - e.action_min)  # noise of the actions
+        target_policy_noise_clip = target_policy_noise_clip_p / (
+                e.action_max - e.action_min)  # will default to 0.5: this is the min max of the noise
+        gradient_clipping = None  # we don't want to clip the gradients (min max values)
+        debug_summaries = False
+        summarize_grads_and_vars = False
+        train_step_counter = None  # should be automatically initialized
+        name = "TD3_Multi_Agents_Learner_{}".format(node.name)
+        key = node
 
-    learning_agent = LearningAgent(environment=e,
-                                   time_step_spec=time_step_spec,
-                                   action_spec=action_spec,
-                                   actor_network=actor_network,
-                                   critic_network=critic_network,
-                                   actor_optimizer=actor_optimizer,
-                                   critic_optimizer=critic_optimizer,
-                                   exploration_noise_std=exploration_noise_std,
-                                   critic_network_2=critic_network_2,
-                                   target_actor_network=target_actor_network,
-                                   target_critic_network=target_critic_network,
-                                   target_critic_network_2=target_critic_network_2,
-                                   target_update_tau=target_update_tau,
-                                   target_update_period=target_update_period,
-                                   actor_update_period=actor_update_period,
-                                   td_errors_loss_fn=td_errors_loss_fn,
-                                   gamma=gamma,
-                                   reward_scale_factor=reward_scale_factor,
-                                   target_policy_noise=target_policy_noise,
-                                   target_policy_noise_clip=target_policy_noise_clip,
-                                   gradient_clipping=gradient_clipping,
-                                   debug_summaries=debug_summaries,
-                                   summarize_grads_and_vars=summarize_grads_and_vars,
-                                   train_step_counter=train_step_counter,
-                                   name=name)
+        learning_agent = LearningAgent(environment=e,
+                                       time_step_spec=time_step_spec,
+                                       action_spec=action_spec,
+                                       actor_network=actor_network,
+                                       critic_network=critic_network,
+                                       actor_optimizer=actor_optimizer,
+                                       critic_optimizer=critic_optimizer,
+                                       exploration_noise_std=exploration_noise_std,
+                                       critic_network_2=critic_network_2,
+                                       target_actor_network=target_actor_network,
+                                       target_critic_network=target_critic_network,
+                                       target_critic_network_2=target_critic_network_2,
+                                       target_update_tau=target_update_tau,
+                                       target_update_period=target_update_period,
+                                       actor_update_period=actor_update_period,
+                                       td_errors_loss_fn=td_errors_loss_fn,
+                                       gamma=gamma,
+                                       reward_scale_factor=reward_scale_factor,
+                                       target_policy_noise=target_policy_noise,
+                                       target_policy_noise_clip=target_policy_noise_clip,
+                                       gradient_clipping=gradient_clipping,
+                                       debug_summaries=debug_summaries,
+                                       summarize_grads_and_vars=summarize_grads_and_vars,
+                                       train_step_counter=train_step_counter,
+                                       name=name,
+                                       key=key)
 
-    learning_agent.initialize()
+        learning_agent.initialize()
 
     return data_spec
 
@@ -224,7 +225,7 @@ def _init_learning_carriers(data_spec,
                             n_carriers: int,
                             max_lost_auctions_in_a_row: int,
                             environment: Environment,
-                            learning_agent: LearningAgent,
+                            learning_agents: Dict[Any, LearningAgent],
                             buffer_max_length: int,
                             replay_buffer_batch_size: int,
                             auction_type: str,
@@ -265,7 +266,7 @@ def _init_learning_carriers(data_spec,
                                              transit_cost=road_costs,
                                              far_from_home_cost=drivers_costs,
                                              time_not_at_home=0,
-                                             episode_learning_agent=learning_agent,
+                                             episode_learning_agent=learning_agents[node],
                                              replay_buffer=buffer,
                                              replay_buffer_batch_size=replay_buffer_batch_size,
                                              is_learning=True,
@@ -291,7 +292,7 @@ def _init_learning_carriers(data_spec,
                                              transit_cost=road_costs,
                                              far_from_home_cost=drivers_costs,
                                              time_not_at_home=0,
-                                             episode_learning_agent=learning_agent,
+                                             episode_learning_agent=learning_agents[node],
                                              replay_buffer=buffer,
                                              replay_buffer_batch_size=replay_buffer_batch_size,
                                              is_learning=True,

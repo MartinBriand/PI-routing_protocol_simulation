@@ -3,7 +3,7 @@ This files defines a few functions to initialize the variables in notebooks.
 """
 
 
-from typing import Tuple, Union, List
+from typing import Tuple, Union, List, Any, Dict
 
 import random
 
@@ -63,7 +63,8 @@ def load_tfa_env_and_agent(carrier_type: int,
                            critic_learning_rate: float,
                            buffer_max_length: int,
                            replay_buffer_batch_size: int,
-                           ) -> Tuple[TFAEnvironment, LearningAgent]:
+                           key: str,
+                           ) -> TFAEnvironment:
     # create env
     e = TFAEnvironment(nb_hours_per_time_unit=nb_hours_per_time_unit,  # 390 km at an average speed of 39.42 km/h)
                        t_c_mu=t_c_mu,
@@ -91,58 +92,59 @@ def load_tfa_env_and_agent(carrier_type: int,
 
     # create Carriers
 
-    data_spec = _init_learning_agent(e=e,
-                                     carrier_type=carrier_type,
-                                     exploration_noise=exploration_noise,
-                                     target_update_tau_p=target_update_tau_p,
-                                     target_update_period_p=target_update_period_p,
-                                     actor_update_period_p=actor_update_period_p,
-                                     reward_scale_factor_p=reward_scale_factor_p,
-                                     target_policy_noise_p=target_policy_noise_p,
-                                     target_policy_noise_clip_p=target_policy_noise_clip_p,
-                                     actor_fc_layer_params=actor_fc_layer_params,
-                                     actor_dropout_layer_params=actor_dropout_layer_params,
-                                     critic_observation_fc_layer_params=critic_observation_fc_layer_params,
-                                     critic_action_fc_layer_params=critic_action_fc_layer_params,
-                                     critic_joint_fc_layer_params=critic_joint_fc_layer_params,
-                                     critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
-                                     actor_learning_rate=actor_learning_rate,
-                                     critic_learning_rate=critic_learning_rate)
+    data_spec = _init_learning_agents(e=e,
+                                      carrier_type=carrier_type,
+                                      exploration_noise=exploration_noise,
+                                      target_update_tau_p=target_update_tau_p,
+                                      target_update_period_p=target_update_period_p,
+                                      actor_update_period_p=actor_update_period_p,
+                                      reward_scale_factor_p=reward_scale_factor_p,
+                                      target_policy_noise_p=target_policy_noise_p,
+                                      target_policy_noise_clip_p=target_policy_noise_clip_p,
+                                      actor_fc_layer_params=actor_fc_layer_params,
+                                      actor_dropout_layer_params=actor_dropout_layer_params,
+                                      critic_observation_fc_layer_params=critic_observation_fc_layer_params,
+                                      critic_action_fc_layer_params=critic_action_fc_layer_params,
+                                      critic_joint_fc_layer_params=critic_joint_fc_layer_params,
+                                      critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
+                                      actor_learning_rate=actor_learning_rate,
+                                      critic_learning_rate=critic_learning_rate,
+                                      key=key)
 
-    learning_agent = e.learning_agent
 
     _init_learning_carriers(carrier_type=carrier_type,
                             data_spec=data_spec,
                             n_carriers=n_carriers,
                             max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                             environment=e,
-                            learning_agent=learning_agent,
+                            learning_agent=e.learning_agents[key],
                             discount=discount,
                             buffer_max_length=buffer_max_length,
                             replay_buffer_batch_size=replay_buffer_batch_size,
                             auction_type=auction_type)
 
-    return e, learning_agent
+    return e
 
 
-def _init_learning_agent(e: TFAEnvironment,
-                         carrier_type: int,
-                         exploration_noise: float,
-                         target_update_tau_p: float,
-                         target_update_period_p: int,
-                         actor_update_period_p: int,
-                         reward_scale_factor_p: float,
-                         target_policy_noise_p: float,
-                         target_policy_noise_clip_p: float,
-                         actor_fc_layer_params: Tuple,
-                         actor_dropout_layer_params: Union[float, None],  # not sure for the float
-                         critic_observation_fc_layer_params: Union[Tuple, None],
-                         critic_action_fc_layer_params: Union[Tuple, None],
-                         critic_joint_fc_layer_params: Tuple,
-                         critic_joint_dropout_layer_params: Union[float, None],
-                         actor_learning_rate: float,
-                         critic_learning_rate: float
-                         ):
+def _init_learning_agents(e: TFAEnvironment,
+                          carrier_type: int,
+                          exploration_noise: float,
+                          target_update_tau_p: float,
+                          target_update_period_p: int,
+                          actor_update_period_p: int,
+                          reward_scale_factor_p: float,
+                          target_policy_noise_p: float,
+                          target_policy_noise_clip_p: float,
+                          actor_fc_layer_params: Tuple,
+                          actor_dropout_layer_params: Union[float, None],  # not sure for the float
+                          critic_observation_fc_layer_params: Union[Tuple, None],
+                          critic_action_fc_layer_params: Union[Tuple, None],
+                          critic_joint_fc_layer_params: Tuple,
+                          critic_joint_dropout_layer_params: Union[float, None],
+                          actor_learning_rate: float,
+                          critic_learning_rate: float,
+                          key: str
+                          ):
     # Initializing the agents
     time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
                               reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
@@ -208,6 +210,7 @@ def _init_learning_agent(e: TFAEnvironment,
     summarize_grads_and_vars = False
     train_step_counter = None  # should be automatically initialized
     name = "TD3_Multi_Agents_Learner"
+    key = key
 
     learning_agent = LearningAgent(environment=e,
                                    time_step_spec=time_step_spec,
@@ -233,7 +236,8 @@ def _init_learning_agent(e: TFAEnvironment,
                                    debug_summaries=debug_summaries,
                                    summarize_grads_and_vars=summarize_grads_and_vars,
                                    train_step_counter=train_step_counter,
-                                   name=name)
+                                   name=name,
+                                   key=key)
 
     learning_agent.initialize()
 

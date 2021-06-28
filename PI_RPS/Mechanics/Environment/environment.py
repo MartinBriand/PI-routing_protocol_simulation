@@ -2,7 +2,7 @@
 Environment file
 """
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Dict, Any
 
 from PI_RPS.Mechanics.Actors.Carriers.learning_agent import LearningAgent
 from PI_RPS.prj_typing.types import Distance
@@ -61,7 +61,7 @@ class Environment:
         self._ffh_c_mu: float = ffh_c_mu
         self._ffh_c_sigma: float = ffh_c_sigma
 
-        self._learning_agent: Optional['LearningAgent'] = None
+        self._learning_agents: Optional[Dict[Any, 'LearningAgent']] = {}
 
     def iteration(self) -> None:
         """This is the main function of the Environment class. It represents the operation of the game for one unit of
@@ -150,11 +150,11 @@ class Environment:
         for shipper in self._shippers:
             shipper.clear_expenses()
 
-    def register_learning_agent(self, learning_agent: 'LearningAgent') -> None:
+    def register_learning_agent(self, learning_agent: 'LearningAgent', key) -> None:
         """
         Called by the learning agent to signal its presence to the environment
         """
-        self._learning_agent = learning_agent
+        self._learning_agents[key] = learning_agent
 
     def check_carriers_first_steps(self) -> None:
         raise NotImplementedError
@@ -214,9 +214,9 @@ class Environment:
         return self._max_node_weights_distance_scaling_factor
 
     @property
-    def learning_agent(self) -> 'LearningAgent':
-        assert self._learning_agent is not None, "Can't call this property if None"
-        return self._learning_agent
+    def learning_agents(self) -> Dict[Any, 'LearningAgent']:
+        assert self._learning_agents is not None, "Can't call this property if None"
+        return self._learning_agents
 
     @property
     def default_reserve_price(self) -> bool:
