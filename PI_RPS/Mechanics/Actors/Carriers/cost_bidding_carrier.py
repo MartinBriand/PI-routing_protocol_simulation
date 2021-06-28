@@ -89,6 +89,10 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
             result += self._transit_costs() + self._far_from_home_costs(time_not_at_home=t)
         return result * self._cost_majoration
 
+    @property
+    def cost_majoration(self):
+        return self._cost_majoration
+
 
 class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
     """

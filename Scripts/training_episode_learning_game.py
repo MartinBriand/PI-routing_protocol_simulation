@@ -15,6 +15,7 @@ node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples
 
 n_carriers_per_node = 15  # @param {type:"integer"}
 cost_majoration_file = 1.  # to select the correct weights  @param {type:"integer"}
+cost_majoration = 1.5  # for the other carriers
 action_min = 0.  # @param {type:"number"}
 action_max = 10.  # @param {type:"number"}
 
@@ -71,6 +72,8 @@ weights_file_name = None if learning_nodes else 'B-D_' + auction_type + '_' + st
                                                 str(n_carriers_per_node) + '_' + str(cost_majoration_file) + '.json'
 
 e = load_tfa_env_and_agent(n_carriers=len(node_filter) * n_carriers_per_node,
+                           n_learning_carriers=1,
+                           cost_majoration=cost_majoration,
                            shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                            init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
                            max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
@@ -118,16 +121,28 @@ all_results = {'carriers_profit': {'min': [],
                                    'quartile3': [],
                                    'max': [],
                                    'mean': []},
+               'learning_profit': {'min': [],
+                                   'quartile1': [],
+                                   'quartile2': [],
+                                   'quartile3': [],
+                                   'max': [],
+                                   'mean': []},
                'nb_loads': [],
                'nb_arrived_loads': [],
                'nb_discarded_loads': [],
                'nb_in_transit_loads': [],
-               'values': {'min': [],
-                          'quartile1': [],
-                          'quartile2': [],
-                          'quartile3': [],
-                          'max': [],
-                          'mean': []},
+               'carriers_values': {'min': [],
+                                   'quartile1': [],
+                                   'quartile2': [],
+                                   'quartile3': [],
+                                   'max': [],
+                                   'mean': []},
+               'learning_values': {'min': [],
+                                   'quartile1': [],
+                                   'quartile2': [],
+                                   'quartile3': [],
+                                   'max': [],
+                                   'mean': []},
                'delivery_costs': {'min': [],
                                   'quartile1': [],
                                   'quartile2': [],
@@ -175,15 +190,24 @@ def test(num_iter_per_test):
 
     # Getting data
     carriers_profit = []
-    carriers_value = []
+    learning_profit = []
+    carriers_values = []
+    learning_values = []
     for carrier_p in e.carriers:
         if len(carrier_p.episode_revenues) > 1:
             carriers_profit.append(sum(carrier_p.episode_revenues[1:]) - sum(carrier_p.episode_expenses[1:]))
-            carriers_value.append(carrier_p.cost_majoration)
+            carriers_values.append(carrier_p.cost_majoration)
         else:
             carriers_profit.append(0.)
+    for learning_agent in learning_agents.values():
+        for carrier_p in learning_agent.carriers:
+            learning_profit.append(sum(carrier_p.episode_revenues[1:]) - sum(carrier_p.episode_expenses[1:]))
+            learning_values.append(carrier_p.cost_majoration)
+
     carriers_profit = np.array(carriers_profit)
-    carriers_value = np.array(carriers_value)
+    carriers_values = np.array(carriers_values)
+    learning_profit = np.array(learning_profit)
+    learning_values = np.array(learning_values)
 
     nb_loads = len(e.loads)
     nb_arrived_loads = 0
@@ -212,16 +236,28 @@ def test(num_iter_per_test):
                                    'quartile3': np.quantile(carriers_profit, 0.75),
                                    'max': np.max(carriers_profit),
                                    'mean': np.mean(carriers_profit)},
+               'learning_profit': {'min': np.min(learning_profit),
+                                   'quartile1': np.quantile(learning_profit, 0.25),
+                                   'quartile2': np.quantile(learning_profit, 0.5),
+                                   'quartile3': np.quantile(learning_profit, 0.75),
+                                   'max': np.max(learning_profit),
+                                   'mean': np.mean(learning_profit)},
                'nb_loads': nb_loads,
                'nb_arrived_loads': nb_arrived_loads,
                'nb_discarded_loads': nb_discarded_loads,
                'nb_in_transit_loads': nb_in_transit_loads,
-               'values': {'min': np.min(carriers_value),
-                          'quartile1': np.quantile(carriers_value, 0.25),
-                          'quartile2': np.quantile(carriers_value, 0.5),
-                          'quartile3': np.quantile(carriers_value, 0.75),
-                          'max': np.max(carriers_value),
-                          'mean': np.mean(carriers_value)},
+               'carriers_values': {'min': np.min(carriers_values),
+                                   'quartile1': np.quantile(carriers_values, 0.25),
+                                   'quartile2': np.quantile(carriers_values, 0.5),
+                                   'quartile3': np.quantile(carriers_values, 0.75),
+                                   'max': np.max(carriers_values),
+                                   'mean': np.mean(carriers_values)},
+               'learning_values': {'min': np.min(learning_values),
+                                   'quartile1': np.quantile(learning_values, 0.25),
+                                   'quartile2': np.quantile(learning_values, 0.5),
+                                   'quartile3': np.quantile(learning_values, 0.75),
+                                   'max': np.max(learning_values),
+                                   'mean': np.mean(learning_values)},
                'delivery_costs': {'min': np.min(total_delivery_costs),
                                   'quartile1': np.quantile(total_delivery_costs, 0.25),
                                   'quartile2': np.quantile(total_delivery_costs, 0.5),
@@ -248,7 +284,9 @@ def test(num_iter_per_test):
     return results
 
 
-keys_with_stats = ['carriers_profit', 'values', 'delivery_costs', 'nb_hops', 'delivery_times']
+keys_with_stats = ['carriers_profit', 'learning_profit',
+                   'carriers_values', 'learning_values',
+                   'delivery_costs', 'nb_hops', 'delivery_times']
 keys_without_stat = ['nb_loads', 'nb_arrived_loads', 'nb_discarded_loads', 'nb_in_transit_loads']
 stat_keys = ['min', 'quartile1', 'quartile2', 'quartile3', 'max', 'mean']
 

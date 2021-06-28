@@ -19,6 +19,8 @@ import tensorflow as tf
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env
 from PI_RPS.Games.init_tools import t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma, nb_hours_per_time_unit
+from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCostBiddingCarrier, \
+    SingleLaneCostBiddingCarrier
 from PI_RPS.Mechanics.Actors.Carriers.episode_learning_carrier import EpisodeLearningCarrier
 from PI_RPS.Mechanics.Actors.Carriers.episode_learning_carrier import MultiLanesEpisodeLearningCarrier
 from PI_RPS.Mechanics.Actors.Carriers.episode_learning_carrier import SingleLaneEpisodeLearningCarrier
@@ -28,8 +30,10 @@ from PI_RPS.Mechanics.Tools.auction import available_auction_types
 
 
 def load_tfa_env_and_agent(n_carriers: int,
+                           n_learning_carriers: int,
                            action_min: float,
                            action_max: float,
+                           cost_majoration: float,
                            shippers_reserve_price_per_distance: float,
                            shipper_default_reserve_price: float,
                            node_filter: List[str],
@@ -60,6 +64,8 @@ def load_tfa_env_and_agent(n_carriers: int,
                            buffer_max_length: int,
                            replay_buffer_batch_size: int,
                            ) -> Environment:
+    assert n_learning_carriers <= n_carriers, "Number of learning carrier should be less than carriers"
+
     # create env
     e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,  # 390 km at an average speed of 39.42 km/h)
                     t_c_mu=t_c_mu,
@@ -101,14 +107,16 @@ def load_tfa_env_and_agent(n_carriers: int,
                                       actor_learning_rate=actor_learning_rate,
                                       critic_learning_rate=critic_learning_rate)
 
-    _init_learning_carriers(data_spec=data_spec,
-                            n_carriers=n_carriers,
-                            max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
-                            environment=e,
-                            learning_agents=e.learning_agents,
-                            buffer_max_length=buffer_max_length,
-                            replay_buffer_batch_size=replay_buffer_batch_size,
-                            auction_type=auction_type)
+    _init_carriers(data_spec=data_spec,
+                   n_carriers=n_carriers,
+                   n_learning_carriers=n_learning_carriers,
+                   cost_majoration=cost_majoration,
+                   max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                   environment=e,
+                   learning_agents=e.learning_agents,
+                   buffer_max_length=buffer_max_length,
+                   replay_buffer_batch_size=replay_buffer_batch_size,
+                   auction_type=auction_type)
 
     return e
 
@@ -131,21 +139,21 @@ def _init_learning_agents(e: Environment,
                           critic_learning_rate: float
                           ):
     # Initializing the agents
+    time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
+                              reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
+                              discount=BoundedTensorSpec(shape=(), dtype=dtype('float32'), name='discount',
+                                                         minimum=0.0, maximum=1.0),
+                              observation=TensorSpec(shape=(EpisodeLearningCarrier.cost_dimension() - 1,),
+                                                     dtype=dtype('float32'), name='observation'))
+
+    action_spec = BoundedTensorSpec(shape=(1,), dtype=dtype('float32'), name='action',
+                                    minimum=[0],
+                                    maximum=[1])
+
+    policy_spec = PolicyStep(action=action_spec, state=(), info=())
+    data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
+
     for node in e.nodes:
-        time_step_spec = TimeStep(step_type=TensorSpec(shape=(), dtype=dtype('int32'), name='step_type'),
-                                  reward=TensorSpec(shape=(), dtype=dtype('float32'), name='reward'),
-                                  discount=BoundedTensorSpec(shape=(), dtype=dtype('float32'), name='discount',
-                                                             minimum=0.0, maximum=1.0),
-                                  observation=TensorSpec(shape=(EpisodeLearningCarrier.cost_dimension() - 1,),
-                                                         dtype=dtype('float32'), name='observation'))
-
-        action_spec = BoundedTensorSpec(shape=(1,), dtype=dtype('float32'), name='action',
-                                        minimum=[0],
-                                        maximum=[1])
-
-        policy_spec = PolicyStep(action=action_spec, state=(), info=())
-        data_spec = Transition(time_step=time_step_spec, action_step=policy_spec, next_time_step=time_step_spec)
-
         actor_network = ActorNetwork(input_tensor_spec=time_step_spec.observation,
                                      output_tensor_spec=action_spec,
                                      fc_layer_params=actor_fc_layer_params,
@@ -221,15 +229,17 @@ def _init_learning_agents(e: Environment,
     return data_spec
 
 
-def _init_learning_carriers(data_spec,
-                            n_carriers: int,
-                            max_lost_auctions_in_a_row: int,
-                            environment: Environment,
-                            learning_agents: Dict[Any, LearningAgent],
-                            buffer_max_length: int,
-                            replay_buffer_batch_size: int,
-                            auction_type: str,
-                            ) -> None:
+def _init_carriers(data_spec,
+                   n_carriers: int,
+                   n_learning_carriers: int,
+                   cost_majoration: float,
+                   max_lost_auctions_in_a_row: int,
+                   environment: Environment,
+                   learning_agents: Dict[Any, LearningAgent],
+                   buffer_max_length: int,
+                   replay_buffer_batch_size: int,
+                   auction_type: str,
+                   ) -> None:
     counter = {}
     for k in range(n_carriers):
         node = environment.nodes[k % len(environment.nodes)]
@@ -246,58 +256,103 @@ def _init_learning_carriers(data_spec,
 
         assert auction_type in available_auction_types.keys(), \
             'Select an available auction type in {}'.format(available_auction_types.keys())
+        if k < n_learning_carriers:
+            if auction_type == 'MultiLanes':
+                MultiLanesEpisodeLearningCarrier(name=node.name + '_' + str(counter[node]),
+                                                 home=node,
+                                                 nb_lost_auctions_in_a_row=0,
+                                                 max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                                                 in_transit=False,
+                                                 previous_node=node,
+                                                 next_node=node,
+                                                 time_to_go=0,
+                                                 load=None,
+                                                 environment=environment,
+                                                 episode_types=[],
+                                                 episode_expenses=[],
+                                                 episode_revenues=[],
+                                                 this_episode_expenses=[],
+                                                 this_episode_revenues=0,
+                                                 transit_cost=road_costs,
+                                                 far_from_home_cost=drivers_costs,
+                                                 time_not_at_home=0,
+                                                 episode_learning_agent=learning_agents[node],
+                                                 replay_buffer=buffer,
+                                                 replay_buffer_batch_size=replay_buffer_batch_size,
+                                                 is_learning=True,
+                                                 time_step=None,
+                                                 policy_step=None)
 
-        if auction_type == 'MultiLanes':
-            MultiLanesEpisodeLearningCarrier(name=node.name + '_' + str(counter[node]),
-                                             home=node,
-                                             nb_lost_auctions_in_a_row=0,
-                                             max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
-                                             in_transit=False,
-                                             previous_node=node,
-                                             next_node=node,
-                                             time_to_go=0,
-                                             load=None,
-                                             environment=environment,
-                                             episode_types=[],
-                                             episode_expenses=[],
-                                             episode_revenues=[],
-                                             this_episode_expenses=[],
-                                             this_episode_revenues=0,
-                                             transit_cost=road_costs,
-                                             far_from_home_cost=drivers_costs,
-                                             time_not_at_home=0,
-                                             episode_learning_agent=learning_agents[node],
-                                             replay_buffer=buffer,
-                                             replay_buffer_batch_size=replay_buffer_batch_size,
-                                             is_learning=True,
-                                             time_step=None,
-                                             policy_step=None)
-
-        elif auction_type == 'SingleLane':
-            SingleLaneEpisodeLearningCarrier(name=node.name + '_' + str(counter[node]),
-                                             home=node,
-                                             nb_lost_auctions_in_a_row=0,
-                                             max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
-                                             in_transit=False,
-                                             previous_node=node,
-                                             next_node=node,
-                                             time_to_go=0,
-                                             load=None,
-                                             environment=environment,
-                                             episode_types=[],
-                                             episode_expenses=[],
-                                             episode_revenues=[],
-                                             this_episode_expenses=[],
-                                             this_episode_revenues=0,
-                                             transit_cost=road_costs,
-                                             far_from_home_cost=drivers_costs,
-                                             time_not_at_home=0,
-                                             episode_learning_agent=learning_agents[node],
-                                             replay_buffer=buffer,
-                                             replay_buffer_batch_size=replay_buffer_batch_size,
-                                             is_learning=True,
-                                             time_step=None,
-                                             policy_step=None)
+            elif auction_type == 'SingleLane':
+                SingleLaneEpisodeLearningCarrier(name=node.name + '_' + str(counter[node]),
+                                                 home=node,
+                                                 nb_lost_auctions_in_a_row=0,
+                                                 max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                                                 in_transit=False,
+                                                 previous_node=node,
+                                                 next_node=node,
+                                                 time_to_go=0,
+                                                 load=None,
+                                                 environment=environment,
+                                                 episode_types=[],
+                                                 episode_expenses=[],
+                                                 episode_revenues=[],
+                                                 this_episode_expenses=[],
+                                                 this_episode_revenues=0,
+                                                 transit_cost=road_costs,
+                                                 far_from_home_cost=drivers_costs,
+                                                 time_not_at_home=0,
+                                                 episode_learning_agent=learning_agents[node],
+                                                 replay_buffer=buffer,
+                                                 replay_buffer_batch_size=replay_buffer_batch_size,
+                                                 is_learning=True,
+                                                 time_step=None,
+                                                 policy_step=None)
+            else:
+                raise NotImplementedError
         else:
-            raise NotImplementedError
-        # note: admin_costs are defined in the CarrierWithCosts class
+            if auction_type == 'MultiLanes':
+                MultiLanesCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
+                                             home=node,
+                                             nb_lost_auctions_in_a_row=0,
+                                             max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                                             in_transit=False,
+                                             previous_node=node,
+                                             next_node=node,
+                                             time_to_go=0,
+                                             load=None,
+                                             environment=environment,
+                                             episode_types=[],
+                                             episode_expenses=[],
+                                             episode_revenues=[],
+                                             this_episode_expenses=[],
+                                             this_episode_revenues=0,
+                                             transit_cost=road_costs,
+                                             far_from_home_cost=drivers_costs,
+                                             time_not_at_home=0,
+                                             cost_majoration=cost_majoration,
+                                             )
+
+            elif auction_type == 'SingleLane':
+                SingleLaneCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
+                                             home=node,
+                                             nb_lost_auctions_in_a_row=0,
+                                             max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                                             in_transit=False,
+                                             previous_node=node,
+                                             next_node=node,
+                                             time_to_go=0,
+                                             load=None,
+                                             environment=environment,
+                                             episode_types=[],
+                                             episode_expenses=[],
+                                             episode_revenues=[],
+                                             this_episode_expenses=[],
+                                             this_episode_revenues=0,
+                                             transit_cost=road_costs,
+                                             far_from_home_cost=drivers_costs,
+                                             time_not_at_home=0,
+                                             cost_majoration=cost_majoration)
+            else:
+                raise NotImplementedError
+            # note: admin_costs are defined in the CarrierWithCosts class
