@@ -3,7 +3,7 @@ The prj_typing package
 """
 
 from tensorflow.python.framework.ops import EagerTensor
-from typing import Dict, Callable, Tuple, Union
+from typing import Dict, Callable, Tuple, Union, List
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -29,8 +29,8 @@ Distance = Dict['Node', Dict['Node', int]]
 NodeStates = Dict['Node', EagerTensor]
 
 # for carriers
-CostsTable = Dict['Node', Dict['Node', float]]
-ListOfCostsTable = Dict['Node', Dict['Node', List[float]]]
+CostsTable = Dict['Node', float]
+ListOfCostsTable = Dict['Node', List[float]]
 
 # for Auction
 AuctionReservePrice = Dict['Load', float]

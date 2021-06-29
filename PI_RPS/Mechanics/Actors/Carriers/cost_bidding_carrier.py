@@ -74,8 +74,8 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
             return self._next_node
 
     def dont_get_attribution(self) -> None:
-        super().dont_get_attribution()
         self._nb_lost_auctions_in_a_row += 1
+        super().dont_get_attribution()
 
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         super().get_attribution(load, next_node, reserve_price_involved)

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from PI_RPS.Mechanics.Environment.environment import Environment
 
 
-class LearningCostCarrier(CarrierWithCosts, abc.ABC):
+class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
     """
     Base abstract class for Cost bidding carriers
     """
@@ -40,9 +40,9 @@ class LearningCostCarrier(CarrierWithCosts, abc.ABC):
                  time_not_at_home: int,
                  nb_lost_auctions_in_a_row: int,
                  max_lost_auctions_in_a_row: int,
-                 last_win_node: Node,
-                 nb_history_since_last_win: int,
-                 max_nb_infos_per_cost: int,
+                 last_won_node: Optional['Node'],
+                 nb_episode_at_last_won_node: int,
+                 max_nb_infos_per_node: int,
                  costs_table: Optional['CostsTable'],
                  list_of_costs_table: Optional['ListOfCostsTable'],
                  ) -> None:
@@ -67,10 +67,10 @@ class LearningCostCarrier(CarrierWithCosts, abc.ABC):
         self._nb_lost_auctions_in_a_row = nb_lost_auctions_in_a_row
         self._max_lost_auctions_in_a_row = max_lost_auctions_in_a_row
 
-        self._last_win_node: 'Node' = last_win_node if last_win_node else self._next_node
+        self._last_won_node: Optional['Node'] = last_won_node
+        self._nb_episode_at_last_won_node: int = nb_episode_at_last_won_node
 
-        self._nb_history_since_last_win = nb_history_since_last_win
-        self._max_nb_infos_per_cost: int = max_nb_infos_per_cost
+        self._max_nb_infos_per_node: int = max_nb_infos_per_node
         assert (costs_table is None and list_of_costs_table is None) or \
                (costs_table is not None and list_of_costs_table is not None), \
                "costs_table and list_of_costs_table should be both None or both assigned"
@@ -79,29 +79,36 @@ class LearningCostCarrier(CarrierWithCosts, abc.ABC):
             self._list_of_costs_table: ListOfCostsTable = list_of_costs_table
         else:
             self._costs_table: CostsTable = {}
+            self._list_of_costs_table = {}
             self._init_cost_tables()
 
         self._total_nb_cost_infos = 0
         self._total_max_nb_cost_infos = 0
+        self._nb_cost_infos = {}
         self._init_total_nb_cost_infos()
 
     def _init_cost_tables(self) -> None:
-        self._costs_table = {}
-        self._list_of_costs_table = {}
+        assert len(self._costs_table.keys()) == 0, 'Init only empty costs_tables'
+        assert len(self._list_of_costs_table.keys()) == 0, 'Init only empty list_of_costs_table'
         for node1 in self._environment.nodes:
-            self._costs_table[node1] = {}
-            self._list_of_costs_table[node1] = {}
-            for node2 in self._environment.nodes:
-                if node2 != node1:
-                    self._costs_table[node1][node2] = 0
-                    self._list_of_costs_table[node1][node2] = [0]
+            self._costs_table[node1] = 0
+            self._list_of_costs_table[node1] = []
 
     def _init_total_nb_cost_infos(self) -> None:
+        assert self._total_nb_cost_infos == 0, 'Only init if 0'
+        assert self._total_max_nb_cost_infos == 0, 'Only init if 0'
         for node1 in self._environment.nodes:
-            for node2 in self._environment.nodes:
-                if node2 != node1:
-                    self._total_nb_cost_infos += len(self._list_of_costs_table[node1][node2])
-                    self._total_max_nb_cost_infos += self._max_nb_infos_per_cost
+            length = len(self._list_of_costs_table[node1])
+            self._nb_cost_infos[node1] = length
+            self._total_nb_cost_infos += length
+            self._total_max_nb_cost_infos += self._max_nb_infos_per_node
+
+    def reinit_cost_tables_to_average(self):
+        for node1 in self._environment.nodes:
+            self._list_of_costs_table[node1] = [self._costs_table[node1]]
+        self._total_nb_cost_infos = 0
+        self._total_max_nb_cost_infos = 0
+        self._init_total_nb_cost_infos()
 
     def _decide_next_node(self) -> 'Node':
         """
@@ -113,34 +120,44 @@ class LearningCostCarrier(CarrierWithCosts, abc.ABC):
             return self._next_node
 
     def dont_get_attribution(self) -> None:
-        super().dont_get_attribution()
         self._nb_lost_auctions_in_a_row += 1
-        self._nb_history_since_last_win += 1
+        super().dont_get_attribution()
+        self._nb_episode_at_last_won_node += 1
 
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
-        self._nb_history_since_last_win += 1
-        # register the cost
-        new_value = sum(self._episode_expenses[-self._nb_history_since_last_win:])
-        costs_list = self._list_of_costs_table[self._last_win_node][next_node]
-        costs_list.append(new_value)
-        if len(self._list_of_costs_table[self._last_win_node][next_node]) > self._max_nb_infos_per_cost:
-            old_value = costs_list.pop(0)
-            self._costs_table[self._last_win_node][next_node] += (new_value - old_value) / self._max_nb_infos_per_cost
-        else:
-            self._costs_table[self._last_win_node][next_node] = sum(costs_list) / len(costs_list)
-            self._total_nb_cost_infos += 1
-
         super().get_attribution(load, next_node, reserve_price_involved)
+        #register value
+        if self._last_won_node:
+            new_value = sum(self._episode_expenses[-self._nb_episode_at_last_won_node:]) \
+                if self._nb_episode_at_last_won_node > 0 else 0.
+            node_info_list = self._list_of_costs_table[self._last_won_node]
+            node_info_list.append(new_value)
+            if len(node_info_list) > self._max_nb_infos_per_node:
+                old_value = node_info_list.pop(0)
+                self._costs_table[self._last_won_node] += (new_value - old_value) / self._max_nb_infos_per_node
+            else:
+                self._costs_table[self._last_won_node] = sum(node_info_list) / len(node_info_list)
+                self._total_nb_cost_infos += 1
+                self._nb_cost_infos[self._last_won_node] += 1
+        # prepare for next round
         self._nb_lost_auctions_in_a_row = 0
-        self._last_win_node = next_node
-        self._nb_history_since_last_win = 0
+        #prepare for next round
+        self._last_won_node = next_node
+        self._nb_episode_at_last_won_node = 0
 
-    @property
+    def _calculate_costs(self, from_node: 'Node', to_node: 'Node') -> float:
+        """Will be called by bid"""
+        result = 0.
+        for delta_t in range(self._environment.get_distance(from_node, to_node)):
+            t = self._time_not_at_home + delta_t
+            result += self._transit_costs() + self._far_from_home_costs(time_not_at_home=t)
+        return result
+
     def convergence_state(self):
         return self._total_nb_cost_infos / self._total_max_nb_cost_infos
 
 
-class MultiLanesLearningCostCarrier(LearningCostCarrier, MultiBidCarrier):
+class MultiLanesLearningCostsCarrier(LearningCostsCarrier, MultiBidCarrier):
     """
     It is a carrier but:
         * bidding their anticipated costs
@@ -152,11 +169,11 @@ class MultiLanesLearningCostCarrier(LearningCostCarrier, MultiBidCarrier):
         bid = {}
         for next_node in self._environment.nodes:
             if next_node != self._next_node:
-                bid[next_node] = self._costs_table[self._next_node][next_node]
+                bid[next_node] = self._costs_table[next_node] + self._calculate_costs(self._next_node, next_node)
         return bid
 
 
-class SingleLaneLearningCostCarrier(LearningCostCarrier, SingleBidCarrier):
+class SingleLaneLearningCostsCarrier(LearningCostsCarrier, SingleBidCarrier):
     """
     It is a carrier but:
         * bidding their anticipated costs
@@ -167,4 +184,4 @@ class SingleLaneLearningCostCarrier(LearningCostCarrier, SingleBidCarrier):
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
         """The bid function"""
-        return self._costs_table[self._next_node][next_node]
+        return self._costs_table[next_node] + self._calculate_costs(self._next_node, next_node)

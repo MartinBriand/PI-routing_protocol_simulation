@@ -8,19 +8,20 @@ import time
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
-from PI_RPS.Mechanics.Actors.Carriers.cost_bidding_carrier import MultiLanesCostBiddingCarrier
+from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import MultiLanesLearningCostsCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
-node_filter = ['Bremen', 'Dresden']
-# node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
-#                'Salzburg', 'Warsaw']
+# node_filter = ['Bremen', 'Dresden']
+node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
+               'Salzburg', 'Warsaw']
 
-n_carriers_per_node = 15  # @param {type:"integer"}
-cost_majoration = 1.  # @param {type:"number"}
+n_carriers_per_node = 30  # @param {type:"integer"}
+max_nb_infos_per_node = 20
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
-shipper_default_reserve_price = 20000.  # @param{type:"number"}
+shipper_default_reserve_price = 10000.  # @param{type:"number"}
 init_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
+initial_cost_majoration = 1.5
 # not used if initialized by artificial weights
 max_node_weights_distance_scaling_factor = 500. * 1.3  # @param{type:"number"}
 # should be big enough to be unrealistic.
@@ -30,16 +31,18 @@ max_nb_infos_per_load = 15  # @param{type:"integer"}
 
 max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 
-learning_nodes = True  # @param{type:"boolean"}
+auction_type = ['MultiLanes', 'SingleLane'][0]
 
-weights_file_name = None if learning_nodes else 'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
-                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
+# TODO keep for the moment the learning nodes but then we will have a much more complicated learning loop
+#  with both learning involved
 
-future_weight_file_name = 'B-D_MultiLanes_' + str(node_auction_cost) + '_' +\
-                           str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
-# future_weight_file_name = 'weights_MultiLanes_' + str(node_auction_cost) + '_' +\
-#                            str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
+learning_nodes = False  # @param{type:"boolean"}
 
+weights_file_name = None if learning_nodes else \
+    'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
+    str(n_carriers_per_node) + '_' + str(initial_cost_majoration) + '.json'
+
+# Initialize the environment
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 max_nb_infos_per_load=max_nb_infos_per_load,
                 init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
@@ -47,8 +50,9 @@ e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 t_c_mu=t_c_mu,
                 t_c_sigma=t_c_sigma,
                 ffh_c_mu=ffh_c_mu,
-                ffh_c_sigma=ffh_c_sigma,)
+                ffh_c_sigma=ffh_c_sigma, )
 
+# Initialize the nodes and the shippers with the initial weights for the node according to a file
 load_realistic_nodes_and_shippers_to_env(e=e,
                                          node_filter=node_filter,
                                          node_nb_info=node_nb_info,
@@ -57,11 +61,13 @@ load_realistic_nodes_and_shippers_to_env(e=e,
                                          node_auction_cost=node_auction_cost,
                                          learning_nodes=learning_nodes,
                                          weights_file_name=weights_file_name,
-                                         auction_type='MultiLanes'
+                                         auction_type=auction_type
                                          )
 
+# Get a reference to the weight master of the nodes, this will help when training the nodes
 weight_master = e.nodes[0].weight_master
 
+# Create the carriers
 counter = {}
 for k in range(n_carriers_per_node * len(e.nodes)):
     node = e.nodes[k % len(e.nodes)]
@@ -72,31 +78,35 @@ for k in range(n_carriers_per_node * len(e.nodes)):
     road_costs = random.normalvariate(mu=t_c_mu, sigma=t_c_sigma)
     drivers_costs = random.normalvariate(mu=ffh_c_mu, sigma=ffh_c_sigma)
 
-    MultiLanesCostBiddingCarrier(name=node.name + '_' + str(counter[node]),
-                                 home=node,
-                                 in_transit=False,
-                                 previous_node=node,
-                                 next_node=node,
-                                 time_to_go=0,
-                                 load=None,
-                                 environment=e,
-                                 episode_types=[],
-                                 episode_expenses=[],
-                                 episode_revenues=[],
-                                 this_episode_expenses=[],
-                                 this_episode_revenues=0,
-                                 transit_cost=road_costs,
-                                 far_from_home_cost=drivers_costs,
-                                 time_not_at_home=0,
-                                 nb_lost_auctions_in_a_row=0,
-                                 max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
-                                 cost_majoration=cost_majoration)
+    if auction_type == 'MultiLanes':
+        MultiLanesLearningCostsCarrier(name=node.name + '_' + str(counter[node]),
+                                       home=node,
+                                       in_transit=False,
+                                       previous_node=node,
+                                       next_node=node,
+                                       time_to_go=0,
+                                       load=None,
+                                       environment=e,
+                                       episode_types=[],
+                                       episode_expenses=[],
+                                       episode_revenues=[],
+                                       this_episode_expenses=[],
+                                       this_episode_revenues=0,
+                                       transit_cost=road_costs,
+                                       far_from_home_cost=drivers_costs,
+                                       time_not_at_home=0,
+                                       nb_lost_auctions_in_a_row=0,
+                                       max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                                       last_won_node=None,
+                                       nb_episode_at_last_won_node=0,
+                                       max_nb_infos_per_node=max_nb_infos_per_node,
+                                       costs_table=None,
+                                       list_of_costs_table=None
+                                       )
 
-"""# Training loop
-## Results structure
-"""
-
-all_results = {'carriers_profit': {'min': [],
+# Result structure
+all_results = {'type': [],
+               'carriers_profit': {'min': [],
                                    'quartile1': [],
                                    'quartile2': [],
                                    'quartile3': [],
@@ -127,9 +137,8 @@ all_results = {'carriers_profit': {'min': [],
 
                }
 
-"""## Evaluation"""
 
-
+# Training loop
 def clear_env() -> None:
     e.clear_node_auctions()
     e.clear_loads()
@@ -146,6 +155,7 @@ def test(num_iter_per_test):
         e.iteration()
 
     # Getting data
+    type_p = (loop, phase, test_nb)
     carriers_profit = []
     for carrier_p in e.carriers:
         if len(carrier_p.episode_revenues) > 1:
@@ -176,7 +186,8 @@ def test(num_iter_per_test):
     nb_hops = np.array(nb_hops)
     delivery_times = np.array(delivery_times)
 
-    results = {'carriers_profit': {'min': np.min(carriers_profit),
+    results = {'type': [],
+               'carriers_profit': {'min': np.min(carriers_profit),
                                    'quartile1': np.quantile(carriers_profit, 0.25),
                                    'quartile2': np.quantile(carriers_profit, 0.5),
                                    'quartile3': np.quantile(carriers_profit, 0.75),
@@ -213,7 +224,7 @@ def test(num_iter_per_test):
 
 
 keys_with_stats = ['carriers_profit', 'delivery_costs', 'nb_hops', 'delivery_times']
-keys_without_stat = ['nb_loads', 'nb_arrived_loads', 'nb_discarded_loads', 'nb_in_transit_loads']
+keys_without_stat = ['type', 'nb_loads', 'nb_arrived_loads', 'nb_discarded_loads', 'nb_in_transit_loads']
 stat_keys = ['min', 'quartile1', 'quartile2', 'quartile3', 'max', 'mean']
 
 
@@ -225,73 +236,50 @@ def add_results(results) -> None:
         all_results[key_without_stat].append(results[key_without_stat])
 
 
-"""## Loop"""
+# Loop parts
 
-num_cost_pass = 5  # @param {type:"integer"}
-num_train_per_pass = 100  # @param {type:"integer"}
-num_iteration_per_test = 100  # @param{type:"integer"}
-
-
-def change_costs():
-    for carrier_p in e.carriers:
-        carrier_p.random_new_cost_parameters()
-
-
-init_readable_weights = weight_master.readable_weights()
-
-not_converged = {arrival: [departure
-                           for departure in init_readable_weights[arrival].keys() if departure != arrival]
-                 for arrival in init_readable_weights.keys()}
-
-previous_weights = {arrival: {departure: [init_readable_weights[arrival][departure]]
-                              for departure in init_readable_weights[arrival].keys()}
-                    for arrival in init_readable_weights.keys()}
-
-
-def add_weights_to_lists():
-    readable_weights = weight_master.readable_weights()
-    for arrival in readable_weights.keys():
-        for departure in readable_weights[arrival].keys():
-            previous_weights[arrival][departure].append(readable_weights[arrival][departure])
-    
-    has_converged = {}
-    for arrival in not_converged.keys():
-        has_converged[arrival] = []
-        for departure in not_converged[arrival]:
-            this_previous_weights = previous_weights[arrival][departure]
-            if this_previous_weights[-2] < this_previous_weights[-1]:
-                has_converged[arrival].append(departure)
-    for arrival in has_converged.keys():
-        for departure in has_converged[arrival]:
-            not_converged[arrival].remove(departure)
-        if len(not_converged[arrival]) == 0:
-            del not_converged[arrival]
-            
-
-start_time = time.time()
-loop_counter = 0
-
-
-def loop_fn():
-    print("Test", loop_counter + 1)
-    change_costs()
-    print(weight_master.readable_weights())
-    print(not_converged)
+# General loop iteration
+def loop_fn(loop_counter_p, num_iteration_per_test, num_train_per_pass):
+    print("Test", loop_counter_p + 1)
     test_results = test(num_iteration_per_test)
     print(test_results)
     add_results(test_results)
-    for _ in range(num_cost_pass):
-        change_costs()
-        for _ in range(num_train_per_pass):
-            e.iteration()
-    add_weights_to_lists()
+    for _ in range(num_train_per_pass):
+        e.iteration()
 
 
-while len(not_converged.keys()) > 0:
+# getting the carriers to converge (part1)
+def condition_convergence_carrier(threshold):
+    list_of_convergence_degree = [carrier_p.convergence_state() for carrier_p in e.carriers]
+    return (sum(list_of_convergence_degree) / len(list_of_convergence_degree)) > threshold
+
+
+# Running the game until we have a stabilized market (part2)
+def market_newcomers_and_bankruptcies():  # TODO
+    return 0
+
+
+# Loop
+nb_iter_for_part2 = 1
+while nb_iter_for_part2 > 0:
+    #part1
+    nb_iter_for_part2 = market_newcomers_and_bankruptcies()
+#par1
+
+
+# num_iteration_per_test = 100
+# num_train_per_pass = 1000
+# convergence_threshold = 0.9
+
+
+start_time = time.time()
+while not condition():
     loop_fn()
     loop_counter += 1
 print("Converged !!")
 print("25 more for better convergence")
+for carrier in e.carriers:
+    carrier.reinit_cost_tables_to_average()
 for _ in range(25):
     loop_fn()
     loop_counter += 1
@@ -301,6 +289,6 @@ delta = int(end_time - start_time)
 delta_h = delta // 3600
 delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
-final_readable_weights = weight_master.readable_weights()
-write_readable_weights_json(final_readable_weights, future_weight_file_name)
+# final_readable_weights = weight_master.readable_weights()
+# write_readable_weights_json(final_readable_weights, future_weight_file_name)
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))

@@ -160,8 +160,8 @@ class LearningCarrier(CarrierWithCosts, abc.ABC):
         self._register_real_cost = not reserve_price_involved
 
     def dont_get_attribution(self) -> None:
-        super().dont_get_attribution()
         self._nb_lost_auctions_in_a_row += 1
+        super().dont_get_attribution()
         if self._in_transit:
             self._discount_power = self._time_to_go
         else:
