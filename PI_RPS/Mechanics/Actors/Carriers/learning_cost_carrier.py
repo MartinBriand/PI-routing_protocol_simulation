@@ -45,6 +45,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
                  max_nb_infos_per_node: int,
                  costs_table: Optional['CostsTable'],
                  list_of_costs_table: Optional['ListOfCostsTable'],
+                 is_learning: bool,
                  ) -> None:
 
         super().__init__(name=name,
@@ -63,6 +64,8 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
                          transit_cost=transit_cost,
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
+
+        self._is_learning = is_learning
 
         self._nb_lost_auctions_in_a_row = nb_lost_auctions_in_a_row
         self._max_lost_auctions_in_a_row = max_lost_auctions_in_a_row
@@ -110,6 +113,14 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         self._total_max_nb_cost_infos = 0
         self._init_total_nb_cost_infos()
 
+    def reinit_cost_tables_to_0(self):
+        for node1 in self._environment.nodes:
+            self._costs_table[node1] = 0
+            self._list_of_costs_table[node1] = []
+        self._total_nb_cost_infos = 0
+        self._total_max_nb_cost_infos = 0
+        self._init_total_nb_cost_infos()
+
     def _decide_next_node(self) -> 'Node':
         """
         Go home only if more than self._max_time_not_at_home since last time at home
@@ -127,7 +138,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         super().get_attribution(load, next_node, reserve_price_involved)
         #register value
-        if self._last_won_node:
+        if self._is_learning and (self._last_won_node is not None):
             new_value = sum(self._episode_expenses[-self._nb_episode_at_last_won_node:]) \
                 if self._nb_episode_at_last_won_node > 0 else 0.
             node_info_list = self._list_of_costs_table[self._last_won_node]
@@ -155,6 +166,16 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
 
     def convergence_state(self):
         return self._total_nb_cost_infos / self._total_max_nb_cost_infos
+
+    @property
+    def is_learning(self) -> bool:
+        return self._is_learning
+
+    @is_learning.setter
+    def is_learning(self, value) -> None:
+        assert type(value) == bool, "value is not a bool"
+        assert value == (not self._is_learning), "Only change to opposite"
+        self._is_learning = value
 
 
 class MultiLanesLearningCostsCarrier(LearningCostsCarrier, MultiBidCarrier):

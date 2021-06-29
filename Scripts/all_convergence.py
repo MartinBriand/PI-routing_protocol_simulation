@@ -33,9 +33,6 @@ max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 
 auction_type = ['MultiLanes', 'SingleLane'][0]
 
-# TODO keep for the moment the learning nodes but then we will have a much more complicated learning loop
-#  with both learning involved
-
 learning_nodes = False  # @param{type:"boolean"}
 
 weights_file_name = None if learning_nodes else \
@@ -146,7 +143,8 @@ def clear_env() -> None:
     e.clear_shipper_expenses()
 
 
-def test(num_iter_per_test):
+def test(num_iter_per_test: int, loop_p: int, phase_p: int, sub_phase_p: int,
+         test_nb_p: int, prop_reserve_price_involved_threshold_p: float):
     # clear
     clear_env()
 
@@ -155,7 +153,7 @@ def test(num_iter_per_test):
         e.iteration()
 
     # Getting data
-    type_p = (loop, phase, test_nb)
+    type_p = (loop_p, phase_p, sub_phase_p, test_nb_p)
     carriers_profit = []
     for carrier_p in e.carriers:
         if len(carrier_p.episode_revenues) > 1:
@@ -186,7 +184,7 @@ def test(num_iter_per_test):
     nb_hops = np.array(nb_hops)
     delivery_times = np.array(delivery_times)
 
-    results = {'type': [],
+    results = {'type': type_p,
                'carriers_profit': {'min': np.min(carriers_profit),
                                    'quartile1': np.quantile(carriers_profit, 0.25),
                                    'quartile2': np.quantile(carriers_profit, 0.5),
@@ -220,7 +218,7 @@ def test(num_iter_per_test):
 
     # clear
     clear_env()
-    return results
+    return results, carriers_with_non_positive_profit, nodes_with_too_much_reserve_price  # TODO
 
 
 keys_with_stats = ['carriers_profit', 'delivery_costs', 'nb_hops', 'delivery_times']
@@ -237,52 +235,130 @@ def add_results(results) -> None:
 
 
 # Loop parts
+loop = 0
+phase = 1
+sub_phase = 1
+test_nb = 0
+num_iteration_per_test = 200
+num_train_per_pass = 1000
+carrier_threshold = 0.35
+prop_reserve_price_involved_threshold = 0.01
 
 # General loop iteration
-def loop_fn(loop_counter_p, num_iteration_per_test, num_train_per_pass):
-    print("Test", loop_counter_p + 1)
-    test_results = test(num_iteration_per_test)
+def loop_fn():
+    global num_iteration_per_test, num_train_per_pass
+    global loop, phase, test_nb, prop_reserve_price_involved_threshold
+    test_results, carriers_with_non_positive_profit, nodes_with_too_much_reserve_price =\
+        test(num_iteration_per_test, loop, phase, sub_phase, test_nb, prop_reserve_price_involved_threshold)
     print(test_results)
     add_results(test_results)
     for _ in range(num_train_per_pass):
         e.iteration()
 
+    test_nb += 1
+    return carriers_with_non_positive_profit, nodes_with_too_much_reserve_price
 
-# getting the carriers to converge (part1)
-def condition_convergence_carrier(threshold):
-    list_of_convergence_degree = [carrier_p.convergence_state() for carrier_p in e.carriers]
-    return (sum(list_of_convergence_degree) / len(list_of_convergence_degree)) > threshold
+
+# Getting carriers and nodes to converge (part1)
+# getting the carriers to converge
+def convergence_carrier(threshold):
+    def condition_convergence_carrier():
+        list_of_convergence_degree = [carrier_p.convergence_state() for carrier_p in e.carriers]
+        return (sum(list_of_convergence_degree) / len(list_of_convergence_degree)) > threshold
+
+    while not condition_convergence_carrier():
+        loop_fn()
+
+
+# getting the nodes to converge
+def convergence_nodes():
+    init_readable_weights = weight_master.readable_weights()
+    not_converged = {arrival: [departure
+                               for departure in init_readable_weights[arrival].keys() if departure != arrival]
+                     for arrival in init_readable_weights.keys()}
+
+    previous_weights = {arrival: {departure: [init_readable_weights[arrival][departure]]
+                                  for departure in init_readable_weights[arrival].keys()}
+                        for arrival in init_readable_weights.keys()}
+
+    def add_weights_to_lists():
+        readable_weights = weight_master.readable_weights()
+        for arrival in readable_weights.keys():
+            for departure in readable_weights[arrival].keys():
+                previous_weights[arrival][departure].append(readable_weights[arrival][departure])
+
+        has_converged = {}
+        for arrival in not_converged.keys():
+            has_converged[arrival] = []
+            for departure in not_converged[arrival]:
+                this_previous_weights = previous_weights[arrival][departure]
+                if this_previous_weights[-2] < this_previous_weights[-1]:
+                    has_converged[arrival].append(departure)
+        for arrival in has_converged.keys():
+            for departure in has_converged[arrival]:
+                not_converged[arrival].remove(departure)
+            if len(not_converged[arrival]) == 0:
+                del not_converged[arrival]
+
+    while len(not_converged.keys()) > 0:
+        loop_fn()
+        add_weights_to_lists()
+
+
+def part1():
+    global carrier_threshold
+    global phase, sub_phase, test_nb
+    phase = 1
+    sub_phase = 0
+    test_nb = 0
+
+    if weight_master.is_learning:  # set nodes to not learning
+        weight_master.is_learning = False
+    for carrier in e.carriers:  # set carriers to learning and reinit_absolutely
+        carrier.reinit_cost_tables_to_0()
+        if not carrier.is_learning:
+            carrier.is_learning = True
+    convergence_carrier(carrier_threshold)
+
+    sub_phase = 1
+    test_nb = 0
+    if not weight_master.is_learning:  # set nodes to learning
+        weight_master.is_learning = True
+    for carrier in e.carriers:  # set carriers to not learning
+        if carrier.is_learning:
+            carrier.is_learning = False
+    convergence_nodes()
+
+    sub_phase = 2
+    test_nb = 0
+    for carrier in e.carriers:  # set carriers to learning and reinit to average
+        carrier.reinit_cost_tables_to_average()
+        if not carrier.is_learning:
+            carrier.is_learning = True
+    convergence_carrier(carrier_threshold)
 
 
 # Running the game until we have a stabilized market (part2)
-def market_newcomers_and_bankruptcies():  # TODO
+def part2():  # TODO
+    global phase, sub_phase, test_nb
+    phase = 1
+    sub_phase = 0
+    test_nb = 0
+    # set everyone to learning but do not reinitialize the learning of the carriers
+    # TODO change the values of the costs of the other such that still the same variance and mean
+    # TODO adapt the values learned accordingly
+
     return 0
 
 
 # Loop
 nb_iter_for_part2 = 1
-while nb_iter_for_part2 > 0:
-    #part1
-    nb_iter_for_part2 = market_newcomers_and_bankruptcies()
-#par1
-
-
-# num_iteration_per_test = 100
-# num_train_per_pass = 1000
-# convergence_threshold = 0.9
-
-
 start_time = time.time()
-while not condition():
-    loop_fn()
-    loop_counter += 1
-print("Converged !!")
-print("25 more for better convergence")
-for carrier in e.carriers:
-    carrier.reinit_cost_tables_to_average()
-for _ in range(25):
-    loop_fn()
-    loop_counter += 1
+while nb_iter_for_part2 > 0:
+    part1()
+    nb_iter_for_part2 = part2()
+print("This is the last part1")
+part1()
 
 end_time = time.time()
 delta = int(end_time - start_time)
