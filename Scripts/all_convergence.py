@@ -233,8 +233,8 @@ def test(num_iter_per_test: int, loop_p: int, phase_p: int, sub_phase_p: int,
                 nodes_nb_transaction_with_reserve_price_involved[movement[0]] += 1
 
     nodes_with_too_much_reserve_price = [node_p for node_p in nodes_nb_transaction.keys()
-                                         if nodes_nb_transaction_with_reserve_price_involved[node]
-                                         / nodes_nb_transaction[node] > prop_reserve_price_involved_threshold_p]
+                                         if nodes_nb_transaction_with_reserve_price_involved[node_p]
+                                         / nodes_nb_transaction[node_p] > prop_reserve_price_involved_threshold_p]
 
     total_delivery_costs = np.array(total_delivery_costs)
     nb_hops = np.array(nb_hops)
