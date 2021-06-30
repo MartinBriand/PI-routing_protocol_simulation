@@ -117,7 +117,6 @@ class Carrier(abc.ABC):
             self._episode_expenses.append(sum(self._this_episode_expenses))
             self._this_episode_revenues = 0.
             self._this_episode_expenses.clear()
-            # And generate episode if needed in the LearningCarrier Method
 
     def _arrive_at_next_node(self) -> None:
         """Called by next_step to do all the variable settings when arrive at a next Nodes

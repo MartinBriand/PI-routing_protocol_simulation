@@ -8,7 +8,8 @@ import time
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
-from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import MultiLanesLearningCostsCarrier
+from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import MultiLanesLearningCostsCarrier, \
+    SingleLaneLearningCostsCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
 # node_filter = ['Bremen', 'Dresden']
@@ -17,6 +18,7 @@ node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'P
 
 n_carriers_per_node = 30  # @param {type:"integer"}
 max_nb_infos_per_node = 20
+nb_lives = 8
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 10000.  # @param{type:"number"}
@@ -66,21 +68,22 @@ weight_master = e.nodes[0].weight_master
 
 # Create the carriers
 counter = {}
-for k in range(n_carriers_per_node * len(e.nodes)):
-    node = e.nodes[k % len(e.nodes)]
-    if node in counter.keys():
-        counter[node] += 1
+
+
+def create_carrier(node_p):
+    if node_p in counter.keys():
+        counter[node_p] += 1
     else:
-        counter[node] = 1
+        counter[node_p] = 1
     road_costs = random.normalvariate(mu=t_c_mu, sigma=t_c_sigma)
     drivers_costs = random.normalvariate(mu=ffh_c_mu, sigma=ffh_c_sigma)
 
     if auction_type == 'MultiLanes':
-        MultiLanesLearningCostsCarrier(name=node.name + '_' + str(counter[node]),
-                                       home=node,
+        MultiLanesLearningCostsCarrier(name=node_p.name + '_' + str(counter[node_p]),
+                                       home=node_p,
                                        in_transit=False,
-                                       previous_node=node,
-                                       next_node=node,
+                                       previous_node=node_p,
+                                       next_node=node_p,
                                        time_to_go=0,
                                        load=None,
                                        environment=e,
@@ -96,10 +99,44 @@ for k in range(n_carriers_per_node * len(e.nodes)):
                                        max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                        last_won_node=None,
                                        nb_episode_at_last_won_node=0,
+                                       nb_lives=nb_lives,
                                        max_nb_infos_per_node=max_nb_infos_per_node,
                                        costs_table=None,
-                                       list_of_costs_table=None
+                                       list_of_costs_table=None,
+                                       is_learning=True
                                        )
+    elif auction_type == 'SingleLane':
+        SingleLaneLearningCostsCarrier(name=node_p.name + '_' + str(counter[node_p]),
+                                       home=node_p,
+                                       in_transit=False,
+                                       previous_node=node_p,
+                                       next_node=node_p,
+                                       time_to_go=0,
+                                       load=None,
+                                       environment=e,
+                                       episode_types=[],
+                                       episode_expenses=[],
+                                       episode_revenues=[],
+                                       this_episode_expenses=[],
+                                       this_episode_revenues=0,
+                                       transit_cost=road_costs,
+                                       far_from_home_cost=drivers_costs,
+                                       time_not_at_home=0,
+                                       nb_lost_auctions_in_a_row=0,
+                                       max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
+                                       last_won_node=None,
+                                       nb_episode_at_last_won_node=0,
+                                       nb_lives=nb_lives,
+                                       max_nb_infos_per_node=max_nb_infos_per_node,
+                                       costs_table=None,
+                                       list_of_costs_table=None,
+                                       is_learning=True
+                                       )
+
+
+for k in range(n_carriers_per_node * len(e.nodes)):
+    node = e.nodes[k % len(e.nodes)]
+    create_carrier(node)
 
 # Result structure
 all_results = {'type': [],
@@ -155,11 +192,15 @@ def test(num_iter_per_test: int, loop_p: int, phase_p: int, sub_phase_p: int,
     # Getting data
     type_p = (loop_p, phase_p, sub_phase_p, test_nb_p)
     carriers_profit = []
+    carriers_with_non_positive_profit = []
     for carrier_p in e.carriers:
         if len(carrier_p.episode_revenues) > 1:
-            carriers_profit.append(sum(carrier_p.episode_revenues[1:]) - sum(carrier_p.episode_expenses[1:]))
+            profit = sum(carrier_p.episode_revenues[1:]) - sum(carrier_p.episode_expenses[1:])
         else:
-            carriers_profit.append(0.)
+            profit = 0.
+        carriers_profit.append(profit)
+        if profit <= 0.:
+            carriers_with_non_positive_profit.append(carrier_p)
     carriers_profit = np.array(carriers_profit)
 
     nb_loads = len(e.loads)
@@ -169,10 +210,11 @@ def test(num_iter_per_test: int, loop_p: int, phase_p: int, sub_phase_p: int,
     total_delivery_costs = []
     nb_hops = []
     delivery_times = []
+    nodes_nb_transaction = {}
+    nodes_nb_transaction_with_reserve_price_involved = {}
     for load_p in e.loads:
         if load_p.is_arrived:
             nb_arrived_loads += 1
-
             total_delivery_costs.append(load_p.total_delivery_cost())
             nb_hops.append(load_p.nb_hops())
             delivery_times.append(load_p.delivery_time())
@@ -180,6 +222,20 @@ def test(num_iter_per_test: int, loop_p: int, phase_p: int, sub_phase_p: int,
             nb_discarded_loads += 1
         if load_p.in_transit:
             nb_in_transit_loads += 1
+
+        for movement in load_p.movements:
+            if movement[0] not in nodes_nb_transaction.keys():  # movement[0] is the node where the auction occurred
+                nodes_nb_transaction[movement[0]] = 0
+                nodes_nb_transaction_with_reserve_price_involved[movement[0]] = 0
+
+            nodes_nb_transaction[movement[0]] += 1
+            if movement[5]:  # movement[5] is the reserve_price_involved of the auction
+                nodes_nb_transaction_with_reserve_price_involved[movement[0]] += 1
+
+    nodes_with_too_much_reserve_price = [node_p for node_p in nodes_nb_transaction.keys()
+                                         if nodes_nb_transaction_with_reserve_price_involved[node]
+                                         / nodes_nb_transaction[node] > prop_reserve_price_involved_threshold_p]
+
     total_delivery_costs = np.array(total_delivery_costs)
     nb_hops = np.array(nb_hops)
     delivery_times = np.array(delivery_times)
@@ -218,7 +274,7 @@ def test(num_iter_per_test: int, loop_p: int, phase_p: int, sub_phase_p: int,
 
     # clear
     clear_env()
-    return results, carriers_with_non_positive_profit, nodes_with_too_much_reserve_price  # TODO
+    return results, carriers_with_non_positive_profit, nodes_with_too_much_reserve_price
 
 
 keys_with_stats = ['carriers_profit', 'delivery_costs', 'nb_hops', 'delivery_times']
@@ -236,19 +292,20 @@ def add_results(results) -> None:
 
 # Loop parts
 loop = 0
-phase = 1
-sub_phase = 1
+phase = 0
+sub_phase = 0
 test_nb = 0
 num_iteration_per_test = 200
 num_train_per_pass = 1000
-carrier_threshold = 0.35
+carrier_convergence_nb_iter = 50
 prop_reserve_price_involved_threshold = 0.01
+
 
 # General loop iteration
 def loop_fn():
     global num_iteration_per_test, num_train_per_pass
     global loop, phase, test_nb, prop_reserve_price_involved_threshold
-    test_results, carriers_with_non_positive_profit, nodes_with_too_much_reserve_price =\
+    test_results, carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = \
         test(num_iteration_per_test, loop, phase, sub_phase, test_nb, prop_reserve_price_involved_threshold)
     print(test_results)
     add_results(test_results)
@@ -261,12 +318,11 @@ def loop_fn():
 
 # Getting carriers and nodes to converge (part1)
 # getting the carriers to converge
-def convergence_carrier(threshold):
-    def condition_convergence_carrier():
-        list_of_convergence_degree = [carrier_p.convergence_state() for carrier_p in e.carriers]
-        return (sum(list_of_convergence_degree) / len(list_of_convergence_degree)) > threshold
+def convergence_carrier():
 
-    while not condition_convergence_carrier():
+    for _ in range(carrier_convergence_nb_iter):
+        list_of_convergence_degree = [carrier_p.convergence_state() for carrier_p in e.carriers]
+        print('Node level of knowledge:', sum(list_of_convergence_degree) / len(list_of_convergence_degree))
         loop_fn()
 
 
@@ -303,25 +359,27 @@ def convergence_nodes():
     while len(not_converged.keys()) > 0:
         loop_fn()
         add_weights_to_lists()
+        print('Not converged nodes:', not_converged)
 
 
 def part1():
     global carrier_threshold
     global phase, sub_phase, test_nb
-    phase = 1
+    phase = 0
     sub_phase = 0
     test_nb = 0
-
+    # do not touch the node weights
     if weight_master.is_learning:  # set nodes to not learning
         weight_master.is_learning = False
     for carrier in e.carriers:  # set carriers to learning and reinit_absolutely
         carrier.reinit_cost_tables_to_0()
         if not carrier.is_learning:
             carrier.is_learning = True
-    convergence_carrier(carrier_threshold)
+    convergence_carrier()
 
     sub_phase = 1
     test_nb = 0
+    weight_master.reinitialize()
     if not weight_master.is_learning:  # set nodes to learning
         weight_master.is_learning = True
     for carrier in e.carriers:  # set carriers to not learning
@@ -331,24 +389,34 @@ def part1():
 
     sub_phase = 2
     test_nb = 0
+    # do not touch the node weights
     for carrier in e.carriers:  # set carriers to learning and reinit to average
         carrier.reinit_cost_tables_to_average()
         if not carrier.is_learning:
             carrier.is_learning = True
-    convergence_carrier(carrier_threshold)
+    convergence_carrier()
 
 
 # Running the game until we have a stabilized market (part2)
-def part2():  # TODO
+def part2():
     global phase, sub_phase, test_nb
     phase = 1
     sub_phase = 0
     test_nb = 0
-    # set everyone to learning but do not reinitialize the learning of the carriers
-    # TODO change the values of the costs of the other such that still the same variance and mean
-    # TODO adapt the values learned accordingly
-
-    return 0
+    nb_iter = 0
+    # everyone is already learning because of phase 1
+    carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = loop_fn()
+    while len(carriers_with_non_positive_profit) > 11 or len(nodes_with_too_much_reserve_price) > 0:
+        for carrier in carriers_with_non_positive_profit:
+            carrier.remove_a_life()
+        for node_p in nodes_with_too_much_reserve_price:
+            create_carrier(node_p)
+        print(len(e.carriers), 'carriers',)
+        print(len(carriers_with_non_positive_profit), 'carriers with non positive profit')
+        print(len(nodes_with_too_much_reserve_price), 'nodes with too much reserve price')
+        carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = loop_fn()
+        nb_iter += 1
+    return nb_iter
 
 
 # Loop
@@ -357,6 +425,7 @@ start_time = time.time()
 while nb_iter_for_part2 > 0:
     part1()
     nb_iter_for_part2 = part2()
+    loop += 1
 print("This is the last part1")
 part1()
 

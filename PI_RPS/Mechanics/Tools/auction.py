@@ -63,7 +63,7 @@ class Auction(abc.ABC):
         winning_carrier.get_attribution(**d['kwargs'])
 
     def _write_loosing_carriers(self) -> None:
-        """Notify the remaining Carriers in the auction list that they """
+        """Notify the remaining Carriers in the auction list that they have lost"""
         for carrier in self._carriers:
             self._results['Carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
 

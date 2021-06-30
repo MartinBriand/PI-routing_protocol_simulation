@@ -42,6 +42,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
                  max_lost_auctions_in_a_row: int,
                  last_won_node: Optional['Node'],
                  nb_episode_at_last_won_node: int,
+                 nb_lives: int,
                  max_nb_infos_per_node: int,
                  costs_table: Optional['CostsTable'],
                  list_of_costs_table: Optional['ListOfCostsTable'],
@@ -64,6 +65,8 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
                          transit_cost=transit_cost,
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
+
+        self._nb_lives = nb_lives
 
         self._is_learning = is_learning
 
@@ -120,6 +123,19 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         self._total_nb_cost_infos = 0
         self._total_max_nb_cost_infos = 0
         self._init_total_nb_cost_infos()
+
+    def remove_a_life(self):
+        if self._nb_lives == 0:
+            self._delete()
+        else:
+            self._nb_lives -= 1
+
+    def _delete(self):
+        # loads and auction will be cleaned, so we need to get out of the actors and environment only, not the tools
+        if not self._in_transit:
+            self._next_node.remove_carrier_from_waiting_list(self)
+        self._environment.remove_carrier(self)
+
 
     def _decide_next_node(self) -> 'Node':
         """

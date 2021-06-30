@@ -33,18 +33,22 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         """To calculate the auction cost on a demand of the auction, before asking the shipper to pay"""
         return self._auction_cost
 
-    def set_weight(self, departure: 'DummyNode', arrival: 'DummyNode', value: float) -> None:
+    def set_weights(self, departure: 'DummyNode', arrival: 'DummyNode', value: float) -> None:
         """Called by the weight master to change the weights"""
         # assert departure != self  # should not be called, remove for speed reasons
         self._weights[arrival][departure] = value
 
-    def set_init_weight(self, departure: 'DummyNode', arrival: 'DummyNode', value: float) -> None:
+    def set_init_weights(self, departure: 'DummyNode', arrival: 'DummyNode', value: float) -> None:
         """Called by the weight master at weight initialization"""
         assert arrival != self and departure != self, "Cannot create self weight"
         if arrival not in self._weights:
             self._weights[arrival] = {}
         assert departure not in self._weights[arrival].keys(), "Connexion already created"
         self._weights[arrival][departure] = value
+
+    def delete_weights(self):
+        """Called during some training"""
+        self._weights = {}
 
     @property
     def weight_master(self) -> 'DummyNodeWeightMaster':
@@ -111,6 +115,13 @@ class DummyNodeWeightMaster:
         self._broadcast_init_weights()
         self._is_initialized = True
 
+    def reinitialize(self, weights: Optional['NodeWeights'] = None) -> None:
+        """Will be called during some training"""
+        for node in self._nodes:
+            node.delete_weights()
+        self._is_initialized = False
+        self.initialize(weights=weights)
+
     def update_weights_with_new_infos(self, node: 'DummyNode', new_infos: List['Info']) -> None:
         """
         This is the method where the Nodes has some intelligence
@@ -161,7 +172,7 @@ class DummyNodeWeightMaster:
                 if arrival != node:
                     for departure in self._weights[arrival].keys():
                         if departure != node:
-                            node.set_weight(departure, arrival, self._weights[arrival][departure])
+                            node.set_weights(departure, arrival, self._weights[arrival][departure])
 
     def _broadcast_init_weights(self) -> None:
         """
@@ -172,7 +183,7 @@ class DummyNodeWeightMaster:
                 if arrival != node:
                     for departure in self._weights[arrival].keys():
                         if departure != node:
-                            node.set_init_weight(departure, arrival, self._weights[arrival][departure])
+                            node.set_init_weights(departure, arrival, self._weights[arrival][departure])
 
     def readable_weights(self) -> Dict:
         result = {}

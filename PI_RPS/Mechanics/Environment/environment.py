@@ -4,7 +4,6 @@ Environment file
 
 from typing import TYPE_CHECKING, List, Optional, Dict, Any
 
-from PI_RPS.Mechanics.Actors.Carriers.learning_agent import LearningAgent
 from PI_RPS.prj_typing.types import Distance
 
 if TYPE_CHECKING:
@@ -12,6 +11,7 @@ if TYPE_CHECKING:
     from PI_RPS.Mechanics.Tools.load import Load
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
     from PI_RPS.Mechanics.Actors.Shippers.shipper import Shipper
+    from PI_RPS.Mechanics.Actors.Carriers.learning_agent import LearningAgent
 
 
 class Environment:
@@ -111,6 +111,10 @@ class Environment:
     def add_carrier(self, carrier: 'Carrier') -> None:
         """add_carrier function"""
         self._carriers.append(carrier)
+
+    def remove_carrier(self, carrier: 'Carrier') -> None:
+        """Remove a carrier from the list (called by cost_learning carriers after bankruptcy)"""
+        self._carriers.remove(carrier)
 
     def add_shipper(self, shipper: 'Shipper') -> None:
         """add_shipper function"""
