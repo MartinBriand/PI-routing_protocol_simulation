@@ -296,9 +296,9 @@ loop = 0
 phase = 0
 sub_phase = 0
 test_nb = 0
-num_iteration_per_test = 200
-num_train_per_pass = 1000
-carrier_convergence_nb_iter = 50
+num_iteration_per_test = 500
+num_train_per_pass = 2000
+carrier_convergence_nb_iter = 25
 prop_reserve_price_involved_threshold = 0.01
 
 
@@ -407,7 +407,9 @@ def part2():
     nb_iter = 0
     # everyone is already learning because of phase 1
     carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = loop_fn()
-    while len(carriers_with_non_positive_profit) > 11 or len(nodes_with_too_much_reserve_price) > 0:
+    old_nb_carriers = len(e.carriers)
+    while len(e.carriers) <= old_nb_carriers:
+        old_nb_carriers = len(e.carriers)
         for carrier in carriers_with_non_positive_profit:
             carrier.remove_a_life()
         for node_p in nodes_with_too_much_reserve_price:
