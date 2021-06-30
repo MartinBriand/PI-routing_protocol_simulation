@@ -18,7 +18,8 @@ node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'P
 
 n_carriers_per_node = 30  # @param {type:"integer"}
 max_nb_infos_per_node = 20
-nb_lives = 8
+nb_lives_start = 8
+nb_lives_after = 15
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 10000.  # @param{type:"number"}
@@ -70,7 +71,7 @@ weight_master = e.nodes[0].weight_master
 counter = {}
 
 
-def create_carrier(node_p):
+def create_carrier(node_p, nb_lives_p):
     if node_p in counter.keys():
         counter[node_p] += 1
     else:
@@ -99,7 +100,7 @@ def create_carrier(node_p):
                                        max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                        last_won_node=None,
                                        nb_episode_at_last_won_node=0,
-                                       nb_lives=nb_lives,
+                                       nb_lives=nb_lives_p,
                                        max_nb_infos_per_node=max_nb_infos_per_node,
                                        costs_table=None,
                                        list_of_costs_table=None,
@@ -126,7 +127,7 @@ def create_carrier(node_p):
                                        max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                        last_won_node=None,
                                        nb_episode_at_last_won_node=0,
-                                       nb_lives=nb_lives,
+                                       nb_lives=nb_lives_p,
                                        max_nb_infos_per_node=max_nb_infos_per_node,
                                        costs_table=None,
                                        list_of_costs_table=None,
@@ -136,7 +137,7 @@ def create_carrier(node_p):
 
 for k in range(n_carriers_per_node * len(e.nodes)):
     node = e.nodes[k % len(e.nodes)]
-    create_carrier(node)
+    create_carrier(node, nb_lives_p=nb_lives_start)
 
 # Result structure
 all_results = {'type': [],
@@ -410,7 +411,7 @@ def part2():
         for carrier in carriers_with_non_positive_profit:
             carrier.remove_a_life()
         for node_p in nodes_with_too_much_reserve_price:
-            create_carrier(node_p)
+            create_carrier(node_p=node_p, nb_lives_p=nb_lives_after)
         print(len(e.carriers), 'carriers',)
         print(len(carriers_with_non_positive_profit), 'carriers with non positive profit')
         print(len(nodes_with_too_much_reserve_price), 'nodes with too much reserve price')
