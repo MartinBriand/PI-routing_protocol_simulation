@@ -447,5 +447,5 @@ delta = int(end_time - start_time)
 delta_h = delta // 3600
 delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
-save_cost_learning_game(e, 'game1_dict.bin')
+save_cost_learning_game(e, node_name_dict)
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))
