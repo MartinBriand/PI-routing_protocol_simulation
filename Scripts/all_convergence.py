@@ -38,7 +38,7 @@ auction_type = ['MultiLanes', 'SingleLane'][0]
 
 learning_nodes = False  # @param{type:"boolean"}
 
-weights_file_name = None if learning_nodes else \
+weights_file_name = None if learning_nodes or auction_type == 'SingleLane' else \
     'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
     str(n_carriers_per_node) + '_' + str(initial_cost_majoration) + '.json'
 
@@ -377,24 +377,25 @@ def part1():
             carrier.is_learning = True
     convergence_carrier()
 
-    sub_phase = 1
-    test_nb = 0
-    weight_master.reinitialize()
-    if not weight_master.is_learning:  # set nodes to learning
-        weight_master.is_learning = True
-    for carrier in e.carriers:  # set carriers to not learning
-        if carrier.is_learning:
-            carrier.is_learning = False
-    convergence_nodes()
+    if auction_type == 'MultiLanes':
+        sub_phase = 1
+        test_nb = 0
+        weight_master.reinitialize()
+        if not weight_master.is_learning:  # set nodes to learning
+            weight_master.is_learning = True
+        for carrier in e.carriers:  # set carriers to not learning
+            if carrier.is_learning:
+                carrier.is_learning = False
+        convergence_nodes()
 
-    sub_phase = 2
-    test_nb = 0
-    # do not touch the node weights
-    for carrier in e.carriers:  # set carriers to learning and reinit to average
-        carrier.reinit_cost_tables_to_average()
-        if not carrier.is_learning:
-            carrier.is_learning = True
-    convergence_carrier()
+        sub_phase = 2
+        test_nb = 0
+        # do not touch the node weights
+        for carrier in e.carriers:  # set carriers to learning and reinit to average
+            carrier.reinit_cost_tables_to_average()
+            if not carrier.is_learning:
+                carrier.is_learning = True
+        convergence_carrier()
 
 
 # Running the game until we have a stabilized market (part2)

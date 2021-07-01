@@ -3,11 +3,14 @@
 import csv
 import json
 import os
+import pickle
 import random
 
 import numpy as np
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Type
 
+from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import SingleLaneLearningCostsCarrier, \
+    MultiLanesLearningCostsCarrier
 from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode, DummyNodeWeightMaster
 from PI_RPS.Mechanics.Actors.Nodes.node import Node
 from PI_RPS.Mechanics.Actors.Shippers.dummy_shipper import DummyShipper
@@ -32,13 +35,16 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                                              node_auction_cost: float,
                                              auction_type: str,
                                              learning_nodes: bool,
-                                             weights_file_name: str = None
+                                             weights_file_name: str = None,
+                                             weights_dict: Dict[str, float] = None
                                              ) -> None:
     path = os.path.abspath(os.path.dirname(__file__))
     lambdas: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_lambda_table.csv'))
     attribution: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_dest_attribution_table.csv'))
     distances: np.ndarray = _read_csv(os.path.join(path, 'data/city_distance_matrix_time_step.csv'))
+    assert weights_dict is None or weights_file_name is None, "Can't set weights with two attributes"
     weights = _read_weights_json(weights_file_name) if weights_file_name else None
+    weights = weights_dict if weights_dict else weights
 
     # here we filter everything except weights, which should be already filtered (or None)
     if node_filter is not None:
@@ -215,3 +221,54 @@ def write_readable_weights_json(readable_weights, file_name) -> None:
     path = os.path.join(path, 'data/experimental/' + file_name)
     with open(path, 'w') as f:
         json.dump(readable_weights, f)
+
+
+def load_learned_games(file_name):
+    path = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(path, 'game_configs/' + file_name)
+    with open(path, 'rb') as f:
+        d = pickle.load(f)
+    e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
+                    max_nb_infos_per_load=d['max_nb_infos_per_load'],
+                    init_node_weights_distance_scaling_factor=d['init_node_weights_distance_scaling_factor'],
+                    max_node_weights_distance_scaling_factor=d['max_node_weights_distance_scaling_factor'],
+                    t_c_mu=t_c_mu,
+                    t_c_sigma=t_c_sigma,
+                    ffh_c_mu=ffh_c_mu,
+                    ffh_c_sigma=ffh_c_sigma, )
+
+    load_realistic_nodes_and_shippers_to_env(e=e,
+                                             node_filter=d['node_filter'],
+                                             node_nb_info=d['node_nb_info'],
+                                             shippers_reserve_price_per_distance=d['shippers_reserve_price_per_distance'],
+                                             shipper_default_reserve_price=d['shipper_default_reserve_price'],
+                                             node_auction_cost=d['node_auction_cost'],
+                                             learning_nodes=False,
+                                             weights_dict=d['weights_dict'],
+                                             auction_type=d['auction_type']
+                                             )
+
+    node_name_dict = {node.name: node for node in e.nodes}
+
+    def transform_carrier_node_kwargs(carrier_args: Dict):
+        return1 = {key: node_name_dict[value] for key, value in carrier_args.items()
+                   if value in node_name_dict.keys()}
+        return2 = {key: node_name_dict[value] for key, value in carrier_args.items()
+                   if value not in node_name_dict.keys()}
+
+        return {**return1, **return2}
+
+    for carrier_config in d['carriers']:
+        if d['auction_type'] == 'SingleLane':
+            if carrier_config['type'] == 'CostLearning':
+                SingleLaneLearningCostsCarrier(**transform_carrier_node_kwargs(carrier_config['kwargs']))
+            else:
+                raise NotImplementedError
+        elif d['auction_type'] == 'MultiLanes':
+            if carrier_config['type'] == 'CostLearning':
+                MultiLanesLearningCostsCarrier(**transform_carrier_node_kwargs(carrier_config['kwargs']))
+            else:
+                raise NotImplementedError
+
+    return e
+
