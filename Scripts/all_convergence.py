@@ -320,7 +320,6 @@ def loop_fn():
 # Getting carriers and nodes to converge (part1)
 # getting the carriers to converge
 def convergence_carrier():
-
     for _ in range(carrier_convergence_nb_iter):
         list_of_convergence_degree = [carrier_p.convergence_state() for carrier_p in e.carriers]
         print('Node level of knowledge:', sum(list_of_convergence_degree) / len(list_of_convergence_degree))
@@ -408,17 +407,26 @@ def part2():
     # everyone is already learning because of phase 1
     carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = loop_fn()
     old_nb_carriers = len(e.carriers)
+
+    def part2_iter(carriers_with_non_positive_profit_p, nodes_with_too_much_reserve_price_p):
+        for carrier in carriers_with_non_positive_profit_p:
+            carrier.remove_a_life()
+        for node_p in nodes_with_too_much_reserve_price_p:
+            create_carrier(node_p=node_p, nb_lives_p=nb_lives_after)
+        print(len(e.carriers), 'carriers', )
+        print(len(carriers_with_non_positive_profit_p), 'carriers with non positive profit')
+        print(len(nodes_with_too_much_reserve_price_p), 'nodes with too much reserve price')
+        return loop_fn()
+
     while len(e.carriers) <= old_nb_carriers:
         old_nb_carriers = len(e.carriers)
-        for carrier in carriers_with_non_positive_profit:
-            carrier.remove_a_life()
-        for node_p in nodes_with_too_much_reserve_price:
-            create_carrier(node_p=node_p, nb_lives_p=nb_lives_after)
-        print(len(e.carriers), 'carriers',)
-        print(len(carriers_with_non_positive_profit), 'carriers with non positive profit')
-        print(len(nodes_with_too_much_reserve_price), 'nodes with too much reserve price')
-        carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = loop_fn()
+        carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = \
+            part2_iter(carriers_with_non_positive_profit, nodes_with_too_much_reserve_price)
         nb_iter += 1
+    print("15 more")
+    for _ in range(15):
+        carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = \
+            part2_iter(carriers_with_non_positive_profit, nodes_with_too_much_reserve_price)
     return nb_iter
 
 
