@@ -42,6 +42,9 @@ weights_file_name = None if learning_nodes or auction_type == 'SingleLane' else 
     'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
     str(n_carriers_per_node) + '_' + str(initial_cost_majoration) + '.json'
 
+terminaison_file_name = 1
+saving_file_name = auction_type + '_' + str(node_auction_cost) + '_' + str(terminaison_file_name) + '.bin'
+
 # Initialize the environment
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
                 max_nb_infos_per_load=max_nb_infos_per_load,
@@ -428,7 +431,7 @@ def part2():
         for _ in range(15):
             carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = \
                 part2_iter(carriers_with_non_positive_profit, nodes_with_too_much_reserve_price)
-        return nb_iter
+    return nb_iter
 
 
 # Loop
@@ -444,6 +447,5 @@ delta = int(end_time - start_time)
 delta_h = delta // 3600
 delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
-# final_readable_weights = weight_master.readable_weights()
 save_cost_learning_game(e, 'game1_dict.bin')
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))
