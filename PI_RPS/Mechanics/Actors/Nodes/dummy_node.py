@@ -193,6 +193,10 @@ class DummyNodeWeightMaster:
                 result[key1.name][key2.name] = self._weights[key1][key2]
         return result
 
+    def weights_text(self):
+        return {key1.name: {key2.name: value2 for key2, value2 in value1.items()}
+                for key1, value1 in self._weights.items()}
+
     @property
     def is_learning(self) -> bool:
         return self._is_learning
@@ -202,3 +206,7 @@ class DummyNodeWeightMaster:
         assert type(value) == bool, 'only set booleans'
         assert self._is_learning == (not value), 'only change to opposite'
         self._is_learning = value
+
+    @property
+    def nb_infos(self) -> int:
+        return self._nb_infos

@@ -40,3 +40,11 @@ class DummyShipper(Shipper):
             return self._default_reserve_price
         else:
             return self._reserve_price_per_distance * self._environment.get_distance(node, load.arrival)
+
+    @property
+    def reserve_price_per_distance(self) -> float:
+        return self._reserve_price_per_distance
+
+    @property
+    def default_reserve_price(self) -> float:
+        return self._default_reserve_price

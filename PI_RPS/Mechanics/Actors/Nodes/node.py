@@ -138,3 +138,7 @@ class Node(abc.ABC):
     @property
     def past_auctions(self):
         return self._past_auctions
+
+    @property
+    def auction_type(self) -> str:
+        return {value: key for key, value in available_auction_types.items()}[self._auction_type]

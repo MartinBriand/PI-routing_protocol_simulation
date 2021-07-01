@@ -193,6 +193,18 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         assert value == (not self._is_learning), "Only change to opposite"
         self._is_learning = value
 
+    @property
+    def max_lost_auctions_in_a_row(self) -> int:
+        return self._max_lost_auctions_in_a_row
+
+    @property
+    def max_nb_infos_per_node(self) -> int:
+        return self._max_nb_infos_per_node
+
+    @property
+    def nb_lives(self) -> int:
+        return self._nb_lives
+
 
 class MultiLanesLearningCostsCarrier(LearningCostsCarrier, MultiBidCarrier):
     """

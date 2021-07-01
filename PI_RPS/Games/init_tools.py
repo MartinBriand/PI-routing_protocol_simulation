@@ -7,10 +7,10 @@ import pickle
 import random
 
 import numpy as np
-from typing import List, Dict, Optional, Type
+from typing import List, Dict, Optional, Type, Any
 
 from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import SingleLaneLearningCostsCarrier, \
-    MultiLanesLearningCostsCarrier
+    MultiLanesLearningCostsCarrier, LearningCostsCarrier
 from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode, DummyNodeWeightMaster
 from PI_RPS.Mechanics.Actors.Nodes.node import Node
 from PI_RPS.Mechanics.Actors.Shippers.dummy_shipper import DummyShipper
@@ -223,7 +223,7 @@ def write_readable_weights_json(readable_weights, file_name) -> None:
         json.dump(readable_weights, f)
 
 
-def load_learned_games(file_name):
+def load_learned_games(file_name: str) -> Environment:
     path = os.path.abspath(os.path.dirname(__file__))
     path = os.path.join(path, 'game_configs/' + file_name)
     with open(path, 'rb') as f:
@@ -250,13 +250,14 @@ def load_learned_games(file_name):
 
     node_name_dict = {node.name: node for node in e.nodes}
 
-    def transform_carrier_node_kwargs(carrier_args: Dict):
+    def transform_carrier_node_kwargs(carrier_args: Dict[str, Any]) -> Dict[str, Any]:
+        to_transform_keys = ['home', 'previous_node', 'next_node']
         return1 = {key: node_name_dict[value] for key, value in carrier_args.items()
-                   if value in node_name_dict.keys()}
-        return2 = {key: node_name_dict[value] for key, value in carrier_args.items()
-                   if value not in node_name_dict.keys()}
+                   if key in to_transform_keys}
+        return2 = {key: value for key, value in carrier_args.items()
+                   if key not in to_transform_keys}
 
-        return {**return1, **return2}
+        return {**return1, **return2, **{'environment': e}}
 
     for carrier_config in d['carriers']:
         if d['auction_type'] == 'SingleLane':
@@ -272,3 +273,57 @@ def load_learned_games(file_name):
 
     return e
 
+
+def save_cost_learning_game(e: Environment, file_name: str) -> None:
+    d = {}
+    d['max_nb_infos_per_load'] = e.max_nb_infos_per_load
+    d['init_node_weights_distance_scaling_factor'] = e.init_node_weights_distance_scaling_factor
+    d['max_node_weights_distance_scaling_factor'] = e.max_node_weights_distance_scaling_factor
+    d['node_filter'] = [node.name for node in e.nodes]
+    d['node_nb_info'] = e.nodes[0].weight_master.nb_infos
+    d['shippers_reserve_price_per_distance'] = e.shippers[0].reserve_price_per_distance
+    d['shipper_default_reserve_price'] = e.shippers[0].default_reserve_price
+    d['node_auction_cost'] = e.nodes[0].auction_cost()  # yes it is a function and not a property
+    d['weights_dict'] = e.nodes[0].weight_master.weights_text()
+    d['auction_type'] = e.nodes[0].auction_type
+
+    carrier_configs = []
+    for carrier in e.carriers:
+        config = {}
+        if isinstance(carrier, LearningCostsCarrier):
+            config['type'] = 'CostLearning'
+            config['kwargs'] = {'name': carrier.name,
+                                'home': carrier.home.name,
+                                'in_transit': False,
+                                'previous_node': carrier.home.name,
+                                'next_node': carrier.home.name,
+                                'time_to_go': 0,
+                                'load': None,
+                                'episode_types': [],
+                                'episode_expenses': [],
+                                'episode_revenues': [],
+                                'this_episode_expenses': [],
+                                'this_episode_revenues': 0,
+                                'transit_cost': carrier.t_c,
+                                'far_from_home_cost': carrier.ffh_c,
+                                'time_not_at_home': 0,
+                                'nb_lost_auctions_in_a_row': 0,
+                                'max_lost_auctions_in_a_row': carrier.max_lost_auctions_in_a_row,
+                                'last_won_node': None,
+                                'nb_episode_at_last_won_node': 0,
+                                'nb_lives': carrier.nb_lives,
+                                'max_nb_infos_per_node': carrier.max_nb_infos_per_node,
+                                'costs_table': None,
+                                'list_of_costs_table': None,
+                                'is_learning': True
+                                }
+        else:
+            raise NotImplementedError
+        carrier_configs.append(config)
+
+    d['carriers'] = carrier_configs
+
+    path = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(path, 'game_configs/' + file_name)
+    with open(path, 'wb') as f:
+        pickle.dump(d, f)

@@ -6,7 +6,7 @@ import numpy as np
 import random
 import time
 
-from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, write_readable_weights_json
+from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, save_cost_learning_game
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
 from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import MultiLanesLearningCostsCarrier, \
     SingleLaneLearningCostsCarrier
@@ -363,7 +363,6 @@ def convergence_nodes():
 
 
 def part1():
-    global carrier_threshold
     global phase, sub_phase, test_nb
     phase = 0
     sub_phase = 0
@@ -446,5 +445,5 @@ delta_h = delta // 3600
 delta_m = (delta % 3600) // 60
 delta_s = (delta % 3600) % 60
 # final_readable_weights = weight_master.readable_weights()
-# write_readable_weights_json(final_readable_weights, future_weight_file_name)
+save_cost_learning_game(e, 'game1_dict.bin')
 print("Total time:", "{}h{}m{}s".format(delta_h, delta_m, delta_s))

@@ -172,6 +172,10 @@ class Environment:
         return self._carriers
 
     @property
+    def shippers(self) -> List['Shipper']:
+        return self._shippers
+
+    @property
     def loads(self) -> List['Load']:
         return self._loads
 
