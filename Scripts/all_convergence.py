@@ -425,7 +425,7 @@ def part2():
 # Loop
 nb_iter_for_part2 = 1
 start_time = time.time()
-while nb_iter_for_part2 > 0:
+while nb_iter_for_part2 > 1:
     part1()
     nb_iter_for_part2 = part2()
     loop += 1
