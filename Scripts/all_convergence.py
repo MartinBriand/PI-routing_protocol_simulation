@@ -423,14 +423,12 @@ def part2():
 
 
 # Loop
-nb_iter_for_part2 = 1
+nb_iter_for_part2 = 2
 start_time = time.time()
 while nb_iter_for_part2 > 1:
     part1()
     nb_iter_for_part2 = part2()
     loop += 1
-print("This is the last part1")
-part1()
 
 end_time = time.time()
 delta = int(end_time - start_time)
