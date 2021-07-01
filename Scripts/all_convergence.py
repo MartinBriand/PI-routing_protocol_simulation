@@ -423,11 +423,12 @@ def part2():
         carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = \
             part2_iter(carriers_with_non_positive_profit, nodes_with_too_much_reserve_price)
         nb_iter += 1
-    print("15 more")
-    for _ in range(15):
-        carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = \
-            part2_iter(carriers_with_non_positive_profit, nodes_with_too_much_reserve_price)
-    return nb_iter
+    if nb_iter > 1:
+        print("15 more")
+        for _ in range(15):
+            carriers_with_non_positive_profit, nodes_with_too_much_reserve_price = \
+                part2_iter(carriers_with_non_positive_profit, nodes_with_too_much_reserve_price)
+        return nb_iter
 
 
 # Loop
