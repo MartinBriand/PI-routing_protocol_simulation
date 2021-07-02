@@ -171,6 +171,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         self._nb_episode_at_last_won_node = 0
 
     def next_step(self) -> None:
+        super().next_step()
         if not self._in_transit:
             self._nb_episode_at_last_won_node += 1
 
