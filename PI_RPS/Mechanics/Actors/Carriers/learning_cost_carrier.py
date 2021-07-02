@@ -79,7 +79,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         self._max_nb_infos_per_node: int = max_nb_infos_per_node
         assert (costs_table is None and list_of_costs_table is None) or \
                (costs_table is not None and list_of_costs_table is not None), \
-               "costs_table and list_of_costs_table should be both None or both assigned"
+            "costs_table and list_of_costs_table should be both None or both assigned"
         if costs_table:
             self._costs_table: CostsTable = costs_table
             self._list_of_costs_table: ListOfCostsTable = list_of_costs_table
@@ -136,7 +136,6 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
             self._next_node.remove_carrier_from_waiting_list(self)
         self._environment.remove_carrier(self)
 
-
     def _decide_next_node(self) -> 'Node':
         """
         Go home only if more than self._max_time_not_at_home since last time at home
@@ -149,11 +148,10 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
     def dont_get_attribution(self) -> None:
         self._nb_lost_auctions_in_a_row += 1
         super().dont_get_attribution()
-        self._nb_episode_at_last_won_node += 1
 
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         super().get_attribution(load, next_node, reserve_price_involved)
-        #register value
+        # register value
         if self._is_learning and (self._last_won_node is not None):
             new_value = sum(self._episode_expenses[-self._nb_episode_at_last_won_node:]) \
                 if self._nb_episode_at_last_won_node > 0 else 0.
@@ -168,9 +166,13 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
                 self._nb_cost_infos[self._last_won_node] += 1
         # prepare for next round
         self._nb_lost_auctions_in_a_row = 0
-        #prepare for next round
+        # prepare for next round
         self._last_won_node = next_node
         self._nb_episode_at_last_won_node = 0
+
+    def next_step(self) -> None:
+        if not self._in_transit:
+            self._nb_episode_at_last_won_node += 1
 
     def _calculate_costs(self, from_node: 'Node', to_node: 'Node') -> float:
         """Will be called by bid"""

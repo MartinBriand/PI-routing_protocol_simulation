@@ -77,7 +77,6 @@ class Carrier(abc.ABC):
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         """To be called by the Nodes after an auction if a load was attributed to the Carriers"""
         self._in_transit = True
-        self._previous_node = self._next_node
         self._previous_node.remove_carrier_from_waiting_list(self)
         self._next_node = next_node
         self._time_to_go = self._environment.get_distance(self._previous_node, self._next_node)
@@ -91,7 +90,6 @@ class Carrier(abc.ABC):
     def dont_get_attribution(self) -> None:
         """To be called by the Nodes after an auction if the Carriers lost"""
         new_next_node = self._decide_next_node()
-        self._previous_node = self._next_node
         if new_next_node != self._next_node:
             self._in_transit = True
             self._next_node = new_next_node
@@ -129,6 +127,7 @@ class Carrier(abc.ABC):
             self._episode_types.append(('Empty', self._previous_node, self._next_node))
         self._load = None
         self._next_node.add_carrier_to_waiting_list(self)
+        self._previous_node = self._next_node
 
     def clear_load(self) -> None:
         """Called by the environment"""
