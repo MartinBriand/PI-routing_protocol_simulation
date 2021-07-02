@@ -252,12 +252,17 @@ def load_learned_games(file_name: str) -> Environment:
 
     def transform_carrier_node_kwargs(carrier_args: Dict[str, Any]) -> Dict[str, Any]:
         to_transform_keys = ['home', 'previous_node', 'next_node']
+        to_transform_dicts = ['costs_table', 'list_of_costs_table']
+
         return1 = {key: node_name_dict[value] for key, value in carrier_args.items()
                    if key in to_transform_keys}
-        return2 = {key: value for key, value in carrier_args.items()
-                   if key not in to_transform_keys}
+        return2 = {key1: {node_name_dict[key2]: value2
+                          for key2, value2 in value1.items()}
+                   for key1, value1 in carrier_args.items() if key1 in to_transform_dicts}
+        return3 = {key: value for key, value in carrier_args.items()
+                   if key not in to_transform_keys+to_transform_dicts}
 
-        return {**return1, **return2, **{'environment': e}}
+        return {**return1, **return2, **return3, **{'environment': e}}
 
     for carrier_config in d['carriers']:
         if d['auction_type'] == 'SingleLane':
@@ -309,8 +314,10 @@ def save_cost_learning_game(e: Environment, file_name: str) -> None:
                                  'nb_episode_at_last_won_node': 0,
                                  'nb_lives': carrier.nb_lives,
                                  'max_nb_infos_per_node': carrier.max_nb_infos_per_node,
-                                 'costs_table': None,
-                                 'list_of_costs_table': None,
+                                 'costs_table': {key.name: value
+                                                 for key, value in carrier.cost_table.items()},
+                                 'list_of_costs_table': {key.name: value
+                                                         for key, value in carrier.list_of_costs_table.items()},
                                  'is_learning': False
                                  }
                       }

@@ -12,7 +12,6 @@ from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import MultiLanesLea
     SingleLaneLearningCostsCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
 
-# node_filter = ['Bremen', 'Dresden']
 node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
                'Salzburg', 'Warsaw']
 
@@ -438,8 +437,8 @@ def part2():
 start_time = time.time()
 part1()
 part2()
+loop += 1
 part1()
-
 end_time = time.time()
 delta = int(end_time - start_time)
 delta_h = delta // 3600

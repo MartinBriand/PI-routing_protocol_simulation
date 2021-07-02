@@ -205,6 +205,14 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         return self._max_nb_infos_per_node
 
     @property
+    def cost_table(self) -> CostsTable:
+        return self._costs_table
+
+    @property
+    def list_of_costs_table(self) -> ListOfCostsTable:
+        return self._list_of_costs_table
+
+    @property
     def nb_lives(self) -> int:
         return self._nb_lives
 
