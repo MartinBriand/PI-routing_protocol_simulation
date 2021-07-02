@@ -315,7 +315,7 @@ def save_cost_learning_game(e: Environment, file_name: str) -> None:
                                 'max_nb_infos_per_node': carrier.max_nb_infos_per_node,
                                 'costs_table': None,
                                 'list_of_costs_table': None,
-                                'is_learning': True
+                                'is_learning': False
                                 }
         else:
             raise NotImplementedError
