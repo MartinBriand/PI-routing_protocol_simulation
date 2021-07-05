@@ -38,6 +38,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int,
+                 max_time_not_at_home: int,
                  nb_lost_auctions_in_a_row: int,
                  max_lost_auctions_in_a_row: int,
                  last_won_node: Optional['Node'],
@@ -66,12 +67,13 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
 
-        self._nb_lives = nb_lives
+        self._nb_lives: int = nb_lives
 
-        self._is_learning = is_learning
+        self._is_learning: bool = is_learning
 
-        self._nb_lost_auctions_in_a_row = nb_lost_auctions_in_a_row
-        self._max_lost_auctions_in_a_row = max_lost_auctions_in_a_row
+        self._nb_lost_auctions_in_a_row: int = nb_lost_auctions_in_a_row
+        self._max_lost_auctions_in_a_row: int = max_lost_auctions_in_a_row
+        self._max_time_not_at_home: int = max_time_not_at_home
 
         self._last_won_node: Optional['Node'] = last_won_node
         self._nb_episode_at_last_won_node: int = nb_episode_at_last_won_node
@@ -85,11 +87,11 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
             self._list_of_costs_table: ListOfCostsTable = list_of_costs_table
         else:
             self._costs_table: CostsTable = {}
-            self._list_of_costs_table = {}
+            self._list_of_costs_table: ListOfCostsTable = {}
             self._init_cost_tables()
 
-        self._total_nb_cost_infos = 0
-        self._total_max_nb_cost_infos = 0
+        self._total_nb_cost_infos: int = 0
+        self._total_max_nb_cost_infos: int = 0
         self._nb_cost_infos = {}
         self._init_total_nb_cost_infos()
 
@@ -140,7 +142,8 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         """
         Go home only if more than self._max_time_not_at_home since last time at home
         """
-        if self._nb_lost_auctions_in_a_row > self._max_lost_auctions_in_a_row:
+        if self._nb_lost_auctions_in_a_row > self._max_lost_auctions_in_a_row or \
+                self._time_not_at_home > self._max_time_not_at_home:
             return self._home
         else:
             return self._next_node

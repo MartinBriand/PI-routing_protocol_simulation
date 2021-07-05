@@ -23,8 +23,8 @@ from PI_RPS.prj_typing.types import NodeWeights
 nb_hours_per_time_unit: float = 6.147508  # 390 km at an average speed of 39.42 km/h)
 t_c_mu: float = 33. * nb_hours_per_time_unit
 t_c_sigma: float = 4.15 * nb_hours_per_time_unit
-ffh_c_mu: float = 20. * nb_hours_per_time_unit
-ffh_c_sigma: float = 1.00 * nb_hours_per_time_unit
+ffh_c_mu: float = 7.35 * nb_hours_per_time_unit
+ffh_c_sigma: float = 7.35/20. * nb_hours_per_time_unit
 
 
 def load_realistic_nodes_and_shippers_to_env(e: Environment,

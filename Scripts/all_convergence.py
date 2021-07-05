@@ -32,6 +32,7 @@ node_nb_info = 100  # @param{type:"integer"}
 max_nb_infos_per_load = 15  # @param{type:"integer"}
 
 max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
+max_time_not_at_home = 24  # about 6 days before getting back home
 
 auction_type = ['MultiLanes', 'SingleLane'][0]
 
@@ -98,6 +99,7 @@ def create_carrier(node_p, nb_lives_p):
                                        transit_cost=road_costs,
                                        far_from_home_cost=drivers_costs,
                                        time_not_at_home=0,
+                                       max_time_not_at_home=max_time_not_at_home,
                                        nb_lost_auctions_in_a_row=0,
                                        max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                        last_won_node=None,
@@ -125,6 +127,7 @@ def create_carrier(node_p, nb_lives_p):
                                        transit_cost=road_costs,
                                        far_from_home_cost=drivers_costs,
                                        time_not_at_home=0,
+                                       max_time_not_at_home=max_time_not_at_home,
                                        nb_lost_auctions_in_a_row=0,
                                        max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
                                        last_won_node=None,

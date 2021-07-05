@@ -195,7 +195,7 @@ class SingleBidCarrier(Carrier, abc.ABC):
 
 class CarrierWithCosts(Carrier, abc.ABC):
     """The idea is to modify the Carrier class to have a single cost structure,
-    Always pu first in inheritance to call the init method"""
+    Always put first in inheritance to call the init method"""
 
     _cost_dimension: int = 3
 
@@ -237,6 +237,7 @@ class CarrierWithCosts(Carrier, abc.ABC):
             self._ffh_c: float = far_from_home_cost
         else:
             raise ValueError("transit_cost and far_from_home_costs should either both be None or both have value")
+        self._a_c_percentage: float = 0.2
 
         self._time_not_at_home: int = time_not_at_home
 
@@ -255,8 +256,7 @@ class CarrierWithCosts(Carrier, abc.ABC):
         context
         """
         t = time_not_at_home if time_not_at_home is not None else self._time_not_at_home
-        return self._ffh_c + 53. * (exp(self._environment.nb_hours_per_time_unit * 0.0015 * t) - 1.) \
-            if t > 0 else 0.
+        return self._ffh_c + 53. + self._a_c_percentage * (self._ffh_c + self._t_c) if t > 0 else 0.
 
     def _update_ffh_cost_functions(self) -> None:
         """Here we update the cost parameter AFTER calculating the costs of the current time step"""
