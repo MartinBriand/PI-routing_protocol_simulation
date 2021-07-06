@@ -31,7 +31,7 @@ max_node_weights_distance_scaling_factor = init_node_weights_distance_scaling_fa
 node_auction_cost = 0.  # @param{type:"number"}
 node_nb_info = 40  # @param{type:"integer"}
 max_nb_infos_per_load = 8  # @param{type:"integer"}
-gamma_for_equal = 0.95
+gamma_for_equal = 0.98
 
 max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 max_time_not_at_home = 24  # about 6 days before getting back home
@@ -71,6 +71,7 @@ load_realistic_nodes_and_shippers_to_env(e=e,
 
 # Get a reference to the weight master of the nodes, this will help when training the nodes
 weight_master = e.nodes[0].weight_master
+node_name_dict = {node.name: node for node in e.nodes}
 
 # Create the carriers
 counter = {}
@@ -368,7 +369,9 @@ def convergence_nodes():
             if len(not_converged[arrival]) == 0:
                 del not_converged[arrival]
 
-        weight_master.update_equal_weights(is_equal, gamma=gamma_for_equal)
+        weight_master.update_equal_weights({node_name_dict[key1]: [node_name_dict[key2] for key2 in value1]
+                                            for key1, value1 in is_equal.items()},
+                                           gamma=gamma_for_equal)
 
     print('Weights:', weight_master.readable_weights())
     while len(not_converged.keys()) > 0:
@@ -453,6 +456,10 @@ part1()
 part2()
 loop += 1
 part1()
+print("30 more")
+for _ in range(30):
+    loop_fn()
+
 end_time = time.time()
 delta = int(end_time - start_time)
 delta_h = delta // 3600
