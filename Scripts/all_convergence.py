@@ -6,7 +6,8 @@ import numpy as np
 import random
 import time
 
-from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, save_cost_learning_game
+from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, save_cost_learning_game, \
+    load_learned_games
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
 from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import MultiLanesLearningCostsCarrier, \
     SingleLaneLearningCostsCarrier
@@ -22,14 +23,15 @@ nb_lives_after = 15
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 10000.  # @param{type:"number"}
-init_node_weights_distance_scaling_factor = 500.  # @param{type:"number"}
+init_node_weights_distance_scaling_factor = 1000.  # @param{type:"number"}
 initial_cost_majoration = 1.5
 # not used if initialized by artificial weights
-max_node_weights_distance_scaling_factor = 500. * 1.3  # @param{type:"number"}
+max_node_weights_distance_scaling_factor = init_node_weights_distance_scaling_factor * 1.8  # @param{type:"number"}
 # should be big enough to be unrealistic.
 node_auction_cost = 0.  # @param{type:"number"}
-node_nb_info = 100  # @param{type:"integer"}
-max_nb_infos_per_load = 15  # @param{type:"integer"}
+node_nb_info = 40  # @param{type:"integer"}
+max_nb_infos_per_load = 8  # @param{type:"integer"}
+gamma_for_equal = 0.95
 
 max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 max_time_not_at_home = 24  # about 6 days before getting back home
@@ -349,22 +351,31 @@ def convergence_nodes():
                 previous_weights[arrival][departure].append(readable_weights[arrival][departure])
 
         has_converged = {}
+        is_equal = {}
         for arrival in not_converged.keys():
             has_converged[arrival] = []
+            is_equal[arrival] = []  # only change that for not converged yet
             for departure in not_converged[arrival]:
                 this_previous_weights = previous_weights[arrival][departure]
                 if this_previous_weights[-2] < this_previous_weights[-1]:
                     has_converged[arrival].append(departure)
+                elif this_previous_weights[-2] == this_previous_weights[-1]:
+                    is_equal[arrival].append(departure)
+
         for arrival in has_converged.keys():
             for departure in has_converged[arrival]:
                 not_converged[arrival].remove(departure)
             if len(not_converged[arrival]) == 0:
                 del not_converged[arrival]
 
+        weight_master.update_equal_weights(is_equal, gamma=gamma_for_equal)
+
+    print('Weights:', weight_master.readable_weights())
     while len(not_converged.keys()) > 0:
         loop_fn()
         add_weights_to_lists()
         print('Not converged nodes:', not_converged)
+        print('Weights:', weight_master.readable_weights())
 
 
 def part1():

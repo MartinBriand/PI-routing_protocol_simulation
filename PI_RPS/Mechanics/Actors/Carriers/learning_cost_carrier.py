@@ -219,6 +219,10 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
     def nb_lives(self) -> int:
         return self._nb_lives
 
+    @property
+    def max_time_not_at_home(self) -> int:
+        return self._max_time_not_at_home
+
 
 class MultiLanesLearningCostsCarrier(LearningCostsCarrier, MultiBidCarrier):
     """

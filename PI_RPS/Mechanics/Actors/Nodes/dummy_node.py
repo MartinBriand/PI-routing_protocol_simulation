@@ -144,6 +144,8 @@ class DummyNodeWeightMaster:
                             if info.arrival not in info_start_arrival_dict[info.start].keys():
                                 info_start_arrival_dict[info.start][info.arrival] = []
                             info_start_arrival_dict[info.start][info.arrival].append(info.cost)
+                        else:
+                            print('coucou')
                 for start in info_start_arrival_dict.keys():
                     for arrival in info_start_arrival_dict[start].keys():
                         w = self._weights[arrival][start]
@@ -162,6 +164,13 @@ class DummyNodeWeightMaster:
                 self._has_learned = False
                 for node in self._has_asked_to_learn.keys():
                     self._has_asked_to_learn[node] = False
+
+    def update_equal_weights(self, is_equal: Dict, gamma: float) -> None:
+        """Called during training"""
+        for arrival in is_equal.keys():
+            for departure in is_equal[arrival]:
+                self._weights[arrival][departure] *= gamma
+        self._broadcast_weights()
 
     def _broadcast_weights(self) -> None:
         """

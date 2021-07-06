@@ -62,7 +62,7 @@ class Auction(abc.ABC):
         d = self._results['Carriers'][winning_carrier]
         winning_carrier.get_attribution(**d['kwargs'])
 
-    def _write_loosing_carriers(self) -> None:
+    def _notify_loosing_carriers(self) -> None:
         """Notify the remaining Carriers in the auction list that they have lost"""
         for carrier in self._carriers:
             self._results['Carriers'][carrier] = {'is_attributed': False, 'kwargs': {}}
@@ -111,7 +111,7 @@ class MultiLanesAuction(Auction):
                 self._notify_winning_carrier(winning_carrier)
                 self._ask_payment(load)
 
-        self._write_loosing_carriers()
+        self._notify_loosing_carriers()
         self._terminate_auction()
         self._source.signal_as_past_auction(self)
 
@@ -238,7 +238,7 @@ class SingleLaneAuction(Auction):
                 self._notify_winning_carrier(winning_carrier)
                 self._ask_payment(load)
 
-        self._write_loosing_carriers()
+        self._notify_loosing_carriers()
         self._terminate_auction()
         self._source.signal_as_past_auction(self)
 

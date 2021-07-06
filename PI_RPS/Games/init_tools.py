@@ -318,6 +318,7 @@ def save_cost_learning_game(e: Environment, file_name: str) -> None:
                                                  for key, value in carrier.cost_table.items()},
                                  'list_of_costs_table': {key.name: value
                                                          for key, value in carrier.list_of_costs_table.items()},
+                                 'max_time_not_at_home': carrier.max_time_not_at_home,
                                  'is_learning': False
                                  }
                       }
