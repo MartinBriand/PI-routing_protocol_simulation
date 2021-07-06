@@ -26,7 +26,7 @@ shipper_default_reserve_price = 10000.  # @param{type:"number"}
 init_node_weights_distance_scaling_factor = 1000.  # @param{type:"number"}
 initial_cost_majoration = 1.5
 # not used if initialized by artificial weights
-max_node_weights_distance_scaling_factor = init_node_weights_distance_scaling_factor * 1.8  # @param{type:"number"}
+max_node_weights_distance_scaling_factor = init_node_weights_distance_scaling_factor * 2.2  # @param{type:"number"}
 # should be big enough to be unrealistic.
 node_auction_cost = 0.  # @param{type:"number"}
 node_nb_info = 40  # @param{type:"integer"}
