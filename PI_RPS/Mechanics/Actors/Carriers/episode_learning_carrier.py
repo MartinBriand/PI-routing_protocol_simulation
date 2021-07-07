@@ -42,7 +42,7 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'Environment',
-                 episode_types: List[Tuple[str, 'Node', 'Node']],
+                 episode_types: List[Tuple[str, 'Node', 'Node', bool]],
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
@@ -85,7 +85,7 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
         self._t_c_obs = (self._t_c - self._environment.t_c_mu) / self._environment.t_c_sigma
         self._ffh_c_obs = (self._ffh_c - self._environment.ffh_c_mu) / self._environment.ffh_c_sigma
 
-        self._reserve_price_involved = False
+        self._reserve_price_involved_in_episode = False
 
         self._episode_learning_agent = episode_learning_agent
         self._episode_learning_agent.add_carrier(self)
@@ -134,7 +134,7 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         super().get_attribution(load, next_node, reserve_price_involved)
         self._nb_lost_auctions_in_a_row = 0
-        self._reserve_price_involved = self._reserve_price_involved or reserve_price_involved
+        self._reserve_price_involved_in_episode = self._reserve_price_involved_in_episode or reserve_price_involved
 
     def _calculate_costs(self, from_node: 'Node', to_node: 'Node') -> float:
         """Will be called by bid"""
@@ -156,7 +156,7 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
         assert self._is_first_step, "only call if we have a first step"
         if not self._in_transit:
             self._set_initial_time_step()
-            self._reserve_price_involved = False
+            self._reserve_price_involved_in_episode = False
 
     def _set_initial_time_step(self):
         observation = tf_expand_dims(tf_constant([self._t_c_obs,
@@ -200,7 +200,7 @@ class EpisodeLearningCarrier(CarrierWithCosts, abc.ABC):
                                 action_step=self._policy_step,
                                 next_time_step=next_time_step)
 
-        if not self._reserve_price_involved:
+        if not self._reserve_price_involved_in_episode:
             # even if the buffer is full we write the new events (this changes nothing)
             self._replay_buffer.add_batch(transition)
 
