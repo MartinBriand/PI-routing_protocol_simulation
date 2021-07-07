@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, List
 if TYPE_CHECKING:
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
     from PI_RPS.Mechanics.Tools.load import Load
+    from PI_RPS.Mechanics.Actors.Shippers.shipper import NodeLaw
+    from PI_RPS.Mechanics.Environment.environment import Environment
 
 
 class DummyShipper(Shipper):
@@ -38,3 +40,11 @@ class DummyShipper(Shipper):
             return self._default_reserve_price
         else:
             return self._reserve_price_per_distance * self._environment.get_distance(node, load.arrival)
+
+    @property
+    def reserve_price_per_distance(self) -> float:
+        return self._reserve_price_per_distance
+
+    @property
+    def default_reserve_price(self) -> float:
+        return self._default_reserve_price

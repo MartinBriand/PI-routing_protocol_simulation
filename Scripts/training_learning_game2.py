@@ -10,12 +10,12 @@ import time
 
 """# Initialization"""
 node_filter = ['Bremen', 'Dresden']  # , 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam',# 'Saarbrücken',
-# 'Salzburg'] # , 'Warsaw']
+# 'Salzburg']  #, 'Warsaw']
 
 n_carriers_per_node = 8  # @param {type:"integer"}
 cost_majoration = 1.  # to select the correct weights  @param {type:"integer"}
 action_min = 0.  # @param {type:"number"}
-action_max = 10000.  # @param {type:"number"}
+action_max = 3.  # @param {type:"number"}
 discount = 0.95  # @param {type:"number"}
 
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
@@ -36,13 +36,13 @@ max_nb_infos_per_load = 5  # @param{type:"integer"}
 max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 
 tnah_divisor = 30.  # keep at 30, not a parameter
-reward_scale_factor_p = 1. / 500.  # keep at 1./500., not a parameter
+reward_scale_factor_p = 1. / 400.  # keep at 1./30., not a parameter
 
 replay_buffer_batch_size = 15  # @param {type:"integer"}
 buffer_max_length = 40  # @param{type:"integer"}
 
-starting_exploration_noise = 50.  # @param {type:"number"}
-final_exploration_noise = 20.  # @param {type:"number"}
+starting_exploration_noise = 0.2  # @param {type:"number"}
+final_exploration_noise = 0.02  # @param {type:"number"}
 exploration_noise = starting_exploration_noise  # not a param
 
 actor_fc_layer_params = (64, 64)  # @param
@@ -58,23 +58,23 @@ actor_update_period_p = 2  # @param {type:"integer"}
 actor_learning_rate = 0.001  # @param{type:"number"}
 critic_learning_rate = 0.001  # @param{type:"number"}
 
+la_key = 'main'
+
 target_policy_noise_p = final_exploration_noise  # @param {type:"number"}
 target_policy_noise_clip_p = target_policy_noise_p * 75. * 30.  # not a parameter
 
-la_key = 'main'
-
 learning_nodes = False  # @param {type:"boolean"}
 
-auction_type = ['MultiLanes', 'SingleLane'][0]
+auction_type = ['MultiLanes', 'SingleLane'][1]
 
-weights_file_name = None if learning_nodes else 'weights_' + 'MultiLanes' + '_' + str(node_auction_cost) + '_' + \
+weights_file_name = None if learning_nodes else 'weights_' + auction_type + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
 weights_file_name = None if learning_nodes else 'B-D_' + 'MultiLanes' + '_' + str(node_auction_cost) + '_' + \
                                                 str(n_carriers_per_node) + '_' + str(cost_majoration) + '.json'
 
-e = load_tfa_env_and_agent(carrier_type=1,
-                           n_carriers=len(node_filter) * n_carriers_per_node,
+e = load_tfa_env_and_agent(carrier_type=2,
+                           n_carriers=len(node_filter) * n_carriers_per_node,  # 11 is the number of nodes
                            shippers_reserve_price_per_distance=shippers_reserve_price_per_distance,
                            init_node_weights_distance_scaling_factor=init_node_weights_distance_scaling_factor,
                            max_node_weights_distance_scaling_factor=max_node_weights_distance_scaling_factor,
@@ -108,7 +108,7 @@ e = load_tfa_env_and_agent(carrier_type=1,
                            critic_action_fc_layer_params=critic_action_fc_layer_params,
                            critic_joint_fc_layer_params=critic_joint_fc_layer_params,
                            critic_joint_dropout_layer_params=critic_joint_dropout_layer_params,
-                           key=la_key,
+                           key = la_key
                            )
 
 learning_agent = e.learning_agents[la_key]

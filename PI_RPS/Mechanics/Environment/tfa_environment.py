@@ -15,7 +15,7 @@ from PI_RPS.prj_typing.types import NodeStates
 
 if TYPE_CHECKING:
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
-    from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningAgent, LearningCarrier
+    from PI_RPS.Mechanics.Actors.Carriers.learning_carrier import LearningCarrier
 
 
 class TFAEnvironment(Environment):  # , TFEnvironment):
@@ -44,15 +44,15 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
                          t_c_mu=t_c_mu,
                          t_c_sigma=t_c_sigma,
                          ffh_c_mu=ffh_c_mu,
-                         ffh_c_sigma=ffh_c_sigma)
+                         ffh_c_sigma=ffh_c_sigma,
+                         action_min=action_min,
+                         action_max=action_max,)
 
-        self._tnah_divisor: float = tnah_divisor
-        self._action_min: float = action_min
-        self._action_max: float = action_max
+        self._tnah_divisor = tnah_divisor
+
         # self._max_time_not_at_home = max_time_not_at_home
         self._enough_transitions_carriers: List['LearningCarrier'] = []
         self._node_states: NodeStates = {}
-        self._learning_agent = None
 
     def this_node_state(self, node: 'Node') -> EagerTensor:
         """Return the state of the present node"""
@@ -65,12 +65,6 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
             var[k - 1] = 0
             var[k] = 1
             self._node_states[self._nodes[k]] = constant(var.copy())
-
-    def register_learning_agent(self, learning_agent: 'LearningAgent') -> None:
-        """
-        Called by the learning agent to signal its presence to the environment
-        """
-        self._learning_agent = learning_agent
 
     def add_carrier_to_enough_transitions(self, carrier: 'LearningCarrier') -> None:
         """
@@ -92,18 +86,6 @@ class TFAEnvironment(Environment):  # , TFEnvironment):
     @property
     def tnah_divisor(self) -> float:
         return self._tnah_divisor
-
-    @property
-    def learning_agent(self) -> 'LearningAgent':
-        return self._learning_agent
-
-    @property
-    def action_min(self) -> float:
-        return self._action_min
-
-    @property
-    def action_max(self) -> float:
-        return self._action_max
 
     @property
     def enough_transitions_carriers(self) -> List['LearningCarrier']:

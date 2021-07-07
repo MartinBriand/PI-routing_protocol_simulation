@@ -32,7 +32,7 @@ class Carrier(abc.ABC):
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'Environment',
-                 episode_types: List[Tuple[str, 'Node', 'Node']],
+                 episode_types: List[Tuple[str, 'Node', 'Node', bool]],
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
@@ -50,7 +50,7 @@ class Carrier(abc.ABC):
 
         # costs are allowed to be methods
 
-        self._episode_types: List[Tuple[str, 'Node', 'Node']] = episode_types
+        self._episode_types: List[Tuple[str, 'Node', 'Node', bool]] = episode_types
         # Transport, Wait, Empty  - origin  - dest
         self._episode_expenses: List[float] = episode_expenses
         self._episode_revenues: List[float] = episode_revenues
@@ -64,6 +64,8 @@ class Carrier(abc.ABC):
         if not self._in_transit:  # should be instantiated after the creations of the Nodes
             self._next_node.add_carrier_to_waiting_list(self)
 
+        self._reserve_price_involved_in_transition = False
+
     @abc.abstractmethod
     def bid(self, *args, **kwargs) -> CarrierBid:
         """To be called by the Nodes before an auction"""
@@ -74,14 +76,14 @@ class Carrier(abc.ABC):
         """Decide of a next Nodes after losing an auction (can be the same Nodes when needed)"""
         raise NotImplementedError
 
-    def get_attribution(self, load: 'Load', next_node: 'Node') -> None:
+    def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
         """To be called by the Nodes after an auction if a load was attributed to the Carriers"""
         self._in_transit = True
-        self._previous_node = self._next_node
         self._previous_node.remove_carrier_from_waiting_list(self)
         self._next_node = next_node
         self._time_to_go = self._environment.get_distance(self._previous_node, self._next_node)
         self._load = load  # note that the get_attribution of the load is called by the auction of the node
+        self._reserve_price_involved_in_transition = reserve_price_involved
 
     def receive_payment(self, value: float) -> None:
         """To be called by the Shippers after an auction if a load was attributed"""
@@ -91,7 +93,6 @@ class Carrier(abc.ABC):
     def dont_get_attribution(self) -> None:
         """To be called by the Nodes after an auction if the Carriers lost"""
         new_next_node = self._decide_next_node()
-        self._previous_node = self._next_node
         if new_next_node != self._next_node:
             self._in_transit = True
             self._next_node = new_next_node
@@ -107,7 +108,7 @@ class Carrier(abc.ABC):
                 self._arrive_at_next_node()  # this does not reinitialize the costs trackers nor generate next state
         else:
             new_cost = self._far_from_home_costs()
-            self._episode_types.append(('Wait', self._previous_node, self._next_node))
+            self._episode_types.append(('Wait', self._previous_node, self._next_node, False))
 
         self._this_episode_expenses.append(new_cost)
         self._total_expenses += new_cost
@@ -115,9 +116,8 @@ class Carrier(abc.ABC):
         if not self._in_transit:  # May have been modified by the _arrive_at_next_node method
             self._episode_revenues.append(self._this_episode_revenues)
             self._episode_expenses.append(sum(self._this_episode_expenses))
-            self._this_episode_revenues = 0
+            self._this_episode_revenues = 0.
             self._this_episode_expenses.clear()
-            # And generate episode if needed in the LearningCarrier Method
 
     def _arrive_at_next_node(self) -> None:
         """Called by next_step to do all the variable settings when arrive at a next Nodes
@@ -125,11 +125,15 @@ class Carrier(abc.ABC):
         self._in_transit = False
         if self._load:  # is not none
             self._load.arrive_at_next_node()
-            self._episode_types.append(('Transport', self._previous_node, self._next_node))
+            self._episode_types.append(('Transport',
+                                        self._previous_node,
+                                        self._next_node,
+                                        self._reserve_price_involved_in_transition))
         else:
-            self._episode_types.append(('Empty', self._previous_node, self._next_node))
+            self._episode_types.append(('Empty', self._previous_node, self._next_node, False))
         self._load = None
         self._next_node.add_carrier_to_waiting_list(self)
+        self._previous_node = self._next_node
 
     def clear_load(self) -> None:
         """Called by the environment"""
@@ -155,7 +159,7 @@ class Carrier(abc.ABC):
         raise NotImplementedError
 
     @property
-    def episode_types(self) -> List[Tuple[str, 'Node', 'Node']]:
+    def episode_types(self) -> List[Tuple[str, 'Node', 'Node', bool]]:
         return self._episode_types
 
     @property
@@ -197,7 +201,7 @@ class SingleBidCarrier(Carrier, abc.ABC):
 
 class CarrierWithCosts(Carrier, abc.ABC):
     """The idea is to modify the Carrier class to have a single cost structure,
-    Always pu first in inheritance to call the init method"""
+    Always put first in inheritance to call the init method"""
 
     _cost_dimension: int = 3
 
@@ -210,14 +214,14 @@ class CarrierWithCosts(Carrier, abc.ABC):
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'Environment',
-                 episode_types: List[Tuple[str, 'Node', 'Node']],
+                 episode_types: List[Tuple[str, 'Node', 'Node', bool]],
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
                  this_episode_revenues: float,
-                 transit_cost: float,
-                 far_from_home_cost: float,
-                 time_not_at_home: int) -> None:
+                 transit_cost: Optional[float] = None,
+                 far_from_home_cost: Optional[float] = None,
+                 time_not_at_home: int = 0) -> None:
         super().__init__(name=name,
                          home=home,
                          in_transit=in_transit,
@@ -232,8 +236,15 @@ class CarrierWithCosts(Carrier, abc.ABC):
                          this_episode_expenses=this_episode_expenses,
                          this_episode_revenues=this_episode_revenues)
 
-        self._t_c: float = transit_cost
-        self._ffh_c: float = far_from_home_cost
+        if transit_cost is None and far_from_home_cost is None:
+            self.random_new_cost_parameters()
+        elif transit_cost is not None and far_from_home_cost is not None:
+            self._t_c: float = transit_cost
+            self._ffh_c: float = far_from_home_cost
+        else:
+            raise ValueError("transit_cost and far_from_home_costs should either both be None or both have value")
+        self._a_c_percentage: float = 0.2
+
         self._time_not_at_home: int = time_not_at_home
 
     def next_step(self) -> None:
@@ -251,8 +262,7 @@ class CarrierWithCosts(Carrier, abc.ABC):
         context
         """
         t = time_not_at_home if time_not_at_home is not None else self._time_not_at_home
-        return self._ffh_c + 53. * (exp(self._environment.nb_hours_per_time_unit * 0.0015 * t) - 1.) \
-            if t > 0 else 0.
+        return self._ffh_c + 53. + self._a_c_percentage * (self._ffh_c + self._t_c) if t > 0 else 0.
 
     def _update_ffh_cost_functions(self) -> None:
         """Here we update the cost parameter AFTER calculating the costs of the current time step"""
