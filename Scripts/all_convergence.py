@@ -5,12 +5,25 @@ This is a learning script to learn the weights of the game with non learning car
 import numpy as np
 import random
 import time
+import sys
 
 from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, save_cost_learning_game
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
 from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import MultiLanesLearningCostsCarrier, \
     SingleLaneLearningCostsCarrier
 from PI_RPS.Mechanics.Environment.environment import Environment
+
+kwargs = {}
+
+if len(sys.argv) > 1:
+    with_args = True
+    for arg in sys.argv[1:]:
+        split = arg.split('=')
+        if len(split)!=2:
+            raise ValueError
+        kwargs[split[0]] = split[1]
+else:
+    with_args = False
 
 node_filter = ['Bremen', 'Dresden', 'Madrid', 'Marseille', 'Milan', 'Naples', 'Paris', 'Rotterdam', 'Saarbrücken',
                'Salzburg', 'Warsaw']
@@ -27,7 +40,7 @@ initial_cost_majoration = 1.5
 # not used if initialized by artificial weights
 max_node_weights_distance_scaling_factor = init_node_weights_distance_scaling_factor * 2.2  # @param{type:"number"}
 # should be big enough to be unrealistic.
-node_auction_cost = 0.  # @param{type:"number"}
+node_auction_cost = float(kwargs['node_auction_cost']) if with_args else 0.  # @param{type:"number"}
 node_nb_info = 40  # @param{type:"integer"}
 max_nb_infos_per_load = 8  # @param{type:"integer"}
 gamma_for_equal = 0.98
@@ -35,7 +48,7 @@ gamma_for_equal = 0.98
 max_lost_auctions_in_a_row = 5  # @param {type:"integer"}
 max_time_not_at_home = 24  # about 6 days before getting back home
 
-auction_type = ['MultiLanes', 'SingleLane'][0]
+auction_type = kwargs['auction_type'] if with_args else['MultiLanes', 'SingleLane'][0]
 
 learning_nodes = False  # @param{type:"boolean"}
 
@@ -43,8 +56,9 @@ weights_file_name = None if learning_nodes or auction_type == 'SingleLane' else 
     'weights_MultiLanes_' + str(node_auction_cost) + '_' + \
     str(n_carriers_per_node) + '_' + str(initial_cost_majoration) + '.json'
 
-terminaison_file_name = 1
+terminaison_file_name = int(kwargs['terminaison_file_name']) if with_args else 1
 saving_file_name = auction_type + '_' + str(node_auction_cost) + '_' + str(terminaison_file_name) + '.bin'
+print(node_auction_cost, auction_type, terminaison_file_name)
 
 # Initialize the environment
 e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
