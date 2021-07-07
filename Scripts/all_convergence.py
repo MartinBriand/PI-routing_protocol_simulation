@@ -1,6 +1,7 @@
 """
 This is a learning script to learn the weights of the game with non learning carriers
 """
+from hmac import new
 
 import numpy as np
 import random
@@ -306,7 +307,7 @@ sub_phase = 0
 test_nb = 0
 num_iteration_per_test = 500
 num_train_per_pass = 2000
-carrier_convergence_nb_iter = 25
+carrier_convergence_threshold = 0.02
 prop_reserve_price_involved_threshold = 0.01
 
 
@@ -328,10 +329,14 @@ def loop_fn():
 # Getting carriers and nodes to converge (part1)
 # getting the carriers to converge
 def convergence_carrier():
-    for _ in range(carrier_convergence_nb_iter):
-        list_of_convergence_degree = [carrier_p.convergence_state() for carrier_p in e.carriers]
-        print('Node level of knowledge:', sum(list_of_convergence_degree) / len(list_of_convergence_degree))
+    old_level_of_knowledge = -2*carrier_convergence_threshold
+    new_level_of_knowledge = 0
+    while new_level_of_knowledge - old_level_of_knowledge > carrier_convergence_threshold:
         loop_fn()
+        list_of_convergence_degree = [carrier_p.convergence_state() for carrier_p in e.carriers]
+        old_level_of_knowledge = new_level_of_knowledge
+        new_level_of_knowledge = sum(list_of_convergence_degree) / len(list_of_convergence_degree)
+        print('Node level of knowledge:', new_level_of_knowledge)
 
 
 # getting the nodes to converge

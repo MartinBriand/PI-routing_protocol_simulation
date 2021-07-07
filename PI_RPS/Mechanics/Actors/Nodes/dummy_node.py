@@ -144,8 +144,6 @@ class DummyNodeWeightMaster:
                             if info.arrival not in info_start_arrival_dict[info.start].keys():
                                 info_start_arrival_dict[info.start][info.arrival] = []
                             info_start_arrival_dict[info.start][info.arrival].append(info.cost)
-                        else:
-                            print('coucou', info.cost / self._environment.get_distance(info.start, info.arrival))
                 for start in info_start_arrival_dict.keys():
                     for arrival in info_start_arrival_dict[start].keys():
                         w = self._weights[arrival][start]
