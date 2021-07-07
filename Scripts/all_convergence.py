@@ -1,14 +1,12 @@
 """
 This is a learning script to learn the weights of the game with non learning carriers
 """
-from hmac import new
 
 import numpy as np
 import random
 import time
 
-from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, save_cost_learning_game, \
-    load_learned_games
+from PI_RPS.Games.init_tools import load_realistic_nodes_and_shippers_to_env, save_cost_learning_game
 from PI_RPS.Games.init_tools import nb_hours_per_time_unit, t_c_mu, t_c_sigma, ffh_c_mu, ffh_c_sigma
 from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import MultiLanesLearningCostsCarrier, \
     SingleLaneLearningCostsCarrier
