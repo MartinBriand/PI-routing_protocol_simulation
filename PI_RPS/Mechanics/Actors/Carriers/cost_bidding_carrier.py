@@ -38,6 +38,7 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
                  transit_cost: float,
                  far_from_home_cost: float,
                  time_not_at_home: int,
+                 max_time_not_at_home: int,
                  nb_lost_auctions_in_a_row: int,
                  max_lost_auctions_in_a_row: int,
                  cost_majoration: float
@@ -60,15 +61,17 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
                          far_from_home_cost=far_from_home_cost,
                          time_not_at_home=time_not_at_home)
 
-        self._nb_lost_auctions_in_a_row = nb_lost_auctions_in_a_row
-        self._max_lost_auctions_in_a_row = max_lost_auctions_in_a_row
-        self._cost_majoration = cost_majoration
+        self._nb_lost_auctions_in_a_row: int = nb_lost_auctions_in_a_row
+        self._max_lost_auctions_in_a_row: int = max_lost_auctions_in_a_row
+        self._max_time_not_at_home: int = max_time_not_at_home
+        self._cost_majoration: float = cost_majoration
 
     def _decide_next_node(self) -> 'Node':
         """
-        Go home only if more than self._max_time_not_at_home since last time at home
+        Go home only if more than self._max_time_not_at_home since last time at home or if loosing too much
         """
-        if self._nb_lost_auctions_in_a_row > self._max_lost_auctions_in_a_row:
+        if self._nb_lost_auctions_in_a_row > self._max_lost_auctions_in_a_row or \
+                self._time_not_at_home > self._max_time_not_at_home:
             return self._home
         else:
             return self._next_node
@@ -102,48 +105,6 @@ class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
         * go back home when not seeing your boss (or mother) for a too long time
     """
 
-    def __init__(self,
-                 name: str,
-                 home: 'Node',
-                 in_transit: bool,
-                 previous_node: 'Node',
-                 next_node: 'Node',
-                 time_to_go: int,
-                 load: Optional['Load'],
-                 environment: 'Environment',
-                 episode_types: List[Tuple[str, 'Node', 'Node']],
-                 episode_expenses: List[float],
-                 episode_revenues: List[float],
-                 this_episode_expenses: List[float],
-                 this_episode_revenues: float,
-                 transit_cost: float,
-                 far_from_home_cost: float,
-                 time_not_at_home: int,
-                 nb_lost_auctions_in_a_row: int,
-                 max_lost_auctions_in_a_row: int,
-                 cost_majoration: float
-                 ) -> None:
-
-        super().__init__(name=name,
-                         home=home,
-                         in_transit=in_transit,
-                         next_node=next_node,
-                         previous_node=previous_node,
-                         time_to_go=time_to_go,
-                         load=load,
-                         environment=environment,
-                         episode_types=episode_types,
-                         episode_expenses=episode_expenses,
-                         episode_revenues=episode_revenues,
-                         this_episode_expenses=this_episode_expenses,
-                         this_episode_revenues=this_episode_revenues,
-                         transit_cost=transit_cost,
-                         far_from_home_cost=far_from_home_cost,
-                         time_not_at_home=time_not_at_home,
-                         nb_lost_auctions_in_a_row=nb_lost_auctions_in_a_row,
-                         max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
-                         cost_majoration=cost_majoration)
-
     def bid(self) -> 'CarrierMultiBid':
         bid = {}
         for next_node in self._environment.nodes:
@@ -160,48 +121,6 @@ class SingleLaneCostBiddingCarrier(CostBiddingCarrier, SingleBidCarrier):
         * go back home when not seeing your boss (or mother) for a too long time
         * bid on the destination lane only
     """
-
-    def __init__(self,
-                 name: str,
-                 home: 'Node',
-                 in_transit: bool,
-                 previous_node: 'Node',
-                 next_node: 'Node',
-                 time_to_go: int,
-                 load: Optional['Load'],
-                 environment: 'Environment',
-                 episode_types: List[Tuple[str, 'Node', 'Node']],
-                 episode_expenses: List[float],
-                 episode_revenues: List[float],
-                 this_episode_expenses: List[float],
-                 this_episode_revenues: float,
-                 transit_cost: float,
-                 far_from_home_cost: float,
-                 time_not_at_home: int,
-                 nb_lost_auctions_in_a_row: int,
-                 max_lost_auctions_in_a_row: int,
-                 cost_majoration: float
-                 ) -> None:
-
-        super().__init__(name=name,
-                         home=home,
-                         in_transit=in_transit,
-                         next_node=next_node,
-                         previous_node=previous_node,
-                         time_to_go=time_to_go,
-                         load=load,
-                         environment=environment,
-                         episode_types=episode_types,
-                         episode_expenses=episode_expenses,
-                         episode_revenues=episode_revenues,
-                         this_episode_expenses=this_episode_expenses,
-                         this_episode_revenues=this_episode_revenues,
-                         transit_cost=transit_cost,
-                         far_from_home_cost=far_from_home_cost,
-                         time_not_at_home=time_not_at_home,
-                         nb_lost_auctions_in_a_row=nb_lost_auctions_in_a_row,
-                         max_lost_auctions_in_a_row=max_lost_auctions_in_a_row,
-                         cost_majoration=cost_majoration)
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':
         """The bid function"""

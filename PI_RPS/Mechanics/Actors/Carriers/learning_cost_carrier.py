@@ -140,7 +140,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
 
     def _decide_next_node(self) -> 'Node':
         """
-        Go home only if more than self._max_time_not_at_home since last time at home
+        Go home only if more than self._max_time_not_at_home since last time at home or if loosing too much
         """
         if self._nb_lost_auctions_in_a_row > self._max_lost_auctions_in_a_row or \
                 self._time_not_at_home > self._max_time_not_at_home:

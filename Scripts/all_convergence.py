@@ -19,7 +19,7 @@ if len(sys.argv) > 1:
     with_args = True
     for arg in sys.argv[1:]:
         split = arg.split('=')
-        if len(split)!=2:
+        if len(split) != 2:
             raise ValueError
         kwargs[split[0]] = split[1]
 else:
@@ -36,7 +36,7 @@ nb_lives_after = 15
 shippers_reserve_price_per_distance = 1200.  # @param{type:"number"}
 shipper_default_reserve_price = 10000.  # @param{type:"number"}
 init_node_weights_distance_scaling_factor = 1000.  # @param{type:"number"}
-initial_cost_majoration = 1.5
+initial_cost_majoration = 4.
 # not used if initialized by artificial weights
 max_node_weights_distance_scaling_factor = init_node_weights_distance_scaling_factor * 2.2  # @param{type:"number"}
 # should be big enough to be unrealistic.
