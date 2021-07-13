@@ -151,8 +151,9 @@ class DummyNodeWeightMaster:
                         nb_infos = len(infos)
                         value = sum(infos) / nb_infos
 
-                        w += (value - w) / (
-                                self._nb_infos ** (1 / nb_infos))  # we have an exponential smoothing of self.nb_infos
+                        w += (value - w) * (
+                                1 - (1-1/self._nb_infos) ** nb_infos)
+                        # we have an exponential smoothing of factor 1/self.nb_infos
                         self._weights[arrival][start] = w
                 self._has_learned = True
             self._has_asked_to_learn[node] = True
