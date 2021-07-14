@@ -319,7 +319,7 @@ sub_phase = 0
 test_nb = 0
 num_iteration_per_test = 500
 num_train_per_pass = 2000
-carrier_convergence_threshold = 0.0002
+carrier_convergence_threshold = 0.002
 prop_reserve_price_involved_threshold = 0.01
 
 
