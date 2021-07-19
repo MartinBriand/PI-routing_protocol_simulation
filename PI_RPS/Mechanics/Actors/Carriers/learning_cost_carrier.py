@@ -30,7 +30,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'Environment',
-                 episode_types: List[Tuple[str, 'Node', 'Node']],
+                 episode_types: List[Tuple[str, 'Node', 'Node', bool]],
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
@@ -81,7 +81,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         self._max_nb_infos_per_node: int = max_nb_infos_per_node
         assert (costs_table is None and list_of_costs_table is None) or \
                (costs_table is not None and list_of_costs_table is not None), \
-            "costs_table and list_of_costs_table should be both None or both assigned"
+               "costs_table and list_of_costs_table should be both None or both assigned"
         if costs_table:
             self._costs_table: CostsTable = costs_table
             self._list_of_costs_table: ListOfCostsTable = list_of_costs_table

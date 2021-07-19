@@ -3,7 +3,6 @@ Carrier file
 """
 import abc
 from typing import TYPE_CHECKING, Optional, List, Tuple
-from math import exp
 import random
 
 from PI_RPS.prj_typing.types import CarrierBid, CarrierMultiBid, CarrierSingleBid

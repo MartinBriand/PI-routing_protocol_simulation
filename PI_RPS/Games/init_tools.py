@@ -7,7 +7,7 @@ import pickle
 import random
 
 import numpy as np
-from typing import List, Dict, Optional, Type, Any
+from typing import List, Dict, Optional, Any
 
 from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import SingleLaneLearningCostsCarrier, \
     MultiLanesLearningCostsCarrier, LearningCostsCarrier
@@ -16,7 +16,6 @@ from PI_RPS.Mechanics.Actors.Nodes.node import Node
 from PI_RPS.Mechanics.Actors.Shippers.dummy_shipper import DummyShipper
 from PI_RPS.Mechanics.Actors.Shippers.shipper import Shipper, NodeLaw
 from PI_RPS.Mechanics.Environment.environment import Environment
-from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
 from PI_RPS.Mechanics.Tools.load import Load
 from PI_RPS.prj_typing.types import NodeWeights
 
@@ -96,9 +95,6 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                   auction_cost=node_auction_cost,
                   auction_type=auction_type)
 
-    if isinstance(e, TFAEnvironment):
-        e.build_node_state()
-
     lambdas, attribution, distances, weights = _to_node_keys(e, lambdas, attribution, distances, weights)
     e.set_distances(distances)
 
@@ -121,10 +117,10 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
             start_node: Node,
             lamb: float,
             population: List[Node],
-            weights: List[float]) -> None:
+            weights_p: List[float]) -> None:
         nb_loads = generator.poisson(lamb)
         for k in range(nb_loads):
-            arrival_node = random.choices(population=population, weights=weights)[0]
+            arrival_node = random.choices(population=population, weights=weights_p)[0]
             Load(departure=start_node, arrival=arrival_node, shipper=load_shipper, environment=environment)
 
     for start in lambdas.keys():
@@ -133,7 +129,7 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                   'start_node': start,
                   'lamb': lambdas[start],
                   'population': list(attribution[start].keys()),
-                  'weights': list(attribution[start].values())}
+                  'weights_p': list(attribution[start].values())}
         shipper.add_law(NodeLaw(owner=shipper, law=law, params=params))
 
 

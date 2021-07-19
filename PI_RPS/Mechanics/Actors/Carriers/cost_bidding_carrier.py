@@ -30,7 +30,7 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
                  time_to_go: int,
                  load: Optional['Load'],
                  environment: 'Environment',
-                 episode_types: List[Tuple[str, 'Node', 'Node']],
+                 episode_types: List[Tuple[str, 'Node', 'Node', bool]],
                  episode_expenses: List[float],
                  episode_revenues: List[float],
                  this_episode_expenses: List[float],
