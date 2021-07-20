@@ -1,8 +1,9 @@
 # Contributing to the project
-This is the development of a model to evaluate the performance of a dynamic routing protocol for the PI (to understand the protocol, see the `README.md` file). As a personal research project, it is open to any hint or help, but not much to contributions.
+This project is the result of a research to find a PI protocol taking payments into account. This was done to evaluate the performance of the protocol (which turned out to be pretty good if you want to read the paper). The protocol still has many shortcoming though (some of them are listed in the paper but you might find some more yourself or in other papers citing the present one), and some of its theoretical promises have not been tested in practice.
 
-If you feel very interested in the paper and would like to contribute, please write an email to forename.lastnameatdomain (where domain is `the-klu.org`). If accepted, you will see that we use a [gitflow workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). However, any free pull request without notifying me before that you want to join the development will be rejected.
+If you want to contribute and build on this code for:
 
-Note that if a paper is ever published, the development of the repository will be stopped for reproducibility purpose.
+* better testing the protocol
+* developing the protocol further, you are more than welcome to fork this project to your own library
 
-In any case, you are free to fork the project and make your own development if you want to, that is the reason why the repo is public ;)
+The project has no license and is totally free.

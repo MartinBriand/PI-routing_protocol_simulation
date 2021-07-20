@@ -1,43 +1,66 @@
-"""Loaders common to all games"""
+"""Loaders common to all games, to be called by scripts only"""
 
-import os, csv, json
-import numpy as np
-from typing import List, Dict, Optional
+import csv
+import json
+import os
+import pickle
 import random
 
+import numpy as np
+from typing import List, Dict, Optional, Any
+
+from PI_RPS.Mechanics.Actors.Carriers.learning_cost_carrier import SingleLaneLearningCostsCarrier, \
+    MultiLanesLearningCostsCarrier, LearningCostsCarrier
 from PI_RPS.Mechanics.Actors.Nodes.dummy_node import DummyNode, DummyNodeWeightMaster
 from PI_RPS.Mechanics.Actors.Nodes.node import Node
 from PI_RPS.Mechanics.Actors.Shippers.dummy_shipper import DummyShipper
 from PI_RPS.Mechanics.Actors.Shippers.shipper import Shipper, NodeLaw
 from PI_RPS.Mechanics.Environment.environment import Environment
-from PI_RPS.Mechanics.Environment.tfa_environment import TFAEnvironment
 from PI_RPS.Mechanics.Tools.load import Load
 from PI_RPS.prj_typing.types import NodeWeights
 
 nb_hours_per_time_unit: float = 6.147508  # 390 km at an average speed of 39.42 km/h)
 t_c_mu: float = 33. * nb_hours_per_time_unit
 t_c_sigma: float = 4.15 * nb_hours_per_time_unit
-ffh_c_mu: float = 20. * nb_hours_per_time_unit
-ffh_c_sigma: float = 1.00 * nb_hours_per_time_unit
+ffh_c_mu: float = 7.35 * nb_hours_per_time_unit
+ffh_c_sigma: float = 7.35/20. * nb_hours_per_time_unit
 
 
 def load_realistic_nodes_and_shippers_to_env(e: Environment,
                                              node_nb_info: int,
                                              shippers_reserve_price_per_distance: float,
                                              shipper_default_reserve_price: float,
+                                             node_filter: List[str],
                                              node_auction_cost: float,
-                                             weights_file_name: str = None
+                                             auction_type: str,
+                                             learning_nodes: bool,
+                                             weights_file_name: str = None,
+                                             weights_dict: Dict[str, float] = None
                                              ) -> None:
+
+    """
+    This function is called by the scripts and returns and environment with all our nodes plus a shipper with
+    correct laws.
+    """
+
     path = os.path.abspath(os.path.dirname(__file__))
     lambdas: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_lambda_table.csv'))
     attribution: np.ndarray = _read_csv(os.path.join(path, 'data/city_traffic_dest_attribution_table.csv'))
     distances: np.ndarray = _read_csv(os.path.join(path, 'data/city_distance_matrix_time_step.csv'))
+    assert weights_dict is None or weights_file_name is None, "Can't set weights with two attributes"
     weights = _read_weights_json(weights_file_name) if weights_file_name else None
+    weights = weights_dict if weights_dict else weights
+
+    # here we filter everything except weights, which should be already filtered (or None)
+    if node_filter is not None:
+        lambdas, attribution, distances = _filter(node_filter, lambdas, attribution, distances)
 
     # check size
     lts = lambdas.shape
     ats = attribution.shape
     dts = distances.shape
+    fs = len(node_filter)
+    assert fs == lts[0], "Some of the names in the filter are wrong..."
     assert lts[0] == ats[0] - 1 == ats[1] - 1 == dts[0] - 1 == dts[1] - 1, \
         "lambdas shape: {}\nattribution shape: {}\ndistance shape: {}".format(lts, ats, dts)
 
@@ -68,16 +91,15 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     # create Nodes
     weight_master = DummyNodeWeightMaster(environment=e,
                                           nb_infos=node_nb_info,
+                                          is_learning=learning_nodes
                                           )
     for name in lambdas.keys():
         DummyNode(name=name,
                   weight_master=weight_master,
                   revenues=[],
                   environment=e,
-                  auction_cost=node_auction_cost)
-
-    if isinstance(e, TFAEnvironment):
-        e.build_node_state()
+                  auction_cost=node_auction_cost,
+                  auction_type=auction_type)
 
     lambdas, attribution, distances, weights = _to_node_keys(e, lambdas, attribution, distances, weights)
     e.set_distances(distances)
@@ -97,14 +119,14 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
     generator = np.random.default_rng()
 
     def law(load_shipper: Shipper,
-            environment: TFAEnvironment,
+            environment: Environment,
             start_node: Node,
             lamb: float,
             population: List[Node],
-            weights: List[float]) -> None:
+            weights_p: List[float]) -> None:
         nb_loads = generator.poisson(lamb)
         for k in range(nb_loads):
-            arrival_node = random.choices(population=population, weights=weights)[0]
+            arrival_node = random.choices(population=population, weights=weights_p)[0]
             Load(departure=start_node, arrival=arrival_node, shipper=load_shipper, environment=environment)
 
     for start in lambdas.keys():
@@ -113,18 +135,38 @@ def load_realistic_nodes_and_shippers_to_env(e: Environment,
                   'start_node': start,
                   'lamb': lambdas[start],
                   'population': list(attribution[start].keys()),
-                  'weights': list(attribution[start].values())}
+                  'weights_p': list(attribution[start].values())}
         shipper.add_law(NodeLaw(owner=shipper, law=law, params=params))
 
 
 def _read_csv(file_path: str) -> np.ndarray:
-    """Return a List with all the values"""
+    """Return an array with all the values of a csv file"""
     with open(file_path, 'r', encoding='utf-8-sig') as f:
         reader = csv.reader(f)
         final: List = []
         for line in reader:
             final.append(line)
     return np.array(final)
+
+
+def _filter(node_filter: List[str], lambdas: np.array, attribution: np.array, distances: np.array):
+    """This function is there to filter down to a few nodes if needed"""
+    new_lambdas = np.array([item for item in lambdas if item[0] in node_filter])
+
+    def att_or_dist_filter(table_p):
+        res = []
+        for i in range(len(table_p)):
+            row = []
+            if i == 0 or table_p[i, 0] in node_filter:
+                for j in range(len(table_p[i])):
+                    if i == 0 and j == 0:
+                        row.append(table_p[i, j])
+                    elif j == 0 or table_p[0, j] in node_filter:
+                        row.append(table_p[i, j])
+                res.append(row)
+        return np.array(res)
+
+    return new_lambdas, att_or_dist_filter(attribution), att_or_dist_filter(distances)
 
 
 def _to_dicts(keys: np.ndarray,
@@ -144,7 +186,7 @@ def _to_dicts(keys: np.ndarray,
     return new_lambdas, new_attribution, new_distances
 
 
-def _to_node_keys(e: TFAEnvironment,
+def _to_node_keys(e: Environment,
                   lambdas: Dict[str, float],
                   attribution: Dict[str, Dict[str, float]],
                   distances: Dict[str, Dict[str, int]],
@@ -152,7 +194,7 @@ def _to_node_keys(e: TFAEnvironment,
                                Dict[Node, Dict[Node, float]],
                                Dict[Node, Dict[Node, int]],
                                Optional[NodeWeights]):
-
+    """Change the keys of the previous dictionaries to object keys with the nodes instead of their names"""
     node_name_dict = {node.name: node for node in e.nodes}
     new_lambdas = {node_name_dict[name]: lamb for name, lamb in lambdas.items()}
     new_attribution = {node_name_dict[name1]: {node_name_dict[name2]: att for name2, att in obj.items()}
@@ -169,16 +211,130 @@ def _to_node_keys(e: TFAEnvironment,
 
 
 def _read_weights_json(file_name) -> Dict:
-    """Read from a json"""
+    """Read weights from a json file which was created by a script with cost bidding carriers"""
     path = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(path, 'data/' + file_name)
+    path = os.path.join(path, 'data/experimental/' + file_name)
     with open(path, 'r') as f:
         return json.load(f)
 
 
 def write_readable_weights_json(readable_weights, file_name) -> None:
-    """"Write weights to json"""
+    """"Write weights generated by a script with cost bidding carriers to a json file"""
     path = os.path.abspath(os.path.dirname(__file__))
-    path = os.path.join(path, 'data/' + file_name)
+    path = os.path.join(path, 'data/experimental/' + file_name)
     with open(path, 'w') as f:
         json.dump(readable_weights, f)
+
+
+def load_learned_games(file_name: str) -> Environment:
+    """Once all weights of a game are learned, a saved game configuration can be loaded with this method"""
+    path = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(path, 'game_configs/' + file_name)
+    with open(path, 'rb') as f:
+        d = pickle.load(f)
+    e = Environment(nb_hours_per_time_unit=nb_hours_per_time_unit,
+                    max_nb_infos_per_load=d['max_nb_infos_per_load'],
+                    init_node_weights_distance_scaling_factor=d['init_node_weights_distance_scaling_factor'],
+                    max_node_weights_distance_scaling_factor=d['max_node_weights_distance_scaling_factor'],
+                    t_c_mu=t_c_mu,
+                    t_c_sigma=t_c_sigma,
+                    ffh_c_mu=ffh_c_mu,
+                    ffh_c_sigma=ffh_c_sigma, )
+
+    load_realistic_nodes_and_shippers_to_env(e=e,
+                                             node_filter=d['node_filter'],
+                                             node_nb_info=d['node_nb_info'],
+                                             shippers_reserve_price_per_distance=d[
+                                                 'shippers_reserve_price_per_distance'],
+                                             shipper_default_reserve_price=d['shipper_default_reserve_price'],
+                                             node_auction_cost=d['node_auction_cost'],
+                                             learning_nodes=False,
+                                             weights_dict=d['weights_dict'],
+                                             auction_type=d['auction_type']
+                                             )
+
+    node_name_dict = {node.name: node for node in e.nodes}
+
+    def transform_carrier_node_kwargs(carrier_args: Dict[str, Any]) -> Dict[str, Any]:
+        to_transform_keys = ['home', 'previous_node', 'next_node']
+        to_transform_dicts = ['costs_table', 'list_of_costs_table']
+
+        return1 = {key: node_name_dict[value] for key, value in carrier_args.items()
+                   if key in to_transform_keys}
+        return2 = {key1: {node_name_dict[key2]: value2
+                          for key2, value2 in value1.items()}
+                   for key1, value1 in carrier_args.items() if key1 in to_transform_dicts}
+        return3 = {key: value for key, value in carrier_args.items()
+                   if key not in to_transform_keys+to_transform_dicts}
+
+        return {**return1, **return2, **return3, **{'environment': e}}
+
+    for carrier_config in d['carriers']:
+        if d['auction_type'] == 'SingleLane':
+            if carrier_config['type'] == 'CostLearning':
+                SingleLaneLearningCostsCarrier(**transform_carrier_node_kwargs(carrier_config['kwargs']))
+            else:
+                raise NotImplementedError
+        elif d['auction_type'] == 'MultiLanes':
+            if carrier_config['type'] == 'CostLearning':
+                MultiLanesLearningCostsCarrier(**transform_carrier_node_kwargs(carrier_config['kwargs']))
+            else:
+                raise NotImplementedError
+
+    return e
+
+
+def save_cost_learning_game(e: Environment, file_name: str) -> None:
+    """Saves a game configuration to a dictionary exported with pickle"""
+    d = {'max_nb_infos_per_load': e.max_nb_infos_per_load,
+         'init_node_weights_distance_scaling_factor': e.init_node_weights_distance_scaling_factor,
+         'max_node_weights_distance_scaling_factor': e.max_node_weights_distance_scaling_factor,
+         'node_filter': [node.name for node in e.nodes], 'node_nb_info': e.nodes[0].weight_master.nb_infos,
+         'shippers_reserve_price_per_distance': e.shippers[0].reserve_price_per_distance,
+         'shipper_default_reserve_price': e.shippers[0].default_reserve_price,
+         'node_auction_cost': e.nodes[0].auction_cost(), 'weights_dict': e.nodes[0].weight_master.readable_weights(),
+         'auction_type': e.nodes[0].auction_type}
+
+    carrier_configs = []
+    for carrier in e.carriers:
+        if isinstance(carrier, LearningCostsCarrier):
+            config = {'type': 'CostLearning',
+                      'kwargs': {'name': carrier.name,
+                                 'home': carrier.home.name,
+                                 'in_transit': False,
+                                 'previous_node': carrier.home.name,
+                                 'next_node': carrier.home.name,
+                                 'time_to_go': 0,
+                                 'load': None,
+                                 'episode_types': [],
+                                 'episode_expenses': [],
+                                 'episode_revenues': [],
+                                 'this_episode_expenses': [],
+                                 'this_episode_revenues': 0,
+                                 'transit_cost': carrier.t_c,
+                                 'far_from_home_cost': carrier.ffh_c,
+                                 'time_not_at_home': 0,
+                                 'nb_lost_auctions_in_a_row': 0,
+                                 'max_lost_auctions_in_a_row': carrier.max_lost_auctions_in_a_row,
+                                 'last_won_node': None,
+                                 'nb_episode_at_last_won_node': 0,
+                                 'nb_lives': carrier.nb_lives,
+                                 'max_nb_infos_per_node': carrier.max_nb_infos_per_node,
+                                 'costs_table': {key.name: value
+                                                 for key, value in carrier.cost_table.items()},
+                                 'list_of_costs_table': {key.name: value
+                                                         for key, value in carrier.list_of_costs_table.items()},
+                                 'max_time_not_at_home': carrier.max_time_not_at_home,
+                                 'is_learning': False
+                                 }
+                      }
+        else:
+            raise NotImplementedError
+        carrier_configs.append(config)
+
+    d['carriers'] = carrier_configs
+
+    path = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(path, 'game_configs/' + file_name)
+    with open(path, 'wb') as f:
+        pickle.dump(d, f)

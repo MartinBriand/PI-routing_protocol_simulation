@@ -2,16 +2,13 @@
 The prj_typing package
 """
 
-from tensorflow.python.framework.ops import EagerTensor
-from typing import TYPE_CHECKING, TypeVar, Dict, Callable, Tuple
-
-if TYPE_CHECKING:
-    pass
+from typing import Dict, Callable, Tuple, Union, List
 
 
 # for Carrier
-CarrierBid = Dict['Node', float]
-CarrierState = TypeVar('EagerTensor')
+CarrierSingleBid = float
+CarrierMultiBid = Dict['Node', float]
+CarrierBid = Union[CarrierMultiBid, CarrierSingleBid]
 
 # for Node
 NodeWeights = Dict['Node', Dict['Node', float]]
@@ -21,12 +18,21 @@ Law = Callable[..., None]  # is supposed to generate loads
 
 # for Environment
 Distance = Dict['Node', Dict['Node', int]]
-NodeStates = Dict['Node', EagerTensor]
+
+# for carriers
+CostsTable = Dict['Node', float]
+ListOfCostsTable = Dict['Node', List[float]]
 
 # for Auction
-AuctionWeights = Dict['Load', Dict['Node', float]]
 AuctionReservePrice = Dict['Load', float]
-AuctionBid = Dict['Load', Dict['Carrier', Dict['Node', float]]]
+
+MultiLaneAuctionWeights = Dict['Load', Dict['Node', float]]
+MultiLaneAuctionBid = Dict['Load', Dict['Carrier', Dict['Node', float]]]
+
+SingleLaneAuctionBid = Dict['Load', Dict['Carrier', float]]
 
 # for Load
-Cost = Tuple['Node', 'Node', float, float]
+Movement = Tuple['Node', 'Node', 'Carrier', float, float, bool]
+
+# class
+AllLearningCarrier = Union['LearningCarrier', 'EpisodeLearningCarrier']

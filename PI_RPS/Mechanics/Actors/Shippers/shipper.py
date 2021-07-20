@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
 class Shipper(abc.ABC):
     """
-    A Shipper is able to generate goods according to a law, generate reserve prices for each time one of its good is
-    auctioned at a Nodes, and has to pay the Nodes and the Carriers
+    A Shipper is able to generate goods according to a law, generate reserve prices each time one of its good is
+    auctioned at a Node, and has to pay the Nodes and the Carriers
     """
 
     def __init__(self,
@@ -47,8 +47,9 @@ class Shipper(abc.ABC):
     @abc.abstractmethod
     def generate_reserve_price(self, load: Load, node: 'Node') -> float:
         """
-        To be called by the Nodes before an auction
+        To be called by an auction before running
         """
+        raise NotImplementedError
 
     def proceed_to_payment(self,
                            node: 'Node',
@@ -56,7 +57,7 @@ class Shipper(abc.ABC):
                            carrier: 'Carrier',
                            carrier_value: float) -> None:
         """
-        To be called by the auction after an auction
+        To be called by the auction after running
         """
         node.receive_payment(node_value)
         carrier.receive_payment(carrier_value)
@@ -65,20 +66,20 @@ class Shipper(abc.ABC):
         self._total_expenses += total_value
 
     def add_load(self, load: Load) -> None:
-        """called by the load to signal to the shipper"""
+        """Called by the load at creation to signal to the shipper"""
         self._loads.append(load)
 
     def clear_loads(self) -> None:
-        """Called by the environment"""
+        """Called by the environment for memory cleaning"""
         self._loads.clear()
 
     def clear_expenses(self) -> None:
-        """Called by the environment"""
+        """Called by the environment for memory cleaning"""
         self._expenses.clear()
         self._total_expenses = 0
 
     def add_law(self, law: 'NodeLaw'):
-        """Called during initialization to add load to load list"""
+        """Called during initialization to add law to law list"""
         assert law.owner == self, "Please add only laws whose owner is self"
         self._laws.append(law)
 
@@ -86,16 +87,14 @@ class Shipper(abc.ABC):
 class NodeLaw:
     """
     A law is an association of a Nodes and a statistical law.
-    The only method is a call function to generate a number of load to be created by the Shippers at a specific Nodes
+    The only method is a call function to generate a number of load
     """
 
     def __init__(self,
                  owner: Shipper,
                  law: Law,
                  params: Dict[str, Any]) -> None:
-        """
-        Generate loads
-        """
+
         self._owner: Shipper = owner
         self._law: Law = law
         self._params = params

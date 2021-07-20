@@ -3,7 +3,7 @@ Load file
 """
 
 from typing import TYPE_CHECKING, Optional, List
-from PI_RPS.prj_typing.types import Cost
+from PI_RPS.prj_typing.types import Movement
 
 if TYPE_CHECKING:
     from PI_RPS.Mechanics.Actors.Nodes.node import Node
@@ -37,8 +37,10 @@ class Load:
         self._is_discarded: bool = False
         self._has_new_infos: bool = False
 
-        self._route_costs: List[Cost] = []  # cost is tuple (previous_node, next_node, carrier_cost, previous_node_cost)
-        self._previous_infos: List['Info'] = [Info(self._departure, self._departure, 0)]  # to calculate the new info, use the
+        self._movements: List[Movement] = []
+        # movement is tuple (previous_node, next_node, carrier, carrier_cost, previous_node_cost)
+        self._previous_infos: List['Info'] = [Info(self._departure, self._departure, 0)]
+        # to calculate the new info, use the
         # old info and add the cost of the current step
 
         # And now add it to the departure Nodes and the environment
@@ -51,15 +53,21 @@ class Load:
                         previous_node: 'Node',
                         next_node: 'Node',
                         carrier_cost: float,
-                        previous_node_cost: float) -> None:
+                        previous_node_cost: float,
+                        reserve_price_involved: bool) -> None:
         """
-        To be called by the Nodes each time a load which was waiting at a Nodes get attributed for a next hop
+        To be called by the Node each time a load which was waiting at a Node get attributed for a next hop
         """
         self._in_transit = True
         self._current_carrier = carrier
         self._next_node.remove_load_from_waiting_list(self)
         self._next_node = next_node
-        self._route_costs.append((previous_node, next_node, carrier_cost, previous_node_cost))
+        self._movements.append((previous_node,
+                                next_node,
+                                carrier,
+                                carrier_cost,
+                                previous_node_cost,
+                                reserve_price_involved))
 
         self._new_node_infos(next_node, carrier_cost + previous_node_cost)  # we call the new infos function at each
         # attribution
@@ -68,7 +76,7 @@ class Load:
                         next_node: 'Node',
                         cost: float) -> None:
         """
-        Generate new info after the attribution and tell the environment it has new info
+        Generates new info after the attribution and tells the environment it has new info
         """
         infos = []
         if len(self._previous_infos) >= self._environment.max_nb_infos_per_load:
@@ -113,17 +121,21 @@ class Load:
         return self._has_new_infos
 
     def total_delivery_cost(self) -> float:
-        assert self._is_arrived, "Only call this function when arrived"
-        return sum([element[2] for element in self._route_costs]) + sum([element[3] for element in self._route_costs])
+        """Return the total delivery cost of the load (so far)"""
+        return sum([element[3] for element in self._movements]) + sum([element[4] for element in self._movements])
 
     def nb_hops(self) -> int:
-        assert self._is_arrived, "Only call this function when arrived"
-        return len(self._route_costs)
+        """Returns the number of hops of the load (so far)"""
+        return len(self._movements)
 
     def delivery_time(self) -> int:
-        assert self._is_arrived, "Only call this function when arrived"
+        """Return the delivery time of the load (so far)"""
         return sum([self._environment.get_distance(departure, arrival)
-                    for departure, arrival, _, _ in self._route_costs])
+                    for departure, arrival, _, _, _, _ in self._movements])
+
+    @property
+    def departure(self) -> 'Node':
+        return self._departure
 
     @property
     def arrival(self) -> 'Node':
@@ -145,10 +157,14 @@ class Load:
     def in_transit(self) -> bool:
         return self._in_transit
 
+    @property
+    def movements(self) -> List[Movement]:
+        return self._movements
+
 
 class Info:
     """
-    An info is made of a start position, an arrival position, and a cost between the two
+    An info is made of a start node, an arrival node, and a cost between the two
     """
 
     def __init__(self,
