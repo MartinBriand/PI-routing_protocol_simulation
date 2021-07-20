@@ -16,10 +16,11 @@ if TYPE_CHECKING:
 class Carrier(abc.ABC):
     """
     A Carriers has two states:
-        * it is either in transit, if so, it is forced to finish it journey
-        * If not, it is because it is at a Nodes, where, it can participate in an auction, and depending on the result
+        * it is either in transit, if so, it is forced to finish its journey
+        * If not, it is because it is at a Node, where, it can participate in an auction, and depending on the result
             * will either be attributed a good to transport and will have to carry it to the next Nodes
-            * Or will not get a good and may decide to stay or move to another Nodes
+            * Or will not get nothing and may decide to stay at the present NOde or move to another one
+    Note that far_from_home_costs are what we call NonRoadCosts in the paper.
     """
 
     def __init__(self,
@@ -67,16 +68,16 @@ class Carrier(abc.ABC):
 
     @abc.abstractmethod
     def bid(self, *args, **kwargs) -> CarrierBid:
-        """To be called by the Nodes before an auction"""
+        """To be called by the Auctions run by node"""
         raise NotImplementedError
 
     @abc.abstractmethod
     def _decide_next_node(self) -> 'Node':
-        """Decide of a next Nodes after losing an auction (can be the same Nodes when needed)"""
+        """Decide of a next Node after losing an auction (can be the same Node when needed)"""
         raise NotImplementedError
 
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
-        """To be called by the Nodes after an auction if a load was attributed to the Carriers"""
+        """To be called by the Auction after running if a load was attributed to this Carrier"""
         self._in_transit = True
         self._previous_node.remove_carrier_from_waiting_list(self)
         self._next_node = next_node
@@ -85,12 +86,12 @@ class Carrier(abc.ABC):
         self._reserve_price_involved_in_transition = reserve_price_involved
 
     def receive_payment(self, value: float) -> None:
-        """To be called by the Shippers after an auction if a load was attributed"""
+        """To be called by the Shipper of the attributed load after a won auction"""
         self._this_episode_revenues += value
         self._total_revenues += value
 
     def dont_get_attribution(self) -> None:
-        """To be called by the Nodes after an auction if the Carriers lost"""
+        """To be called by the Auction after running if this Carrier lost"""
         new_next_node = self._decide_next_node()
         if new_next_node != self._next_node:
             self._in_transit = True
@@ -99,7 +100,7 @@ class Carrier(abc.ABC):
             self._previous_node.remove_carrier_from_waiting_list(self)
 
     def next_step(self) -> None:
-        """To be called by the environment at each iteration"""
+        """To be called by the environment at each iteration to update the carrier state"""
         if self._in_transit:
             self._time_to_go -= 1
             new_cost = self._transit_costs() + self._far_from_home_costs()
@@ -119,8 +120,7 @@ class Carrier(abc.ABC):
             self._this_episode_expenses.clear()
 
     def _arrive_at_next_node(self) -> None:
-        """Called by next_step to do all the variable settings when arrive at a next Nodes
-        Note: cost calculations and episode generation are not made here"""
+        """Called by next_step to do all the variable settings when arriving at a next Node"""
         self._in_transit = False
         if self._load:  # is not none
             self._load.arrive_at_next_node()
@@ -135,11 +135,11 @@ class Carrier(abc.ABC):
         self._previous_node = self._next_node
 
     def clear_load(self) -> None:
-        """Called by the environment"""
+        """Called by the environment to clear the load (memory saver)"""
         self._load = None
 
     def clear_profit(self) -> None:
-        """Called by the environment"""
+        """Called by the environment to clear profit for new series"""
         self._total_expenses -= sum(self._episode_expenses)  # the expenses of the current episode are still here
         # we will have to delete them at extraction time
         self._episode_expenses.clear()
@@ -149,12 +149,12 @@ class Carrier(abc.ABC):
 
     @abc.abstractmethod
     def _transit_costs(self) -> float:
-        """Calculating the transit costs depending on the states"""
+        """Calculating the transit costs depending on the context of the Carrier"""
         raise NotImplementedError
 
     @abc.abstractmethod
     def _far_from_home_costs(self) -> float:
-        """Calculating the "far from home" costs depending on the states"""
+        """Calculating the "far from home" costs depending on the context of the Carrier"""
         raise NotImplementedError
 
     @property
@@ -170,39 +170,40 @@ class Carrier(abc.ABC):
         return self._episode_expenses
 
     @property
-    def home(self):
+    def home(self) -> 'Node':
         return self._home
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
 
 # Bidding abstract classes
 
 class MultiBidCarrier(Carrier, abc.ABC):
-
+    """
+    A carrier bidding on multiple lanes (abstract method)
+    """
     @abc.abstractmethod
     def bid(self) -> CarrierMultiBid:
-        """To be called by the Nodes before an auction"""
         raise NotImplementedError
 
 
 class SingleBidCarrier(Carrier, abc.ABC):
-
+    """
+    A carrier bidding on a single lane. If they all bid on the destination lane, then it forms the control group
+    """
     @abc.abstractmethod
     def bid(self, next_node: 'Node') -> CarrierSingleBid:
-        """To be called by the nodes before an auction"""
         raise NotImplementedError
 
 
 # Cost abstract classes
 
 class CarrierWithCosts(Carrier, abc.ABC):
-    """The idea is to modify the Carrier class to have a single cost structure,
-    Always put first in inheritance to call the init method"""
-
-    _cost_dimension: int = 3
+    """
+    Carrier with the cost structure of the model
+    """
 
     def __init__(self,
                  name: str,
@@ -257,14 +258,15 @@ class CarrierWithCosts(Carrier, abc.ABC):
 
     def _far_from_home_costs(self, time_not_at_home=None) -> float:
         """
-        The far from home costs,m calculated with the given value if given, else, calculated with the current
-        context
+        The far from home costs (or the non road costs in the paper)
         """
         t = time_not_at_home if time_not_at_home is not None else self._time_not_at_home
         return self._ffh_c + 53. + self._a_c_percentage * (self._ffh_c + self._t_c) if t > 0 else 0.
 
     def _update_ffh_cost_functions(self) -> None:
-        """Here we update the cost parameter AFTER calculating the costs of the current time step"""
+        """
+        To update the cost function (actually in our case it doesn't update anything, but it could).
+        """
         if not self._in_transit and self._next_node == self._home:
             self._time_not_at_home = 0
         else:
@@ -278,24 +280,20 @@ class CarrierWithCosts(Carrier, abc.ABC):
 
     def _set_new_cost_parameters(self, t_c: float, ffh_c: float) -> None:
         """
-        Setting new parameters for learners and resetting buffers
+        Setting new parameters for learners and resetting profit lists
         """
         self._t_c = t_c
         self._ffh_c = ffh_c
         self.clear_profit()
 
-    @classmethod
-    def cost_dimension(cls) -> int:
-        return cls._cost_dimension
-
     @property
-    def next_node(self):
+    def next_node(self) -> 'Node':
         return self._next_node
 
     @property
-    def t_c(self):
+    def t_c(self) -> float:
         return self._t_c
 
     @property
-    def ffh_c(self):
+    def ffh_c(self) -> float:
         return self._ffh_c

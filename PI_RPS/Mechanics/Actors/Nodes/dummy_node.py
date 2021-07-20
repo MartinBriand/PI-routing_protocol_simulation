@@ -1,5 +1,5 @@
 """
-The most basic node you could think of
+A basic node learning with an exponential smoothing.
 """
 
 from PI_RPS.Mechanics.Actors.Nodes.node import Node, NodeWeights
@@ -27,6 +27,7 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         self._weight_master.register_node(self)
 
     def update_weights_with_new_infos(self, new_infos: List['Info']) -> None:
+        """When asked to learn, it transfers the info to the weight master (which will make sure to learn only once)"""
         self._weight_master.update_weights_with_new_infos(self, new_infos)
 
     def auction_cost(self) -> float:
@@ -46,7 +47,7 @@ class DummyNode(Node):  # Actually this is not so dummy and will perhaps not cha
         assert departure not in self._weights[arrival].keys(), "Connexion already created"
         self._weights[arrival][departure] = value
 
-    def delete_weights(self):
+    def delete_weights(self) -> None:
         """Called during some training"""
         self._weights = {}
 
@@ -93,7 +94,7 @@ class DummyNodeWeightMaster:
         self._has_asked_to_learn[node] = False
 
     def initialize(self, weights: Optional['NodeWeights'] = None) -> None:
-        """create structure and initialize the weights and the number of visits to distance*2000.
+        """create structure and initialize the weights and the number of visits to distance*init_scale.
         Should be called by the initializer AFTER registering the distance matrix"""
         assert not self._is_initialized, "Can initialize only once"
         assert all(not i for i in self._has_asked_to_learn.values()), "No learning"
@@ -116,7 +117,7 @@ class DummyNodeWeightMaster:
         self._is_initialized = True
 
     def reinitialize(self, weights: Optional['NodeWeights'] = None) -> None:
-        """Will be called during some training"""
+        """Will be called during some training, this is to reinitialize the weights"""
         for node in self._nodes:
             node.delete_weights()
         self._is_initialized = False
@@ -165,7 +166,7 @@ class DummyNodeWeightMaster:
                     self._has_asked_to_learn[node] = False
 
     def update_equal_weights(self, is_equal: Dict, gamma: float) -> None:
-        """Called during training"""
+        """Called during training to reduce the weights that are not being explored anymore"""
         for arrival in is_equal.keys():
             for departure in is_equal[arrival]:
                 self._weights[arrival][departure] *= gamma
@@ -193,15 +194,11 @@ class DummyNodeWeightMaster:
                         if departure != node:
                             node.set_init_weights(departure, arrival, self._weights[arrival][departure])
 
-    def readable_weights(self) -> Dict:
-        result = {}
-        for key1 in self._weights.keys():
-            result[key1.name] = {}
-            for key2 in self._weights[key1]:
-                result[key1.name][key2.name] = self._weights[key1][key2]
-        return result
-
-    def weights_text(self):
+    def readable_weights(self) -> Dict[str, Dict[str, float]]:
+        """
+        This functions returns a readable version of the weights with name keys instead of Memory Address keys
+        Handsome when training to know the evolution or for saving the model.
+        """
         return {key1.name: {key2.name: value2 for key2, value2 in value1.items()}
                 for key1, value1 in self._weights.items()}
 

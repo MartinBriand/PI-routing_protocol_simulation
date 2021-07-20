@@ -96,6 +96,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         self._init_total_nb_cost_infos()
 
     def _init_cost_tables(self) -> None:
+        """"To init the cost tables"""
         assert len(self._costs_table.keys()) == 0, 'Init only empty costs_tables'
         assert len(self._list_of_costs_table.keys()) == 0, 'Init only empty list_of_costs_table'
         for node1 in self._environment.nodes:
@@ -103,6 +104,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
             self._list_of_costs_table[node1] = []
 
     def _init_total_nb_cost_infos(self) -> None:
+        """To init the nb of cost infos for the level of knowledge"""
         assert self._total_nb_cost_infos == 0, 'Only init if 0'
         assert self._total_max_nb_cost_infos == 0, 'Only init if 0'
         for node1 in self._environment.nodes:
@@ -111,14 +113,16 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
             self._total_nb_cost_infos += length
             self._total_max_nb_cost_infos += self._max_nb_infos_per_node
 
-    def reinit_cost_tables_to_average(self):
+    def reinit_cost_tables_to_average(self) -> None:
+        """To reinit the cost table to the last values but with only one record"""
         for node1 in self._environment.nodes:
             self._list_of_costs_table[node1] = [self._costs_table[node1]]
         self._total_nb_cost_infos = 0
         self._total_max_nb_cost_infos = 0
         self._init_total_nb_cost_infos()
 
-    def reinit_cost_tables_to_0(self):
+    def reinit_cost_tables_to_0(self) -> None:
+        """To init the cost table to 0 without any record"""
         for node1 in self._environment.nodes:
             self._costs_table[node1] = 0
             self._list_of_costs_table[node1] = []
@@ -126,13 +130,18 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         self._total_max_nb_cost_infos = 0
         self._init_total_nb_cost_infos()
 
-    def remove_a_life(self):
+    def remove_a_life(self) -> None:
+        """Called by trainers when elimination phase"""
         if self._nb_lives == 0:
             self._delete()
         else:
             self._nb_lives -= 1
 
-    def _delete(self):
+    def _delete(self) -> None:
+        """
+        When you are dead, make sure the carrier does not take up any memory anymore by deleting all refs
+        (gc does the work thereafter)
+        """
         # loads and auction will be cleaned, so we need to get out of the actors and environment only, not the tools
         if not self._in_transit:
             self._next_node.remove_carrier_from_waiting_list(self)
@@ -153,6 +162,10 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
         super().dont_get_attribution()
 
     def get_attribution(self, load: 'Load', next_node: 'Node', reserve_price_involved: bool) -> None:
+        """
+        This is the classical get attribution, but after the carrier learns from its experience to register
+        a new cost for the node at which it was waiting.
+        """
         super().get_attribution(load, next_node, reserve_price_involved)
         # register value
         if self._is_learning and (self._last_won_node is not None):
@@ -186,7 +199,11 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
             result += self._transit_costs() + self._far_from_home_costs(time_not_at_home=t)
         return result
 
-    def convergence_state(self):
+    def convergence_state(self) -> float:
+        """
+        The convergence state is the level of knowledge of one carrier as said in the paper
+        It helps knowing when to stop the learning process of the carriers
+        """
         return self._total_nb_cost_infos / self._total_max_nb_cost_infos
 
     @property
@@ -226,10 +243,7 @@ class LearningCostsCarrier(CarrierWithCosts, abc.ABC):
 
 class MultiLanesLearningCostsCarrier(LearningCostsCarrier, MultiBidCarrier):
     """
-    It is a carrier but:
-        * bidding their anticipated costs
-        * is able to change its parameters
-        * go back home when not seeing your boss (or mother) for a too long time
+    MultiLanes version
     """
 
     def bid(self) -> 'CarrierMultiBid':
@@ -242,11 +256,7 @@ class MultiLanesLearningCostsCarrier(LearningCostsCarrier, MultiBidCarrier):
 
 class SingleLaneLearningCostsCarrier(LearningCostsCarrier, SingleBidCarrier):
     """
-    It is a carrier but:
-        * bidding their anticipated costs
-        * is able to change its parameters
-        * go back home when not seeing your boss (or mother) for a too long time
-        * bid on the destination lane only
+    SingleLane version
     """
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':

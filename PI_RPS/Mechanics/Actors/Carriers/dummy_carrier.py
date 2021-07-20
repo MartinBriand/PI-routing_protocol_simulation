@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 class DummyCarrier(CarrierWithCosts, MultiBidCarrier):
 
     def bid(self) -> CarrierMultiBid:  # this should be a dictionary: key is next_node, value is float
-        """To be called by the Nodes before an auction"""
         bid = {}
         for next_node in self._environment.nodes:
             if next_node != self._next_node:

@@ -197,7 +197,7 @@ all_results = {'type': [],
 
 # Training loop
 def clear_env() -> None:
-    e.clear_node_auctions()
+    e.clear_node_auctions_and_profit()
     e.clear_loads()
     e.clear_carrier_profits()
     e.clear_shipper_expenses()

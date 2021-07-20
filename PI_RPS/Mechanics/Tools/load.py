@@ -56,7 +56,7 @@ class Load:
                         previous_node_cost: float,
                         reserve_price_involved: bool) -> None:
         """
-        To be called by the Nodes each time a load which was waiting at a Nodes get attributed for a next hop
+        To be called by the Node each time a load which was waiting at a Node get attributed for a next hop
         """
         self._in_transit = True
         self._current_carrier = carrier
@@ -76,7 +76,7 @@ class Load:
                         next_node: 'Node',
                         cost: float) -> None:
         """
-        Generate new info after the attribution and tell the environment it has new info
+        Generates new info after the attribution and tells the environment it has new info
         """
         infos = []
         if len(self._previous_infos) >= self._environment.max_nb_infos_per_load:
@@ -121,17 +121,20 @@ class Load:
         return self._has_new_infos
 
     def total_delivery_cost(self) -> float:
+        """Return the total delivery cost of the load (so far)"""
         return sum([element[3] for element in self._movements]) + sum([element[4] for element in self._movements])
 
     def nb_hops(self) -> int:
+        """Returns the number of hops of the load (so far)"""
         return len(self._movements)
 
     def delivery_time(self) -> int:
+        """Return the delivery time of the load (so far)"""
         return sum([self._environment.get_distance(departure, arrival)
                     for departure, arrival, _, _, _, _ in self._movements])
 
     @property
-    def departure(self):
+    def departure(self) -> 'Node':
         return self._departure
 
     @property
@@ -155,13 +158,13 @@ class Load:
         return self._in_transit
 
     @property
-    def movements(self):
+    def movements(self) -> List[Movement]:
         return self._movements
 
 
 class Info:
     """
-    An info is made of a start position, an arrival position, and a cost between the two
+    An info is made of a start node, an arrival node, and a cost between the two
     """
 
     def __init__(self,

@@ -1,6 +1,5 @@
 """
-This is a carrier that bids the cost for each lane except if it has to go home. If so, it bids 0 on its home lane and
-very high (higher than reserve price) on the other lanes and go home whatever the result
+This is a carrier that bids the cost for each lane times a cost majoration to have positive profit.
 """
 import abc
 
@@ -93,16 +92,13 @@ class CostBiddingCarrier(CarrierWithCosts, abc.ABC):
         return result * self._cost_majoration
 
     @property
-    def cost_majoration(self):
+    def cost_majoration(self) -> float:
         return self._cost_majoration
 
 
 class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
     """
-    It is a carrier but:
-        * bidding their anticipated costs
-        * is able to change its parameters
-        * go back home when not seeing your boss (or mother) for a too long time
+    MultiLanes version
     """
 
     def bid(self) -> 'CarrierMultiBid':
@@ -115,11 +111,7 @@ class MultiLanesCostBiddingCarrier(CostBiddingCarrier, MultiBidCarrier):
 
 class SingleLaneCostBiddingCarrier(CostBiddingCarrier, SingleBidCarrier):
     """
-    It is a carrier but:
-        * bidding their anticipated costs
-        * is able to change its parameters
-        * go back home when not seeing your boss (or mother) for a too long time
-        * bid on the destination lane only
+    SingleLane version
     """
 
     def bid(self, next_node: 'Node') -> 'CarrierSingleBid':

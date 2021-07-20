@@ -21,14 +21,10 @@ class Node(abc.ABC):
         * Run auctions for the available loads
             * Ask Shippers for reserve prices
             * Ask Carriers for bids
-            * Run the auction
-            * Make the attribution
-            * Ask everyone to update their status
+            * Run the auctions
+            * Make the attributions
+            * Communicate results
             * Ask everyone to proceed to payment
-        * Make the attribution and ask for payment
-
-    Important note: the waiting lists are only managed by the loads and the Carriers themselves. A load signal when it
-    wants to be auctioned, remove itself after being auctioned, and similarly for the Carriers.
     """
 
     def __init__(self,
@@ -115,6 +111,11 @@ class Node(abc.ABC):
         """Called by the environment"""
         self._past_auctions.clear()
 
+    def clear_profit(self):
+        """Called by the environment"""
+        self._revenues = []
+        self._total_revenues = 0
+
     def clear_waiting_loads(self) -> None:
         """Called by the environment"""
         self._waiting_loads.clear()
@@ -136,7 +137,7 @@ class Node(abc.ABC):
         return self._weights
 
     @property
-    def past_auctions(self):
+    def past_auctions(self) -> List[Auction]:
         return self._past_auctions
 
     @property

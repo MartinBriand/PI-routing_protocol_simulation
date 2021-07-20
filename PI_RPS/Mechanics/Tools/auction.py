@@ -76,7 +76,7 @@ class Auction(abc.ABC):
                                         carrier_value=d['carrier_cost'])
 
     @property
-    def results(self):
+    def results(self) -> Dict:
         return self._results
 
 
@@ -117,7 +117,7 @@ class MultiLanesAuction(Auction):
 
     def _calculate_auction_weights(self, load: 'Load') -> None:
         """
-        Build the dictionary of weights. The first key is the auctioned load, the second is the intermediary Nodes
+        Build the dictionary of weights. The first key is the auctioned load, the second is the intermediary Node
         The value is the weight
         """
         self._weights[load] = self._source.weights[load.arrival]
@@ -127,15 +127,16 @@ class MultiLanesAuction(Auction):
         del self._bids
         # but we keep self._all_bids
 
-    def _get_all_bids(self):
-        """Get all the bids from which _get_bids will create the correct bids"""
+    def _get_all_bids(self) -> None:
+        """Get all the bids from which _get_bids will create the correct bids,
+        This way, a carrier bids only once for a series of sub-auctions"""
         for carrier in self._carriers:
             self._all_bids[carrier] = carrier.bid()
 
     def _get_bids(self, load: 'Load', nb_carriers_involved: int) -> None:
         """
         Build the dictionary of the bid dictionary. The first key is the load, key2 the carrier, and key3 the next
-        node. The value is the bid
+        node. The value is the bid.
         """
         self._bids[load] = {}
         for carrier in self._carriers[:nb_carriers_involved]:  # could be parallelized
@@ -250,7 +251,7 @@ class SingleLaneAuction(Auction):
     def _get_bids(self, load: 'Load', nb_carriers_involved: int) -> None:
         """
         Build the dictionary of the bid dictionary. The first key is the load, key2 the carrier, and key3 the next
-        node. The value is the bid
+        node. The value is the bid.
         """
         self._bids[load] = {}
         for carrier in self._carriers[:nb_carriers_involved]:  # could be parallelized
@@ -258,6 +259,19 @@ class SingleLaneAuction(Auction):
 
     def _make_attributions_and_payments(self, load: 'Load',
                                         nb_carriers_involved: int) -> Tuple[bool, Optional['Carrier']]:
+
+        """
+        This is the auction process. It builds the result dictionary
+        the first key is either 'loads' or 'Carriers'
+        In the 'loads' dictionary, we have, for each load key:
+            * an 'is_attributed' key with a boolean value associated
+            * a 'kwargs' dictionary with the exact format of the kw of the get_attribution function of the load package
+                (or an empty dictionary to call the discard function if need be)
+        In the 'Carriers' dictionary, we have, for each Carriers key:
+            * an 'is_attributed' key with a boolean value associated
+            * a 'kwargs' dictionary with the exact format of the kw of the get_attribution function of the load package
+                (or an empty dictionary to call the dont_get_attribution function if need be)
+        """
 
         this_auction_reserve_price = self._reserve_prices[load]
         this_auction_bids = self._bids[load]

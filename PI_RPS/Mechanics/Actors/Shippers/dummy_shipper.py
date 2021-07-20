@@ -13,7 +13,10 @@ if TYPE_CHECKING:
 
 
 class DummyShipper(Shipper):
-
+    """
+    A shipper with fixed reserve price of reserve price proportional to distance (the first mode is the
+    only was used but the other was developed in case)
+    """
     def __init__(self,
                  name: str,
                  laws: List['NodeLaw'],  # forward reference
@@ -33,9 +36,6 @@ class DummyShipper(Shipper):
         self._default_reserve_price: float = default_reserve_price
 
     def generate_reserve_price(self, load: 'Load', node: 'Node') -> float:  # this should be a float
-        """
-        To be called by the Nodes before an auction
-        """
         if self._environment.default_reserve_price:
             return self._default_reserve_price
         else:

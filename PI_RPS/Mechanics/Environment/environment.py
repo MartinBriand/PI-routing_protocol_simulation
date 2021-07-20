@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 class Environment:
     """
     This is the Environment class. It should be seen as a simple clock necessary for the functioning of the game,
-    but not as a real entity of the game. If a version ever have to be implemented or become more realistic,
-    the Environment should be deleted.
+    but not as a real entity of the game. If a version ever has to be implemented,
+    the Environment will not exist.
     """
 
     def __init__(self,
@@ -85,7 +85,7 @@ class Environment:
             carrier.next_step()  # could be parallelized
 
     def _get_and_broadcast_new_infos(self) -> None:
-        """Asking loads with new infos to communicate this and then broadcast the information to Nodes"""
+        """Asking loads with new infos to communicate them and then broadcast the infos to Nodes"""
         new_infos = []
         for load in self._loads_with_new_infos:
             new_infos += load.communicate_infos()  # could be parallelized
@@ -94,11 +94,12 @@ class Environment:
         self._loads_with_new_infos = []
 
     def get_distance(self, departure: 'Node', arrival: 'Node') -> int:
-        """to be called by Carriers to know the remaining time"""
+        """To know the distance (called by carriers when moving or by shippers when generating reserve price
+        or by nodes at initialization"""
         return self._distances[departure][arrival]
 
     def set_distances(self, distances: 'Distance') -> None:
-        """the set distance function"""
+        """Set distance function"""
         self._distances = distances
 
     def add_node(self, node: 'Node') -> None:
@@ -122,13 +123,14 @@ class Environment:
         self._loads.append(load)
 
     def add_load_to_new_infos_list(self, load: 'Load') -> None:
-        """to be called by load with new info to signal the new information"""
+        """to be called by loads with new info to signal the new information"""
         self._loads_with_new_infos.append(load)
 
-    def clear_node_auctions(self) -> None:
+    def clear_node_auctions_and_profit(self) -> None:
         """Called by training loop before tests"""
         for node in self._nodes:
             node.clear_past_auctions()
+            node.clear_profit()
 
     def clear_loads(self) -> None:
         """Called by training loop before tests"""
@@ -151,9 +153,6 @@ class Environment:
         for shipper in self._shippers:
             shipper.clear_expenses()
 
-    def check_carriers_first_steps(self) -> None:
-        raise NotImplementedError
-
     @property
     def nodes(self) -> List['Node']:
         return self._nodes
@@ -171,7 +170,7 @@ class Environment:
         return self._loads
 
     @property
-    def nb_hours_per_time_unit(self):
+    def nb_hours_per_time_unit(self) -> float:
         return self._nb_hours_per_time_unit
 
     @property
@@ -205,11 +204,11 @@ class Environment:
         return self._max_nb_infos_per_load
 
     @property
-    def init_node_weights_distance_scaling_factor(self):
+    def init_node_weights_distance_scaling_factor(self) -> float:
         return self._init_node_weights_distance_scaling_factor
 
     @property
-    def max_node_weights_distance_scaling_factor(self):
+    def max_node_weights_distance_scaling_factor(self) -> float:
         return self._max_node_weights_distance_scaling_factor
 
     @property

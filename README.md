@@ -1,7 +1,7 @@
 # PI-routing_protocol_simulation
 
 > Important: Please read the `CONTRIBUTING.md` file to know how to contribute to the project
-
+TODO DO NOT FORGET TO TELL ABOUT FFHC AND NRC
 ## Introduction
 ### Why the project
 The aim is to propose a protocol that optimize the stochastic price to send a good from one place to another over the _PI_
