@@ -262,6 +262,7 @@ class CarrierWithCosts(Carrier, abc.ABC):
         """
         t = time_not_at_home if time_not_at_home is not None else self._time_not_at_home
         return self._ffh_c + 53. + self._a_c_percentage * (self._ffh_c + self._t_c) if t > 0 else 0.
+        # why do we have this +53. ?????
 
     def _update_ffh_cost_functions(self) -> None:
         """
